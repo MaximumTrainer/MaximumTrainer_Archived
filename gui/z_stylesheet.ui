@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Z_StyleSheet</class>
+ <widget class="QMainWindow" name="Z_StyleSheet">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>817</width>
+    <height>605</height>
+   </rect>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::ClickFocus</enum>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+QMainWindow#MainWindow {
+	background: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #2a2a2a, stop: 1.0 #4b4b4b);
+}
+
+QLabel#label_headerMain {
+	color: white; 
+}
+
+QWidget#widget_fancyMenu {
+
+	/*background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb(64,64,64), stop: 1.0 rgb(130,130,130));*/
+
+	/*border-bottom: 0px;*/
+	border-bottom: 1px solid #313131;
+	border-right: 1px solid #313131;
+	border-top: 1px solid #313131;
+	border-left: 1px solid #313131;
+}
+
+
+
+QWidget#tab_workout1, #tab_workout2, #tab_profile1, #tab_achiev1, #tableView_workout, #tab_create, #tableView_course, #tab_course, #tab_edit_course {
+  background-color: #f0f0f0;
+}
+
+QWidget#tabWidget_course, #tab_course, #tab_edit_course #tab_edit_course {
+  background-color: #f0f0f0;
+}
+
+/*
+QWidget.mainPage{
+  background-color: #f0f0f0;
+}
+*/
+
+
+QTableView#tableView_workout, QTableView#tableView_course {
+	gridline-color: gray; 
+}
+
+
+
+QSplitter::handle {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, 
+	stop:0 rgba(101, 104, 113, 255), 
+	stop:0.5 rgba(101, 104, 113, 235),
+	stop:1.0 rgba(101, 104, 113, 255));
+ }
+
+
+
+
+/******************************** PUSH BUTTON *******************************************/
+QPushButton.boutonLogin {
+font: bold;
+/*font-size: 14px;*/
+color : white;
+background-color: #5cb85c;
+border: 2px solid #4cae4c;
+border-radius: 3px;
+padding: 5px;
+min-width: 80px;
+}
+
+QPushButton.boutonLogin:hover {
+background-color: #47a447;
+border: 2px solid #398439;
+}
+
+QPushButton.boutonLogin:pressed {
+border: 3px solid #398439;
+}
+
+
+
+
+
+
+/********************************** QLABEL image *****************************************/
+QLabel.labelImageHr {
+	image: url(:/image/icon/heart2);
+}
+QLabel.labelImagePower {
+	image: url(:/image/icon/power2);
+}
+QLabel.labelImageCadence {
+	image: url(:/image/icon/crank2);
+}
+QLabel.labelImageSpeed {
+	image: url(:/image/icon/speed);
+}
+QLabel.labelImageCalories {
+	image: url(:/image/icon/burn);
+}
+
+QLabel.label_clockgreen{
+	image: url(:/image/icon/clock_green);
+}
+QLabel.label_clockorange{
+	image: url(:/image/icon/clock_orange);
+}
+</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

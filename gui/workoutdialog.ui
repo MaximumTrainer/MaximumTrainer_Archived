@@ -1,0 +1,677 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WorkoutDialog</class>
+ <widget class="QDialog" name="WorkoutDialog">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>812</width>
+    <height>563</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>600</width>
+    <height>1</height>
+   </size>
+  </property>
+  <property name="font">
+   <font>
+    <underline>false</underline>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>Workout - MaximumTrainer</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../MyResources.qrc">
+    <normaloff>:/image/icon/main_icon</normaloff>:/image/icon/main_icon</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+#WorkoutDialog {
+	background-color: rgb(25, 25, 25);
+	border: 2px solid #525252;
+}
+
+
+#widgetVideo {
+	border: 2px solid grey;
+}
+
+QLabel {
+	color: white;
+}
+
+
+QwtScaleWidget {  
+	color: white;
+}
+
+
+#frame_VLine {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, 
+	stop:0 rgba(101, 104, 113, 255), 
+	stop:0.5 rgba(101, 104, 113, 235),
+	stop:1.0 rgba(101, 104, 113, 255));
+}
+
+</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>2</number>
+   </property>
+   <property name="topMargin">
+    <number>2</number>
+   </property>
+   <property name="rightMargin">
+    <number>2</number>
+   </property>
+   <property name="bottomMargin">
+    <number>2</number>
+   </property>
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <item row="0" column="0">
+    <widget class="QSplitter" name="splitter">
+     <property name="lineWidth">
+      <number>1</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="opaqueResize">
+      <bool>true</bool>
+     </property>
+     <property name="handleWidth">
+      <number>1</number>
+     </property>
+     <widget class="TopMenuWorkout" name="widget_topMenu" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+     <widget class="QWidget" name="widget_videoPlayers" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="WebBrowserV2" name="widget_webPlayer" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>1</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="MyVlcPlayer" name="widgetVideo" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>1</height>
+          </size>
+         </property>
+         <property name="mouseTracking">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="WorkoutPlot" name="widget_workoutPlot" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>1</height>
+       </size>
+      </property>
+      <property name="baseSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="canvasBackground" stdset="0">
+       <brush brushstyle="SolidPattern">
+        <color alpha="255">
+         <red>25</red>
+         <green>25</green>
+         <blue>25</blue>
+        </color>
+       </brush>
+      </property>
+      <property name="autoReplot" stdset="0">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QWidget" name="widget_allSpeedo" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>1</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>2</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item row="0" column="0" rowspan="2">
+        <widget class="QWidget" name="horizontalLayout_Bottom" native="true">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="spacing">
+           <number>5</number>
+          </property>
+          <property name="leftMargin">
+           <number>3</number>
+          </property>
+          <property name="topMargin">
+           <number>3</number>
+          </property>
+          <property name="rightMargin">
+           <number>3</number>
+          </property>
+          <property name="bottomMargin">
+           <number>3</number>
+          </property>
+          <item>
+           <widget class="TimeWidget" name="widget_time" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>300</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>180</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="InfoWidget" name="wid_1_infoBoxHr" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>165</width>
+              <height>140</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>165</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="WorkoutPlotZoomer" name="wid_1_workoutPlot_HeartrateZoom" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>100</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="MinimalistWidget" name="wid_1_minimalistHr" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>150</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>300</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="InfoWidget" name="wid_2_infoBoxPower" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>165</width>
+              <height>140</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>165</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="WorkoutPlotZoomer" name="wid_2_workoutPlot_PowerZoom" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="baseSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>CrossCursor</cursorShape>
+            </property>
+            <property name="canvasBackground" stdset="0">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>25</red>
+               <green>25</green>
+               <blue>25</blue>
+              </color>
+             </brush>
+            </property>
+            <property name="autoReplot" stdset="0">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="MinimalistWidget" name="wid_2_minimalistPower" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>150</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>300</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="InfoWidget" name="wid_3_infoBoxCadence" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>165</width>
+              <height>140</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>165</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="WorkoutPlotZoomer" name="wid_3_workoutPlot_CadenceZoom" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="baseSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>ArrowCursor</cursorShape>
+            </property>
+            <property name="canvasBackground" stdset="0">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>25</red>
+               <green>25</green>
+               <blue>25</blue>
+              </color>
+             </brush>
+            </property>
+            <property name="autoReplot" stdset="0">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="InfoWidget" name="wid_4_infoBoxSpeed" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>165</width>
+              <height>140</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>165</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="MinimalistWidget" name="wid_3_minimalistCadence" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>150</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>300</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="OxygenWidget" name="wid_oxygen" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>113</width>
+              <height>140</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>113</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="BalanceWidget" name="wid_2_balancePower" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>240</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>350</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="infosWorkout" name="wid_5_infoWorkout" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>112</width>
+              <height>140</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>112</width>
+              <height>600</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>WorkoutPlot</class>
+   <extends>QWidget</extends>
+   <header>workoutplot.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>WorkoutPlotZoomer</class>
+   <extends>QWidget</extends>
+   <header>workoutplotzoomer.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>InfoWidget</class>
+   <extends>QWidget</extends>
+   <header>infowidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TopMenuWorkout</class>
+   <extends>QWidget</extends>
+   <header>topmenuworkout.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BalanceWidget</class>
+   <extends>QWidget</extends>
+   <header>balancewidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MinimalistWidget</class>
+   <extends>QWidget</extends>
+   <header>minimalistwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>infosWorkout</class>
+   <extends>QWidget</extends>
+   <header>infosworkout.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TimeWidget</class>
+   <extends>QWidget</extends>
+   <header>timewidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MyVlcPlayer</class>
+   <extends>QWidget</extends>
+   <header>myvlcplayer.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>OxygenWidget</class>
+   <extends>QWidget</extends>
+   <header>oxygenwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>WebBrowserV2</class>
+   <extends>QWidget</extends>
+   <header location="global">webbrowserv2.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../MyResources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

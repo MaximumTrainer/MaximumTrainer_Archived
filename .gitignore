@@ -1,0 +1,7 @@
+*.user
+.idea/workspace.xml
+.idea/vcs.xml
+.idea/modules.xml
+.idea/misc.xml
+.idea/encodings.xml
+.idea/Qt_Project.iml

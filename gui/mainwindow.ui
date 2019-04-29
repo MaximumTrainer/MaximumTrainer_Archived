@@ -1,0 +1,598 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1087</width>
+    <height>444</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MaximumTrainer</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../MyResources.qrc">
+    <normaloff>:/image/icon/main_icon</normaloff>:/image/icon/main_icon</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <property name="documentMode">
+   <bool>true</bool>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <item row="0" column="0" rowspan="3">
+     <widget class="QWidget" name="widget_fancyMenu" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>86</width>
+        <height>250</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>86</width>
+        <height>16777215</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="BottomBar" name="widget_bottomMenu" native="true"/>
+    </item>
+    <item row="1" column="1">
+     <widget class="QStackedWidget" name="stackedWidget_menu">
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="currentIndex">
+       <number>4</number>
+      </property>
+      <widget class="QWidget" name="stackedWidget_menuPageWorkout">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="tabWidget_workout">
+          <property name="tabShape">
+           <enum>QTabWidget::Rounded</enum>
+          </property>
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+          <property name="usesScrollButtons">
+           <bool>false</bool>
+          </property>
+          <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <property name="tabsClosable">
+           <bool>false</bool>
+          </property>
+          <widget class="Main_WorkoutPage" name="tab_workout1">
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <attribute name="title">
+            <string>List</string>
+           </attribute>
+          </widget>
+          <widget class="WorkoutCreator" name="tab_create">
+           <attribute name="title">
+            <string>Editor</string>
+           </attribute>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="stackedWidget_menu_ergDb">
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="tabWidget_ergDb">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <property name="usesScrollButtons">
+           <bool>false</bool>
+          </property>
+          <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="ergDb">
+           <attribute name="title">
+            <string>Find Workouts</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_12">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWebEngineView" name="webView_ergDb" native="true">
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="stackedWidget_menuPagePlan">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="tab_trainingPlans">
+           <attribute name="title">
+            <string>Plan</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_9">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWebEngineView" name="webView_plan" native="true">
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="stackedWidget_menuPageStudio">
+       <layout class="QVBoxLayout" name="verticalLayout_10">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="tabStudio">
+          <property name="usesScrollButtons">
+           <bool>false</bool>
+          </property>
+          <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="tab">
+           <attribute name="title">
+            <string>Studio</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_11">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWebEngineView" name="webView_studio" native="true">
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="stackedWidget_menuPageProfile">
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="tabWidget_profile">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <property name="usesScrollButtons">
+           <bool>false</bool>
+          </property>
+          <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="tab_zone">
+           <attribute name="title">
+            <string>Profile</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWebEngineView" name="webView_zones" native="true">
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_achievement">
+           <attribute name="title">
+            <string>Achievements</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWebEngineView" name="webView_achiev" native="true">
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="stackedWidget_menuPageAnt">
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="tabAnt">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <property name="usesScrollButtons">
+           <bool>false</bool>
+          </property>
+          <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="tab_ant">
+           <attribute name="title">
+            <string>ANT+</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWebEngineView" name="webView_settings" native="true">
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1087</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFolder">
+    <property name="title">
+     <string>Folder</string>
+    </property>
+    <addaction name="actionWorkout"/>
+    <addaction name="actionHistory"/>
+   </widget>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>?</string>
+    </property>
+    <addaction name="actionAbout_MT"/>
+    <addaction name="actionAbout_Qt"/>
+    <addaction name="actionRequest_Help"/>
+   </widget>
+   <widget class="QMenu" name="menuMaximumTrainer">
+    <property name="title">
+     <string>MaximumTrainer</string>
+    </property>
+    <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
+    <addaction name="actionLog_off_Exit"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuTEst">
+    <property name="title">
+     <string>Workout</string>
+    </property>
+    <widget class="QMenu" name="menuImport">
+     <property name="title">
+      <string>Import</string>
+     </property>
+     <addaction name="actionSingle_Workout"/>
+     <addaction name="actionMultiple_Workouts"/>
+    </widget>
+    <addaction name="actionCreate_New"/>
+    <addaction name="menuImport"/>
+    <addaction name="separator"/>
+    <addaction name="actionOpen_Ride"/>
+   </widget>
+   <addaction name="menuMaximumTrainer"/>
+   <addaction name="menuFolder"/>
+   <addaction name="menuTEst"/>
+   <addaction name="menu"/>
+  </widget>
+  <action name="actionWorkout">
+   <property name="text">
+    <string>Open Workout Folder</string>
+   </property>
+  </action>
+  <action name="actionHistory">
+   <property name="text">
+    <string>Open History Folder</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences</string>
+   </property>
+  </action>
+  <action name="actionAbout_MT">
+   <property name="icon">
+    <iconset resource="../MyResources.qrc">
+     <normaloff>:/image/icon/main_icon</normaloff>:/image/icon/main_icon</iconset>
+   </property>
+   <property name="text">
+    <string>About MaximumTrainer</string>
+   </property>
+  </action>
+  <action name="actionAbout_Qt">
+   <property name="text">
+    <string>About Qt</string>
+   </property>
+  </action>
+  <action name="actionRequest_Help">
+   <property name="text">
+    <string>Help</string>
+   </property>
+  </action>
+  <action name="actionCreate_New">
+   <property name="text">
+    <string>Create New</string>
+   </property>
+  </action>
+  <action name="actionOpen_Ride">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Start Free Ride</string>
+   </property>
+  </action>
+  <action name="actionLog_off_Exit">
+   <property name="text">
+    <string>Change User</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionSingle_Workout">
+   <property name="text">
+    <string>Single Workout</string>
+   </property>
+  </action>
+  <action name="actionMultiple_Workouts">
+   <property name="text">
+    <string>Multiple Workouts</string>
+   </property>
+  </action>
+  <action name="actionFree_Ride">
+   <property name="text">
+    <string>Free Ride</string>
+   </property>
+  </action>
+  <action name="actiona">
+   <property name="text">
+    <string>a</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>QWebEngineView</class>
+   <extends>QWidget</extends>
+   <header location="global">qwebengineview.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Main_WorkoutPage</class>
+   <extends>QWidget</extends>
+   <header>main_workoutpage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>WorkoutCreator</class>
+   <extends>QWidget</extends>
+   <header>workoutcreator.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BottomBar</class>
+   <extends>QWidget</extends>
+   <header>bottombar.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../MyResources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

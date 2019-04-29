@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WorkoutCreator</class>
+ <widget class="QWidget" name="WorkoutCreator">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1195</width>
+    <height>624</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>1</height>
+   </size>
+  </property>
+  <property name="cursor">
+   <cursorShape>ArrowCursor</cursorShape>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">#frame_border {
+	border-top: 1px solid rgb(25, 25, 25);
+	border-bottom: 1px solid rgb(25, 25, 25);
+	border-right : 1px solid rgb(25, 25, 25);
+	border-left: 1px solid rgb(25, 25, 25);
+
+  /*  border-top-left-radius: 20px; */
+}
+
+
+/*
+QPushButton#pushButton_add, #pushButton_repeat, #pushButton_copy, #pushButton_delete {
+	text-align:left;
+}
+*/
+
+
+#frame_tableView_buttons {
+/*background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(229, 229, 229, 255), stop:1 rgba(255, 255, 255, 255));
+*/
+	background-color: white;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,2,1">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>9</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QWebEngineView" name="webView_createWorkout" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>200</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>200</height>
+      </size>
+     </property>
+     <property name="contextMenuPolicy">
+      <enum>Qt::NoContextMenu</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget_top" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QWidget" name="widget_2" native="true">
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame_tableView_buttons">
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QFrame" name="frame_button">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>100</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <property name="topMargin">
+             <number>9</number>
+            </property>
+            <item>
+             <widget class="QToolButton" name="pushButton_add">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>50</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Add</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../MyResources.qrc">
+                <normaloff>:/image/icon/add</normaloff>:/image/icon/add</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_4">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>13</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="pushButton_repeat">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>50</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Repeat</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../MyResources.qrc">
+                <normaloff>:/image/icon/repeat</normaloff>:/image/icon/repeat</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_5">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>13</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="pushButton_copy">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>50</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Copy</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../MyResources.qrc">
+                <normaloff>:/image/icon/copy</normaloff>:/image/icon/copy</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>13</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="pushButton_delete">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>50</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Delete</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../MyResources.qrc">
+                <normaloff>:/image/icon/delete</normaloff>:/image/icon/delete</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>252</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="TableViewInterval" name="tableView">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="acceptDrops">
+            <bool>true</bool>
+           </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAsNeeded</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAsNeeded</enum>
+           </property>
+           <property name="sizeAdjustPolicy">
+            <enum>QAbstractScrollArea::AdjustIgnored</enum>
+           </property>
+           <property name="autoScroll">
+            <bool>true</bool>
+           </property>
+           <property name="autoScrollMargin">
+            <number>16</number>
+           </property>
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="dragEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="dragDropOverwriteMode">
+            <bool>false</bool>
+           </property>
+           <property name="dragDropMode">
+            <enum>QAbstractItemView::InternalMove</enum>
+           </property>
+           <property name="defaultDropAction">
+            <enum>Qt::MoveAction</enum>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>false</bool>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <property name="showGrid">
+            <bool>true</bool>
+           </property>
+           <attribute name="horizontalHeaderStretchLastSection">
+            <bool>false</bool>
+           </attribute>
+           <attribute name="verticalHeaderStretchLastSection">
+            <bool>false</bool>
+           </attribute>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>3</number>
+      </property>
+      <item>
+       <widget class="myCreatorPlot" name="widget_plot" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QWebEngineView</class>
+   <extends>QWidget</extends>
+   <header location="global">qwebengineview.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>myCreatorPlot</class>
+   <extends>QWidget</extends>
+   <header>mycreatorplot.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TableViewInterval</class>
+   <extends>QTableView</extends>
+   <header>tableviewinterval.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../MyResources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

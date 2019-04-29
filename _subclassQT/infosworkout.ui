@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>infosWorkout</class>
+ <widget class="QWidget" name="infosWorkout">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>191</width>
+    <height>176</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>5</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item row="2" column="1">
+    <widget class="QLabel" name="label_4">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>Kilocalorie</string>
+     </property>
+     <property name="text">
+      <string>kcal</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLabel" name="label_kcal">
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>-</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="minimumSize">
+      <size>
+       <width>45</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>Normalized Power®</string>
+     </property>
+     <property name="text">
+      <string>NP</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_44">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>Training Stress Score®</string>
+     </property>
+     <property name="text">
+      <string>TSS</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QLabel" name="label_if">
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>-</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_tss">
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>-</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_np">
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>-</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLabel" name="label_2">
+     <property name="minimumSize">
+      <size>
+       <width>45</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>Intensity Factor®</string>
+     </property>
+     <property name="text">
+      <string>IF</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_distanceText">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>Km</string>
+     </property>
+     <property name="text">
+      <string>Distance</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_distance">
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>-</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>addtab.png</file>
+        <file>closetab.png</file>
+        <file>history.png</file>
+        <file>demobrowser.svg</file>
+        <file>defaultbookmarks.xbel</file>
+        <file>loading.gif</file>
+        <file>defaulticon.png</file>
+        <file>fullscreen.png</file>
+    </qresource>
+</RCC>

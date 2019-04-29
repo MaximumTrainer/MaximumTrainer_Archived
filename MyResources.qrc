@@ -1,0 +1,153 @@
+<RCC>
+    <qresource prefix="/image/icon" lang="user">
+        <file alias="loading">images/loading.gif</file>
+        <file alias="delete">images/delete.png</file>
+        <file alias="copy">images/copy.png</file>
+        <file alias="repeat">images/repeat.png</file>
+        <file alias="add">images/add.png</file>
+        <file alias="check">images/green_check.png</file>
+        <file alias="logo">images/logo.png</file>
+        <file alias="min1">images/Minimize1.png</file>
+        <file alias="min2">images/Minimize1-2.png</file>
+        <file alias="exp1">images/Expand1.png</file>
+        <file alias="exp2">images/Expand1-2.png</file>
+        <file alias="exit1">images/Exit1.png</file>
+        <file alias="exit2">images/Exit1-2.png</file>
+        <file alias="expB1">images/ExpandBefore1.png</file>
+        <file alias="expB2">images/ExpandBefore1-2.png</file>
+        <file alias="conf1">images/Config1.png</file>
+        <file alias="conf2">images/Config1-2.png</file>
+        <file alias="main_icon">images/main_icon.png</file>
+        <file alias="redc">images/red_circle.png</file>
+        <file alias="greenc">images/green_circle.png</file>
+        <file alias="edit">images/edit.png</file>
+        <file alias="power2">images/fa-bolt.png</file>
+        <file alias="heart2">images/fa-heart.png</file>
+        <file alias="crank2">images/fa-gear.png</file>
+        <file alias="speed">images/fa-dashboard.png</file>
+        <file alias="volume">images/volume.png</file>
+        <file alias="volume_mute">images/volume_mute.png</file>
+        <file alias="folder">images/folder.png</file>
+        <file alias="chart">images/line_chart.png</file>
+        <file alias="sound">images/speaker.png</file>
+        <file alias="display">images/mac_display.png</file>
+        <file alias="movie">images/movies.png</file>
+        <file alias="general">images/general.png</file>
+        <file alias="calendar">images/calendar.png</file>
+        <file alias="gear">images/gear.png</file>
+        <file alias="user">images/user.png</file>
+        <file alias="road">images/road.png</file>
+        <file alias="radio">images/radio.png</file>
+        <file alias="ruler">images/ruler.png</file>
+        <file alias="fullscreen">images/fullscreen.png</file>
+        <file alias="pdf">images/pdf.png</file>
+        <file alias="leftArrow">images/arrow-left-icon.png</file>
+        <file alias="rightArrow">images/arrow-right-icon.png</file>
+        <file alias="refresh">images/refresh.png</file>
+        <file alias="play">images/button_blue_play.png</file>
+        <file alias="pause">images/button_blue_pause.png</file>
+        <file alias="skip">images/button_blue_last.png</file>
+        <file alias="stop">images/button_blue_stop.png</file>
+        <file alias="back">images/button_blue_rew.png</file>
+        <file alias="next">images/button_blue_ffw.png</file>
+        <file alias="workoutMan">images/workoutMan.png</file>
+        <file alias="strava">images/connectStrava1.png</file>
+        <file alias="upload">images/cloudUpload.png</file>
+        <file alias="ant">images/ANTPlusLogo_STDnoTM.png</file>
+        <file alias="studio">images/studio.png</file>
+        <file alias="antmenu">images/ANT_Menu.png</file>
+        <file alias="target">images/fa-target.png</file>
+        <file alias="trainingpeaks">images/TP_logo_horz_2_color.png</file>
+        <file>images/ergdb-logo-black-rider.png</file>
+    </qresource>
+    <qresource prefix="/sound">
+        <file alias="end_workout">sound/end_workout.wav</file>
+        <file alias="resume">sound/resume.wav</file>
+        <file alias="firstBeep">sound/first.wav</file>
+        <file alias="secondBeep">sound/second.wav</file>
+        <file alias="fireTorch">sound/fire_torch.wav</file>
+        <file alias="powerTooLow">sound/PowerTooLow.wav</file>
+        <file alias="powerTooHigh">sound/PowerTooHigh.wav</file>
+        <file alias="cadenceTooLow">sound/CadenceTooLow.wav</file>
+        <file alias="cadenceTooHigh">sound/CadenceTooHigh.wav</file>
+    </qresource>
+    <qresource prefix="/language">
+        <file>language/powervelo_en.qm</file>
+        <file>language/powervelo_fr.qm</file>
+    </qresource>
+    <qresource prefix="/included_workout/bt_16_wk_plan">
+        <file>included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkA-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkA-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkA-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkA-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkB-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkB-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkB-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkB-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk1-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk1-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk2-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk2-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk2-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk2-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk3-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk3-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk3-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk3-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk4-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk4-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk4-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase1-wk4-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk5-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk5-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk6-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk6-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk6-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk6-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk7-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk7-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk7-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk7-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk8-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk8-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk8-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk8-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk9-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase2-wk9-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk10-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk10-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk10-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk10-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk11-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk11-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk11-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk11-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk12-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk12-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk12-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk12-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk13-wo1.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk13-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk13-wo3.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk13-wo4.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk14-wo2.workout</file>
+        <file>included_workout/BT 16wk Power Based/Phase3-wk14-wo4.workout</file>
+    </qresource>
+    <qresource prefix="/included_workout/sufferfest">
+        <file>included_workout/Sufferfest/ISLAGIATT.workout</file>
+    </qresource>
+    <qresource prefix="/included_workout/rachel">
+        <file>included_workout/Rachel/Intervals-01.workout</file>
+        <file>included_workout/Rachel/Intervals-02.workout</file>
+        <file>included_workout/Rachel/Intervals-03.workout</file>
+        <file>included_workout/Rachel/Intervals-04.workout</file>
+        <file>included_workout/Rachel/Intervals-05.workout</file>
+        <file>included_workout/Rachel/Intervals-06.workout</file>
+        <file>included_workout/Rachel/Intervals-07.workout</file>
+        <file>included_workout/Rachel/Intervals-08.workout</file>
+        <file>included_workout/Rachel/Intervals-09.workout</file>
+        <file>included_workout/Rachel/Intervals-10.workout</file>
+        <file>included_workout/Rachel/Intervals-11.workout</file>
+        <file>included_workout/Rachel/Intervals-12.workout</file>
+    </qresource>
+</RCC>
