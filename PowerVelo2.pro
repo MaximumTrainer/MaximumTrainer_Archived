@@ -179,7 +179,6 @@ include (ANT/power/ANT_Power.pri)
 include (ANT/fec/ANT_fec.pri)
 include (ANT/oxygen/ANT_Oxygen.pri)
 include (ANT/ANT.pri)
-#include (Fit_16_20/Fit.pri)
 include (Fit_20_16/Fit.pri)
 
 
