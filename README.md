@@ -1,5 +1,5 @@
 # MaximumTrainer
-Qt software for indoor cycling
+Qt software for indoor cycling, similar to trainerroad, with the ability to get plans from trainerday.com
 
 ## Building
 build with the .pro file inside the project, soon to be added to github actions
