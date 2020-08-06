@@ -12,4 +12,4 @@ Language file are used at runtime in the /language folder
 You need Qt linguist to be able to open and generate a new language file (.qm file)
 
 ## TODO
-Project now going through new revisions, with plans to enhance
+Project now going through new revisions, with plans to enhance as open source interval trainer for indoor cycling & indoor rowing
