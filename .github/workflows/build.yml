@@ -19,7 +19,7 @@ jobs:
         sudo DEBIAN_FRONTEND=noninteractive apt-get update
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev fcitx-frontend-qt5
     - name: Install Qt
-      uses: jurplel/install-qt-action@v2.8.0
+      uses: jurplel/install-qt-action@v2
       with:
         modules: 'qtcharts qtwebengine'
 
@@ -42,7 +42,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install Qt
-      uses: jurplel/install-qt-action@2.8.0
+      uses: jurplel/install-qt-action@v2
       with:
         modules: 'qtcharts qtwebengine'
 
@@ -65,7 +65,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install Qt
-      uses: jurplel/install-qt-action@v2.8.0
+      uses: jurplel/install-qt-action@v2
       with:
         modules: 'qtcharts qtwebengine'
     - name: do build
