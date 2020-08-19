@@ -24,12 +24,8 @@ jobs:
         modules: 'qtcharts qtwebengine'
 
     - name: do build
-      run: |
-        cp /usr/lib/x86_64-linux-gnu/libFcitxQt5DBusAddons.so* $Qt5_Dir/lib/
-        cp /usr/lib/x86_64-linux-gnu/libFcitxQt5WidgetsAddons.so* $Qt5_Dir/lib
-        cp /usr/lib/x86_64-linux-gnu/qt5/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so $Qt5_Dir/plugins/platforminputcontexts/
-        cd src
-        ./release_linux.sh
+      run: qmake PowerVelo3.pro
+
     
     - uses: actions/upload-artifact@v1
       with:
@@ -40,6 +36,9 @@ jobs:
     runs-on: windows-latest
 
     steps:
+    - name: MSVC Environment Setup
+      uses: ilammy/msvc-dev-cmd@v1
+    - name: checkout
     - uses: actions/checkout@v2
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
@@ -47,11 +46,7 @@ jobs:
         modules: 'qtcharts qtwebengine'
 
     - name: do build
-      shell: cmd
-      run: |
-        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
-        cd src
-        release_win.bat
+      run: qmake PowerVelo3.pro
     
     - uses: actions/upload-artifact@v1
       with:
@@ -69,7 +64,7 @@ jobs:
       with:
         modules: 'qtcharts qtwebengine'
     - name: do build
-      run: cd src;./release_macos.sh
+      run: qmake PowerVelo3.pro
     
     - uses: actions/upload-artifact@v1
       with:
