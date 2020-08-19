@@ -33,22 +33,6 @@ jobs:
         name: linux
         path: build/artifact 
 
-  build_mac:
-    runs-on: macos-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v2.6.2
-
-    - name: do build
-      run: cd src;./release_macos.sh
-    
-    - uses: actions/upload-artifact@v1
-      with:
-        name: macos
-        path: build/artifact 
-
   build_windows:
     runs-on: windows-latest
 
@@ -68,3 +52,20 @@ jobs:
       with:
         name: windows
         path: build\artifact 
+
+
+  build_mac:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2.6.2
+
+    - name: do build
+      run: cd src;./release_macos.sh
+    
+    - uses: actions/upload-artifact@v1
+      with:
+        name: macos
+        path: build/artifact 
