@@ -1,0 +1,70 @@
+  
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'src/*'
+
+jobs:
+  build_linux:
+    runs-on: ubuntu-16.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        sudo DEBIAN_FRONTEND=noninteractive apt-get update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev fcitx-frontend-qt5
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2.6.2
+
+    - name: do build
+      run: |
+        cp /usr/lib/x86_64-linux-gnu/libFcitxQt5DBusAddons.so* $Qt5_Dir/lib/
+        cp /usr/lib/x86_64-linux-gnu/libFcitxQt5WidgetsAddons.so* $Qt5_Dir/lib
+        cp /usr/lib/x86_64-linux-gnu/qt5/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so $Qt5_Dir/plugins/platforminputcontexts/
+        cd src
+        ./release_linux.sh
+    
+    - uses: actions/upload-artifact@v1
+      with:
+        name: linux
+        path: build/artifact 
+
+  build_mac:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2.6.2
+
+    - name: do build
+      run: cd src;./release_macos.sh
+    
+    - uses: actions/upload-artifact@v1
+      with:
+        name: macos
+        path: build/artifact 
+
+  build_windows:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2.6.2
+
+    - name: do build
+      shell: cmd
+      run: |
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+        cd src
+        release_win.bat
+    
+    - uses: actions/upload-artifact@v1
+      with:
+        name: windows
+        path: build\artifact 
