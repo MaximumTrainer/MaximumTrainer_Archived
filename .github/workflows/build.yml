@@ -30,7 +30,7 @@ jobs:
     - uses: actions/upload-artifact@v1
       with:
         name: linux
-        path: build/artifact 
+        path: build/
 
   build_windows:
     runs-on: windows-latest
@@ -51,7 +51,7 @@ jobs:
     - uses: actions/upload-artifact@v1
       with:
         name: windows
-        path: build\artifact 
+        path: build\ 
 
 
   build_mac:
@@ -69,4 +69,4 @@ jobs:
     - uses: actions/upload-artifact@v1
       with:
         name: macos
-        path: build/artifact 
+        path: build/ 
