@@ -25,10 +25,11 @@ jobs:
       with:
         modules: 'qtcharts qtwebengine'
 
-    - name: do build
+    - name: Create Makefile
       run: 
         qmake PowerVelo.pro
-        make
+    - name: Run MakeFile
+      run: make
     - name: upload artifact
       uses: actions/upload-artifact@v2
       with:
@@ -48,10 +49,11 @@ jobs:
       with:
         modules: 'qtcharts qtwebengine'
 
-    - name: do build
-      run:
+    - name: Create Makefile
+      run: 
         qmake PowerVelo.pro
-        make
+    - name: Run MakeFile
+      run: make
     - name: upload artifact
       uses: actions/upload-artifact@v2
       with:
@@ -69,10 +71,11 @@ jobs:
       uses: jurplel/install-qt-action@v2.8.0
       with:
         modules: 'qtcharts qtwebengine'
-    - name: do build
-      run:
+    - name: Create Makefile
+      run: 
         qmake PowerVelo.pro
-        make
+    - name: Run MakeFile
+      run: make
     - name: upload artifact
       uses: actions/upload-artifact@v1
       with:
