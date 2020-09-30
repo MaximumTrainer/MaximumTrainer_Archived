@@ -11,8 +11,9 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-    - name: Install dependencies
+    - name: checkout
       uses: actions/checkout@v2
+    - name: Linux Environment Setup
       run: |
         DEBIAN_FRONTEND=noninteractive apt update && apt install sudo software-properties-common --yes
         DEBIAN_FRONTEND=noninteractive sudo apt-get update --yes
