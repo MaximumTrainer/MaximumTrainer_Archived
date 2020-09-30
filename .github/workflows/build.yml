@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-    - uses: actions/checkout@v2
     - name: Install dependencies
+    - uses: actions/checkout@v2
       run: |
         DEBIAN_FRONTEND=noninteractive apt update && apt install sudo software-properties-common --yes
         DEBIAN_FRONTEND=noninteractive sudo apt-get update --yes
@@ -28,8 +28,6 @@ jobs:
       run: 
         qmake PowerVelo.pro
         make
-
-    
     - uses: actions/upload-artifact@v2
       with:
         name: linux
@@ -51,8 +49,7 @@ jobs:
     - name: do build
         qmake PowerVelo.pro
         make
-    
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: windows
         path: build\ 
@@ -62,6 +59,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
+    - name: checkout
     - uses: actions/checkout@v2
     - name: Install Qt
       uses: jurplel/install-qt-action@v2.8.0
@@ -70,7 +68,6 @@ jobs:
     - name: do build
         qmake PowerVelo.pro
         make
-    
     - uses: actions/upload-artifact@v1
       with:
         name: macos
