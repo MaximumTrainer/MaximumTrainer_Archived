@@ -6,28 +6,31 @@ on:
   pull_request:
     branches: [ master ]
 
-
-
 jobs:
   build_linux:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
 
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        sudo DEBIAN_FRONTEND=noninteractive apt-get update
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev fcitx-frontend-qt5
+        DEBIAN_FRONTEND=noninteractive apt update && apt install sudo software-properties-common --yes
+        DEBIAN_FRONTEND=noninteractive sudo apt-get update --yes
+        sudo add-apt-repository ppa:beineri/opt-qt-5.12.6-bionic
+        sudo DEBIAN_FRONTEND=noninteractive apt install python3-pip --yes
+        sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq qt5-default qt514base qt514tools qt514serialport qt514svg qt514multimedia qt514connectivity qt514webengine qt514charts-no-lgpl qt514networkauth-no-lgpl qt514translations
     - name: Install Qt
-      uses: jurplel/install-qt-action@v2
+      uses: jurplel/install-qt-action@v2.8.0
       with:
         modules: 'qtcharts qtwebengine'
 
     - name: do build
-      run: qmake PowerVelo3.pro
+      run: 
+        qmake PowerVelo.pro
+        make
 
     
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: linux
         path: build/
@@ -41,12 +44,13 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
     - name: Install Qt
-      uses: jurplel/install-qt-action@v2
+      uses: jurplel/install-qt-action@v2.8.0
       with:
         modules: 'qtcharts qtwebengine'
 
     - name: do build
-      run: qmake PowerVelo3.pro
+        qmake PowerVelo.pro
+        make
     
     - uses: actions/upload-artifact@v1
       with:
@@ -60,11 +64,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install Qt
-      uses: jurplel/install-qt-action@v2
+      uses: jurplel/install-qt-action@v2.8.0
       with:
         modules: 'qtcharts qtwebengine'
     - name: do build
-      run: qmake PowerVelo3.pro
+        qmake PowerVelo.pro
+        make
     
     - uses: actions/upload-artifact@v1
       with:
