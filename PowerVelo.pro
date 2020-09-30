@@ -142,9 +142,6 @@ macx {
     # Mac native widget support
     QT += macextras
 
-    # we have our own plist
-    QMAKE_INFO_PLIST = ./Resources/mac/Info.plist.app
-
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
 }
