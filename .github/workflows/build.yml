@@ -12,7 +12,7 @@ jobs:
 
     steps:
     - name: Install dependencies
-    - uses: actions/checkout@v2
+      uses: actions/checkout@v2
       run: |
         DEBIAN_FRONTEND=noninteractive apt update && apt install sudo software-properties-common --yes
         DEBIAN_FRONTEND=noninteractive sudo apt-get update --yes
@@ -28,7 +28,8 @@ jobs:
       run: 
         qmake PowerVelo.pro
         make
-    - uses: actions/upload-artifact@v2
+    - name: upload artifact
+      uses: actions/upload-artifact@v2
       with:
         name: linux
         path: build/
@@ -47,9 +48,11 @@ jobs:
         modules: 'qtcharts qtwebengine'
 
     - name: do build
+      run:
         qmake PowerVelo.pro
         make
-    - uses: actions/upload-artifact@v2
+    - name: upload artifact
+      uses: actions/upload-artifact@v2
       with:
         name: windows
         path: build\ 
@@ -66,9 +69,11 @@ jobs:
       with:
         modules: 'qtcharts qtwebengine'
     - name: do build
+      run:
         qmake PowerVelo.pro
         make
-    - uses: actions/upload-artifact@v1
+    - name: upload artifact
+      uses: actions/upload-artifact@v1
       with:
         name: macos
         path: build/ 
