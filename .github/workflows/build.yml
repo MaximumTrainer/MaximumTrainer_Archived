@@ -51,7 +51,7 @@ jobs:
 
     - name: Create Makefile
       run: 
-        qmake PowerVelo.pro -spec win32-msvc2015
+        qmake PowerVelo.pro -spec winrt-x64-msvc2017
     - name: Run MakeFile
       run: make
     - name: upload artifact
