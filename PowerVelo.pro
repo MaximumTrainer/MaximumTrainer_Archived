@@ -142,8 +142,14 @@ macx {
     # Mac native widget support
     QT += macextras
 
+    QMAKEFEATURES += /usr/local/qwt-5.12.9/features
+    CONFIG += qwt
+    INCLUDEPATH += /usr/local/qwt-5.12.9/lib/qwt.framework/Headers
+    LIBS += -L/usr/local/qwt-5.12.9/lib/qwt.framework/Versions/6/ -lqwt
+
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
+    
 }
 
 
