@@ -142,10 +142,10 @@ macx {
     # Mac native widget support
     QT += macextras
 
-    QMAKEFEATURES += /Users/runner/work/MaximumTrainer/Qt/5.12.9//features
+    QMAKEFEATURES += /Users/runner/work/MaximumTrainer/Qt/5.12.9/features
     CONFIG += qwt
     INCLUDEPATH += /Users/runner/work/MaximumTrainer/Qt/5.12.9/lib/qwt.framework/Headers
-    LIBS += -F//Users/runner/work/MaximumTrainer/Qt/5.12.9/lib -framework qwt
+    LIBS += -F/Users/runner/work/MaximumTrainer/Qt/5.12.9/lib -framework qwt
 
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
