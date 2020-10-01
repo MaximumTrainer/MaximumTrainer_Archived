@@ -51,7 +51,7 @@ jobs:
 
     - name: Create Makefile
       run: 
-        qmake PowerVelo.pro
+        qmake PowerVelo.pro -platform win32-g++
     - name: Run MakeFile
       run: make
     - name: upload artifact
