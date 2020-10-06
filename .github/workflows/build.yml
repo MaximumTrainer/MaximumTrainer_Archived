@@ -19,7 +19,7 @@ jobs:
         DEBIAN_FRONTEND=noninteractive sudo apt-get update --yes
         sudo add-apt-repository ppa:beineri/opt-qt-5.12.6-bionic
         sudo DEBIAN_FRONTEND=noninteractive apt install python3-pip --yes
-        sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq qt5-default qt512base qt512tools qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations
+        sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq qt5-default qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations
     - name: Install Qt
       uses: jurplel/install-qt-action@v2.8.0
       with:
