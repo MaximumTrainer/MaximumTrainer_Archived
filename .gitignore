@@ -9,4 +9,4 @@ Makefile
 .idea/encodings.xml
 .idea/Qt_Project.iml
 .idea/QtGithub.iml
-
+.qmake.stash 
