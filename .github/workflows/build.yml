@@ -68,9 +68,7 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
     - name: QT Environment Setup
-      run: |
-      ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" < /dev/null 2> /dev/null
-      brew install qt5
+      run: brew install qt5
     - name: Install Qt
       uses: jurplel/install-qt-action@v2.8.0
       with:
