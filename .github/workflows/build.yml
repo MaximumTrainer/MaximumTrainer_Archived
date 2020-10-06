@@ -26,7 +26,7 @@ jobs:
         modules: 'qtcharts qtwebengine'
 
     - name: Create Makefile
-      run: 
+      run: |
         qmake -set QMAKEFEATURES /resources/qwt/
         qmake PowerVelo.pro
     - name: Run MakeFile
@@ -75,7 +75,7 @@ jobs:
       with:
         modules: 'qtcharts qtwebengine'
     - name: Create Makefile
-      run: 
+      run: |
         qmake -set QMAKEFEATURES /resources/qwt/
         qmake PowerVelo.pro
     - name: Run MakeFile
