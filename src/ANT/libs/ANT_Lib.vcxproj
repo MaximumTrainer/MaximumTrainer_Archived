@@ -1,0 +1,169 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>ANT_LIB</ProjectName>
+    <ProjectGuid>{929444E0-FE12-4443-AC5C-ECA07B46A9F8}</ProjectGuid>
+    <RootNamespace>ANT_Lib</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>12.0.21005.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)inc;$(ProjectDir)common;$(ProjectDir)libraries;$(ProjectDir)software\ANTFS;$(ProjectDir)software\system;$(ProjectDir)software\serial\device_management;$(ProjectDir)software\serial;$(ProjectDir)software\USB;$(ProjectDir)software\USB\devices;$(ProjectDir)software\USB\device_handles;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;DEBUG_FILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)..\Bin\DSI_*.dll" "$(OutDir)" /d /i /r /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>$(ProjectDir)inc;$(ProjectDir)common;$(ProjectDir)libraries;$(ProjectDir)software\ANTFS;$(ProjectDir)software\system;$(ProjectDir)software\serial\device_management;$(ProjectDir)software\serial;$(ProjectDir)software\USB;$(ProjectDir)software\USB\devices;$(ProjectDir)software\USB\device_handles;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_WINDOWS;DEBUG_FILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader />
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)..\Bin\DSI_*.dll" "$(OutDir)" /d /i /r /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="software\ANTFS\antfs_client_channel.cpp" />
+    <ClCompile Include="software\ANTFS\antfs_directory.c" />
+    <ClCompile Include="software\ANTFS\antfs_host.cpp" />
+    <ClCompile Include="software\ANTFS\antfs_host_channel.cpp" />
+    <ClCompile Include="common\checksum.c" />
+    <ClCompile Include="common\crc.c" />
+    <ClCompile Include="software\serial\device_management\dsi_ant_device.cpp" />
+    <ClCompile Include="libraries\dsi_cm_library.cpp" />
+    <ClCompile Include="software\serial\device_management\dsi_ant_device_polling.cpp" />
+    <ClCompile Include="software\system\dsi_convert.c" />
+    <ClCompile Include="software\system\dsi_debug.cpp" />
+    <ClCompile Include="software\serial\dsi_framer.cpp" />
+    <ClCompile Include="software\serial\dsi_framer_ant.cpp" />
+    <ClCompile Include="software\serial\dsi_framer_integrated_antfs_client.cpp" />
+    <ClCompile Include="libraries\dsi_libusb_library.cpp" />
+    <ClCompile Include="software\serial\dsi_serial.cpp" />
+    <ClCompile Include="software\serial\dsi_serial_generic.cpp" />
+    <ClCompile Include="software\serial\dsi_serial_libusb.cpp" />
+    <ClCompile Include="software\serial\dsi_serial_si.cpp" />
+    <ClCompile Include="software\serial\dsi_serial_vcp.cpp" />
+    <ClCompile Include="libraries\dsi_silabs_library.cpp" />
+    <ClCompile Include="software\system\dsi_thread_win32.c" />
+    <ClCompile Include="software\system\dsi_timer.cpp" />
+    <ClCompile Include="software\system\macros.c" />
+    <ClCompile Include="software\USB\devices\usb_device.cpp" />
+    <ClCompile Include="software\USB\device_handles\usb_device_handle_libusb.cpp" />
+    <ClCompile Include="software\USB\device_handles\usb_device_handle_si.cpp" />
+    <ClCompile Include="software\USB\device_handles\usb_device_handle_win.cpp" />
+    <ClCompile Include="software\USB\devices\usb_device_libusb.cpp" />
+    <ClCompile Include="software\USB\devices\usb_device_si.cpp" />
+    <ClCompile Include="software\serial\WinDevice.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="inc\antdefines.h" />
+    <ClInclude Include="software\ANTFS\antfs_client_channel.hpp" />
+    <ClInclude Include="software\ANTFS\antfs_client_interface.hpp" />
+    <ClInclude Include="software\ANTFS\antfs_directory.h" />
+    <ClInclude Include="software\ANTFS\antfs_host.hpp" />
+    <ClInclude Include="software\ANTFS\antfs_host_channel.hpp" />
+    <ClInclude Include="software\ANTFS\antfs_host_interface.hpp" />
+    <ClInclude Include="software\ANTFS\antfs_interface.h" />
+    <ClInclude Include="software\ANTFS\antfsmessage.h" />
+    <ClInclude Include="inc\antmessage.h" />
+    <ClInclude Include="common\checksum.h" />
+    <ClInclude Include="software\ANTFS\config.h" />
+    <ClInclude Include="common\crc.h" />
+    <ClInclude Include="inc\defines.h" />
+    <ClInclude Include="software\serial\device_management\dsi_ant_device.hpp" />
+    <ClInclude Include="software\serial\device_management\dsi_ant_device_polling.hpp" />
+    <ClInclude Include="software\serial\device_management\dsi_ant_message_processor.hpp" />
+    <ClInclude Include="libraries\dsi_cm_library.hpp" />
+    <ClInclude Include="software\system\dsi_convert.h" />
+    <ClInclude Include="software\system\dsi_debug.hpp" />
+    <ClInclude Include="software\serial\dsi_framer.hpp" />
+    <ClInclude Include="software\serial\dsi_framer_ant.hpp" />
+    <ClInclude Include="libraries\dsi_libusb_library.hpp" />
+    <ClInclude Include="software\serial\device_management\dsi_response_queue.hpp" />
+    <ClInclude Include="software\serial\dsi_serial.hpp" />
+    <ClInclude Include="software\serial\dsi_serial_callback.hpp" />
+    <ClInclude Include="software\serial\dsi_serial_generic.hpp" />
+    <ClInclude Include="software\serial\dsi_serial_libusb.hpp" />
+    <ClInclude Include="software\serial\dsi_serial_si.hpp" />
+    <ClInclude Include="software\serial\dsi_serial_vcp.hpp" />
+    <ClInclude Include="libraries\dsi_silabs_library.hpp" />
+    <ClInclude Include="software\system\dsi_thread.h" />
+    <ClInclude Include="software\system\dsi_timer.hpp" />
+    <ClInclude Include="software\system\dsi_ts_queue.hpp" />
+    <ClInclude Include="software\system\macros.h" />
+    <ClInclude Include="inc\types.h" />
+    <ClInclude Include="libraries\usb.h" />
+    <ClInclude Include="software\USB\devices\usb_device.hpp" />
+    <ClInclude Include="software\USB\device_handles\usb_device_handle.hpp" />
+    <ClInclude Include="software\USB\device_handles\usb_device_handle_libusb.hpp" />
+    <ClInclude Include="software\USB\device_handles\usb_device_handle_si.hpp" />
+    <ClInclude Include="software\USB\devices\usb_device_libusb.hpp" />
+    <ClInclude Include="software\USB\usb_device_list.hpp" />
+    <ClInclude Include="software\USB\usb_device_list_template.hpp" />
+    <ClInclude Include="software\USB\devices\usb_device_si.hpp" />
+    <ClInclude Include="inc\version.h" />
+    <ClInclude Include="software\serial\WinDevice.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

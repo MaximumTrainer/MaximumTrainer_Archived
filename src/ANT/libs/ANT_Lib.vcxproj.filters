@@ -1,0 +1,285 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Software">
+      <UniqueIdentifier>{6a989e3f-e8ed-45d8-9c90-62fbb5be921c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Software\USB">
+      <UniqueIdentifier>{7b21b231-e46c-416f-addb-95e09e47b82c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Software\USB\device_handles">
+      <UniqueIdentifier>{48bd6494-ddf7-4b16-81f0-a446b84a9b8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Software\system">
+      <UniqueIdentifier>{8227405b-d4d9-4f05-887e-afceb5f4429b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Software\ANTFS">
+      <UniqueIdentifier>{f2bf3ec8-681e-456e-ab1f-6dd8847b4de5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Software\serial">
+      <UniqueIdentifier>{04973ff2-29cd-4462-b53e-510b25e88d9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Software\serial\device_management">
+      <UniqueIdentifier>{99ea2772-08c1-4c86-8be5-c07de871bd26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{b138d0f1-3bc6-48ec-aa1c-b249c1ede28c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Software\USB\devices">
+      <UniqueIdentifier>{743edb4d-099f-4be6-8a98-c0210a4d3e08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libraries">
+      <UniqueIdentifier>{4949d81e-38b2-4793-965d-1c010b710be7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="software\USB\device_handles\usb_device_handle_libusb.cpp">
+      <Filter>Source Files\Software\USB\device_handles</Filter>
+    </ClCompile>
+    <ClCompile Include="software\USB\device_handles\usb_device_handle_si.cpp">
+      <Filter>Source Files\Software\USB\device_handles</Filter>
+    </ClCompile>
+    <ClCompile Include="software\USB\device_handles\usb_device_handle_win.cpp">
+      <Filter>Source Files\Software\USB\device_handles</Filter>
+    </ClCompile>
+    <ClCompile Include="software\ANTFS\antfs_client_channel.cpp">
+      <Filter>Source Files\Software\ANTFS</Filter>
+    </ClCompile>
+    <ClCompile Include="software\ANTFS\antfs_directory.c">
+      <Filter>Source Files\Software\ANTFS</Filter>
+    </ClCompile>
+    <ClCompile Include="software\ANTFS\antfs_host.cpp">
+      <Filter>Source Files\Software\ANTFS</Filter>
+    </ClCompile>
+    <ClCompile Include="software\ANTFS\antfs_host_channel.cpp">
+      <Filter>Source Files\Software\ANTFS</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\dsi_framer.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\dsi_framer_ant.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\dsi_serial.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\dsi_serial_generic.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\dsi_serial_libusb.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\dsi_serial_si.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\dsi_serial_vcp.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="common\checksum.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="common\crc.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\device_management\dsi_ant_device.cpp">
+      <Filter>Source Files\Software\serial\device_management</Filter>
+    </ClCompile>
+    <ClCompile Include="software\system\dsi_convert.c">
+      <Filter>Source Files\Software\system</Filter>
+    </ClCompile>
+    <ClCompile Include="software\system\dsi_debug.cpp">
+      <Filter>Source Files\Software\system</Filter>
+    </ClCompile>
+    <ClCompile Include="software\system\dsi_thread_win32.c">
+      <Filter>Source Files\Software\system</Filter>
+    </ClCompile>
+    <ClCompile Include="software\system\macros.c">
+      <Filter>Source Files\Software\system</Filter>
+    </ClCompile>
+    <ClCompile Include="software\system\dsi_timer.cpp">
+      <Filter>Source Files\Software\system</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\WinDevice.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="software\USB\devices\usb_device.cpp">
+      <Filter>Source Files\Software\USB\devices</Filter>
+    </ClCompile>
+    <ClCompile Include="software\USB\devices\usb_device_libusb.cpp">
+      <Filter>Source Files\Software\USB\devices</Filter>
+    </ClCompile>
+    <ClCompile Include="software\USB\devices\usb_device_si.cpp">
+      <Filter>Source Files\Software\USB\devices</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\device_management\dsi_ant_device_polling.cpp">
+      <Filter>Source Files\Software\serial\device_management</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\dsi_cm_library.cpp">
+      <Filter>Source Files\libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\dsi_libusb_library.cpp">
+      <Filter>Source Files\libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\dsi_silabs_library.cpp">
+      <Filter>Source Files\libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="software\serial\dsi_framer_integrated_antfs_client.cpp">
+      <Filter>Source Files\Software\serial</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="inc\antdefines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\antfs_client_channel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\antfs_client_interface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\antfs_directory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\antfs_host.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\antfs_host_channel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\antfs_host_interface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\antfs_interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\antfsmessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\antmessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\checksum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\ANTFS\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\crc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\device_management\dsi_ant_device.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\device_management\dsi_ant_message_processor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\dsi_cm_library.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\system\dsi_convert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\system\dsi_debug.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\dsi_framer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\dsi_framer_ant.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\dsi_libusb_library.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\device_management\dsi_response_queue.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\dsi_serial.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\dsi_serial_callback.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\dsi_serial_generic.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\dsi_serial_libusb.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\dsi_serial_si.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\dsi_serial_vcp.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\dsi_silabs_library.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\system\dsi_thread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\system\dsi_timer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\system\dsi_ts_queue.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\system\macros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\usb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\USB\devices\usb_device.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\USB\device_handles\usb_device_handle.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\USB\device_handles\usb_device_handle_libusb.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\USB\device_handles\usb_device_handle_si.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\USB\devices\usb_device_libusb.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\USB\usb_device_list.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\USB\usb_device_list_template.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\USB\devices\usb_device_si.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\WinDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="software\serial\device_management\dsi_ant_device_polling.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
