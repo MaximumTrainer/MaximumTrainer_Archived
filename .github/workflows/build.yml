@@ -23,7 +23,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2.8.0
       with:
-        modules: 'qtcharts qtwebengine'
+        modules: 'qwt qtcharts qtwebengine'
 
     - name: Create Makefile
       run: |
@@ -73,7 +73,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2.8.0
       with:
-        modules: 'qtcharts qtwebengine'
+        modules: 'qwt qtcharts qtwebengine'
     - name: Create Makefile
       run: |
         qmake -set QMAKEFEATURES /resources/qwt/
