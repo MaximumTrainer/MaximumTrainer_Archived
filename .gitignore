@@ -1,6 +1,7 @@
 build
 release
 Makefile
+obj
 *.user
 .idea/workspace.xml
 .idea/vcs.xml
