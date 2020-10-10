@@ -21,7 +21,9 @@ jobs:
         sudo DEBIAN_FRONTEND=noninteractive apt install python3-pip --yes
         sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq qt5-default qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations qtdeclarative5-dev-tools libqwt-qt5-dev
     - name: Create Makefile
-      run: qmake PowerVelo.pro
+      run:  |
+        qmake -version
+        qmake PowerVelo.pro
     - name: Run MakeFile
       run: make
     - name: upload artifact
