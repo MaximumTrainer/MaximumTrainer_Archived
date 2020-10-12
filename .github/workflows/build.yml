@@ -14,13 +14,13 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
     - name: Linux Environment Setup - step 1
-      run: DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install sudo software-properties-common --yes
+      run: DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install sudo --yes
     - name: Linux Environment Setup - step 2
       run: udo DEBIAN_FRONTEND=noninteractive yes '' | sudo add-apt-repository ppa:beineri/opt-qt-5.12.6-bionic && sudo apt-get update --yes
     - name: Linux Environment Setup - step 3
       run: s sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install python3-pip --yes
     - name: Install QT 5.12.x - part 1
-      run: sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install qt5-default qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations qtdeclarative5-dev-tools libqwt-qt5-dev --yes\
+      run: sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install software-properties-common qt5-default qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations qtdeclarative5-dev-tools libqwt-qt5-dev --yes\
     - name: Install QT 5.12.x - part 2
       run: sudo DEBIAN_FRONTEND=noninteractive sudo /opt/qt512/bin/./qt512-env.sh
     - name: Create Makefile
