@@ -14,7 +14,7 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
     - name: Linux Environment Setup - step 1
-      run: DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install sudo --yes
+      run: yes '' | apt update && apt install sudo
     - name: Linux Environment Setup - step 2
       run: udo DEBIAN_FRONTEND=noninteractive yes '' | sudo add-apt-repository ppa:beineri/opt-qt-5.12.6-bionic && sudo apt-get update --yes
     - name: Linux Environment Setup - step 3
