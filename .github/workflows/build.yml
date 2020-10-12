@@ -15,18 +15,10 @@ jobs:
       uses: actions/checkout@v2
     - name: Linux Environment Setup
       run: |
-<<<<<<< HEAD
         DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install sudo software-properties-common --yes
         sudo DEBIAN_FRONTEND=noninteractive yes '' | sudo add-apt-repository ppa:beineri/opt-qt-5.12.6-bionic && sudo apt-get update --yes
         sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install python3-pip --yes
         sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install qt5-default qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations qtdeclarative5-dev-tools libqwt-qt5-dev --yes
-=======
-        sudo DEBIAN_FRONTEND=noninteractive sudo add-apt-repository ppa:beineri/opt-qt-5.12.6-bionic
-        sudo DEBIAN_FRONTEND=noninteractive sudo apt-get update && apt-get install sudo software-properties-common --yes
-        sudo DEBIAN_FRONTEND=noninteractive sudo apt-get update --yes
-        sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install python3-pip --yes
-        sudo DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq qt5-default qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations qtdeclarative5-dev-tools libqwt-qt5-dev
->>>>>>> 194719e633368fbb4450d43d08629708dfd74e69
         sudo DEBIAN_FRONTEND=noninteractive sudo /opt/qt512/bin/./qt512-env.sh
     - name: Create Makefile
       run:  |
