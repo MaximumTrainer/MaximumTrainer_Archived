@@ -20,7 +20,7 @@ jobs:
     - name: Linux Environment Setup - install python3
       run:  sudo apt-get install python3-pip --yes
     - name: Install QT 5.12.x - part 1
-      run: sudo apt-get install qt5-default qt5-qmake qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine libqt5webkit5-dev qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations qtdeclarative5-dev-tools libqwt-qt5-dev -y
+      run: sudo apt-get install qt5-default qt5-qmake qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine libqt5webkit5-dev qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations qtdeclarative5-dev-tools libqwt-qt5-dev qtwebengine5-dev -y
     - name: Install QT 5.12.x - part 2
       run: sudo /opt/qt512/bin/./qt512-env.sh
     - name: Create Makefile
