@@ -14,7 +14,7 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
     - name: Linux Environment Setup - install sudo
-      run: apt-get update && apt-get install sudo -y -qq 
+      run: apt update && apt install sudo -y
     - name: Linux Environment Setup - install software-properties-common - ppa pre-req
       run: sudo apt-get install software-properties-common -y -qq 
     - name: Linux Environment Setup - install qt ppa
