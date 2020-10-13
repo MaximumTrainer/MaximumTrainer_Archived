@@ -61,15 +61,15 @@
         <file>resources/images/ergdb-logo-black-rider.png</file>
     </qresource>
     <qresource prefix="/sound">
-        <file alias="end_workout">sound/end_workout.wav</file>
-        <file alias="resume">sound/resume.wav</file>
-        <file alias="firstBeep">sound/first.wav</file>
-        <file alias="secondBeep">sound/second.wav</file>
-        <file alias="fireTorch">sound/fire_torch.wav</file>
-        <file alias="powerTooLow">sound/PowerTooLow.wav</file>
-        <file alias="powerTooHigh">sound/PowerTooHigh.wav</file>
-        <file alias="cadenceTooLow">sound/CadenceTooLow.wav</file>
-        <file alias="cadenceTooHigh">sound/CadenceTooHigh.wav</file>
+        <file alias="end_workout">resources/sound/end_workout.wav</file>
+        <file alias="resume">resources/sound/resume.wav</file>
+        <file alias="firstBeep">resources/sound/first.wav</file>
+        <file alias="secondBeep">resources/sound/second.wav</file>
+        <file alias="fireTorch">resources/sound/fire_torch.wav</file>
+        <file alias="powerTooLow">resources/sound/PowerTooLow.wav</file>
+        <file alias="powerTooHigh">resources/sound/PowerTooHigh.wav</file>
+        <file alias="cadenceTooLow">resources/sound/CadenceTooLow.wav</file>
+        <file alias="cadenceTooHigh">resources/sound/CadenceTooHigh.wav</file>
     </qresource>
     <qresource prefix="/language">
         <file>resources/language/powervelo_en.qm</file>
