@@ -24,7 +24,7 @@ QT       += network printsupport concurrent
 #QT += multimediawidgets
 #QT += webengine
 #QT += webenginecore
-#QT += webenginewidgets
+QT += webenginewidgets
 
 
 # For Release, disable QDebug for performance
