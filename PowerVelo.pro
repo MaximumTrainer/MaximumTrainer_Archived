@@ -3,8 +3,6 @@
 #                                                                             #
 ###############################################################################
 
-!versionAtLeast(QT_VERSION,5.12):error("Use at least Qt version 5.12")
-
 qtHaveModule(uitools):!embedded: QT += uitools
 else: DEFINES += QT_NO_UITOOLS
 
