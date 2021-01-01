@@ -20,6 +20,7 @@ SOURCES +=\
     src/_subclassQT/faderframe.cpp \
     src/_subclassQT/tableviewhover.cpp \
     src/_subclassQT/clock.cpp \
+    src/_subclassQT/languagecombobox.cpp \
     $$PWD/infosworkout.cpp \
     $$PWD/timewidget.cpp \
     $$PWD/oxygenwidget.cpp \

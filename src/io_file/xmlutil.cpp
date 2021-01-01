@@ -631,7 +631,7 @@ QList<Workout> XmlUtil::getLstUserWorkout() {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 QList<Course> XmlUtil::getLstCourseIncluded() {
-#todo remove dropbox ref
+//todo remove dropbox ref
     QStringList lstWorkoutPat;
     //    lstWorkoutPat.append(":/included_workout/bt_16_wk_plan/included_workout/BT 16wk Power Based/Opt-Phase-Prep-wkB-wo4.workout");
     lstWorkoutPat.append("C:/Dropbox/MT/3a.tcx");
