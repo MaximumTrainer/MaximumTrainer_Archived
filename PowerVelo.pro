@@ -149,10 +149,9 @@ macx {
     INCLUDEPATH += /usr/local/Cellar/sfml/2.5.1/include
     LIBS += -L/usr/local/Cellar/sfml/2.5.1/lib -lsfml-audio -lsfml-system
 
-    INCLUDEPATH += /usr/local/opt/vlc-qt/lib/VLCQtCore.framework/Headers
+    INCLUDEPATH += /usr/local/include
     LIBS += -F/usr/local/opt/vlc-qt/lib -framework VLCQtCore
 
-    INCLUDEPATH += /usr/local/opt/vlc-qt/lib/VLCQtWidgets.framework/Headers
     LIBS += -F/usr/local/opt/vlc-qt/lib -framework VLCQtWidgets
 
     # on mac we use native buttons and video, but have native fullscreen support

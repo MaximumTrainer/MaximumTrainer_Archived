@@ -80,8 +80,10 @@ jobs:
       run: qmake PowerVelo.pro
     - name: Run MakeFile
       run: make
-    - name: Bind rpath for vlc-qt frameworks
-      run: install_name_tool -add_rpath /usr/local/opt/vlc-qt/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+    - name: Bind rpath for Qt frameworks
+      run:  |
+        install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+        install_name_tool -add_rpath /usr/local/opt/vlc-qt/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
     - name: upload artifact
       uses: actions/upload-artifact@v1
       with:
