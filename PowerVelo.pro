@@ -91,9 +91,9 @@ win32 {
     LIBS += -L$${PWD}/../qwt/lib -lqwtd
     }
 
-} else {
-    #QWT is configured to build 1 lib for all other OS (see qwtbuild.pri)
-    LIBS += -L$${PWD}/../qwt/lib -lqwt
+#} else {
+#    #QWT is configured to build 1 lib for all other OS (see qwtbuild.pri)
+#    LIBS += -L$${PWD}/../qwt/lib -lqwt
 }
 
 # compress and math libs must be defined in gcconfig.pri
@@ -144,7 +144,15 @@ macx {
     CONFIG += qwt
     INCLUDEPATH += /usr/local/Cellar/qwt/6.1.5/lib/qwt.framework/Headers    
     
-    LIBS += -L "/usr/local/Cellar/qwt/6.1.5/lib/" -framework qwt
+    LIBS += -F/usr/local/Cellar/qwt/6.1.5/lib -framework qwt
+
+    INCLUDEPATH += /usr/local/Cellar/sfml/2.5.1/include
+    LIBS += -L/usr/local/Cellar/sfml/2.5.1/lib -lsfml-audio -lsfml-system
+
+    INCLUDEPATH += /usr/local/include
+    LIBS += -F/usr/local/opt/vlc-qt/lib -framework VLCQtCore
+
+    LIBS += -F/usr/local/opt/vlc-qt/lib -framework VLCQtWidgets
 
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit

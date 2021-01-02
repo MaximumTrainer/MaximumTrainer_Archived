@@ -67,14 +67,23 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v2
-    - name: QT Environment Setup part 1
-      run: brew install qt5 qwt
-    - name: QT Environment Setup part 2
-      run: brew link qt5 --force
+    - name: QT Environment Setup
+      run:  |
+        brew install qt5 qwt sfml
+        brew link qt5 --force
+        curl -L -o /tmp/VLC-Qt_1.1.0_macos.7z  https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_macos.7z
+        mkdir -p /usr/local/opt/vlc-qt
+        7z x -o/usr/local/opt/vlc-qt /tmp/VLC-Qt_1.1.0_macos.7z
+        ln -sf /usr/local/opt/vlc-qt/lib/VLCQtCore.framework/Headers /usr/local/include/VLCQtCore
+        ln -sf /usr/local/opt/vlc-qt/lib/VLCQtWidgets.framework/Headers /usr/local/include/VLCQtWidgets
     - name: Create Makefile
       run: qmake PowerVelo.pro
     - name: Run MakeFile
       run: make
+    - name: Bind rpath for Qt frameworks
+      run:  |
+        install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+        install_name_tool -add_rpath /usr/local/opt/vlc-qt/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
     - name: upload artifact
       uses: actions/upload-artifact@v1
       with:
