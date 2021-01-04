@@ -44,6 +44,9 @@ win32 {
 
 #////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+unix:!macx {
+    LIBS += $$PWD/libs/linux/libANT_LIB.a -lusb-1.0
+}
 macx {
 
     INCLUDEPATH += $$PWD/libs/software/USB/iokit_driver
