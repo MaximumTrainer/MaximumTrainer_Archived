@@ -154,23 +154,26 @@ macx {
     # Mac native widget support
     QT += macextras
 
-  #  QMAKEFEATURES += /Users/runner/work/MaximumTrainer/Qt/5.12.9/features
     CONFIG += qwt
-    INCLUDEPATH += /usr/local/Cellar/qwt/6.1.5/lib/qwt.framework/Headers    
-    
-    LIBS += -F/usr/local/Cellar/qwt/6.1.5/lib -framework qwt
 
-    INCLUDEPATH += /usr/local/Cellar/sfml/2.5.1/include
-    LIBS += -L/usr/local/Cellar/sfml/2.5.1/lib -lsfml-audio -lsfml-system
+    isEmpty(BREW_PREFIX)   { BREW_PREFIX   = $$system(brew --prefix) }
+    isEmpty(QWT_INSTALL)   { QWT_INSTALL   = $${BREW_PREFIX}/opt/qwt }
+    isEmpty(SFML_INSTALL)  { SFML_INSTALL  = $${BREW_PREFIX}/opt/sfml@2 }
+    isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = $${BREW_PREFIX}/opt/vlc-qt }
 
-    INCLUDEPATH += /usr/local/include
-    LIBS += -F/usr/local/opt/vlc-qt/lib -framework VLCQtCore
+    INCLUDEPATH += $${QWT_INSTALL}/lib/qwt.framework/Headers
+    LIBS += -F$${QWT_INSTALL}/lib -framework qwt
 
-    LIBS += -F/usr/local/opt/vlc-qt/lib -framework VLCQtWidgets
+    INCLUDEPATH += $${SFML_INSTALL}/include
+    LIBS += -L$${SFML_INSTALL}/lib -lsfml-audio -lsfml-system
+
+    INCLUDEPATH += $${VLCQT_INSTALL}/include
+    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
+    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
 
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
-    
+
 }
 
 
