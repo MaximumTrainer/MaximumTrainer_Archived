@@ -111,10 +111,14 @@ jobs:
       run: |
         $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
         $sfmlDirFwd = $sfmlDir -replace '\\','/'
+        $kitRoot = "${env:ProgramFiles(x86)}\Windows Kits\10\Lib"
+        $kitVersion = (Get-ChildItem $kitRoot | Sort-Object Name -Descending | Select-Object -First 1).Name
+        $winkitInstall = "$kitRoot\$kitVersion\um\x64" -replace '\\','/'
         qmake PowerVelo.pro `
           "VLCQT_INSTALL=C:/vlcqt" `
           "SFML_INSTALL=$sfmlDirFwd" `
-          "INCLUDEPATH+=..\qwt\include"
+          "INCLUDEPATH+=..\qwt\include" `
+          "WINKIT_INSTALL=$winkitInstall"
       shell: powershell
       env:
         QMAKEFEATURES: ..\qwt\features
