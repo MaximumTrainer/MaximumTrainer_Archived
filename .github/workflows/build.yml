@@ -6,38 +6,59 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions:
+  contents: read
+
 jobs:
   build_linux:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     steps:
     - name: checkout
-      uses: actions/checkout@v2
-    - name: Linux Environment Setup - install software-properties-common - ppa pre-req
-      run: sudo apt-get install software-properties-common -y -qq 
-    - name: Linux Environment Setup - install qt ppa
-      run: sudo add-apt-repository ppa:beineri/opt-qt-5.12.0-bionic -y && sudo apt-get update -y
-    - name: Linux Environment Setup - install python3
-      run:  sudo apt-get install python3-pip --yes
-    - name: Install QT 5.12.x - part 1
-      run: sudo apt-get install qt5-default qt5-qmake qt512base qt512tools libqwt-qt5-6 qt512serialport qt512svg qt512multimedia qt512connectivity qt512webengine libqt5webkit5-dev qt512charts-no-lgpl qt512networkauth-no-lgpl qt512translations qtdeclarative5-dev-tools libqwt-qt5-dev qtwebengine5-dev vlc libvlc-dev libvlccore-dev libsfml-dev libusb-1.0-0-dev -y
-    - name: Install QT 5.12.x - part 2
-      run: sudo /opt/qt512/bin/./qt512-env.sh
-    - name: Install build essentials to compile VLC-Qt
-      run: sudo apt-get install build-essential cmake debhelper
-    - name: Build VLC-Qt
-      run: cd /tmp && git clone https://github.com/vlc-qt/vlc-qt && cd vlc-qt && dpkg-buildpackage -us -uc
-    - name: Install VLC-Qt
-      run: sudo apt install /tmp/libvlc-qt-core2_1.2.0-1_amd64.deb /tmp/libvlc-qt-widgets2_1.2.0-1_amd64.deb /tmp/libvlc-qt-qml2_1.2.0-1_amd64.deb /tmp/libvlc-qt-dev_1.2.0-1_amd64.deb -y
+      uses: actions/checkout@v4
+
+    - name: Install Qt and system dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          qtwebengine5-dev \
+          libqwt-qt5-dev \
+          libsfml-dev \
+          libvlc-dev \
+          libvlccore-dev \
+          libusb-1.0-0-dev \
+          cmake \
+          build-essential
+
+    - name: Build and install VLC-Qt
+      run: |
+        cd /tmp
+        git clone --branch 1.1.1 --depth 1 https://github.com/vlc-qt/vlc-qt
+        cd vlc-qt
+        mkdir build && cd build
+        cmake .. \
+          -DQT_VERSION=5 \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/usr/local
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig
+
     - name: Create Makefile
-      run:  |
-        qtchooser -list-versions
-        qmake -version
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
         qmake PowerVelo.pro
-    - name: Run MakeFile
-      run: make
-    - name: upload artifact
-      uses: actions/upload-artifact@v2
+      env:
+        QMAKEFEATURES: /usr/share/qt5/mkspecs/features
+
+    - name: Build
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        make -j$(nproc)
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
         name: linux
         path: build/
@@ -48,23 +69,64 @@ jobs:
     steps:
     - name: MSVC Environment Setup
       uses: ilammy/msvc-dev-cmd@v1
+
     - name: checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+
     - name: Install Qt
-      uses: jurplel/install-qt-action@v2.8.0
+      uses: jurplel/install-qt-action@v3
       with:
-        modules: 'qtcharts qtwebengine'
+        version: '5.15.2'
+        modules: 'qtwebengine'
+
+    - name: Download and install VLC-Qt
+      # Using 1.1.0 as it is the last release with pre-built Windows MSVC binaries
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_win64_msvc2015.7z" -OutFile "$env:TEMP\vlcqt.7z"
+        7z x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt_temp"
+        $vlcqtDir = (Get-ChildItem "C:\vlcqt_temp" -Directory | Select-Object -First 1).FullName
+        Move-Item $vlcqtDir "C:\vlcqt"
+      shell: powershell
+
+    - name: Download and install SFML
+      run: |
+        Invoke-WebRequest -Uri "https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip" -OutFile "$env:TEMP\sfml.zip"
+        Expand-Archive -Path "$env:TEMP\sfml.zip" -DestinationPath "C:\sfml"
+      shell: powershell
+
+    - name: Build QWT
+      run: |
+        Set-Location ..
+        Invoke-WebRequest -Uri "https://downloads.sourceforge.net/project/qwt/qwt/6.2.0/qwt-6.2.0.tar.bz2" -OutFile "$env:TEMP\qwt.tar.bz2"
+        7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
+        7z x "$env:TEMP\qwt.tar" -o"." -y
+        Rename-Item "qwt-6.2.0" "qwt-src"
+        Set-Location "qwt-src"
+        qmake qwt.pro "QWT_INSTALL_PREFIX=..\qwt"
+        nmake
+        nmake install
+      shell: powershell
 
     - name: Create Makefile
-      run: 
-        qmake PowerVelo.pro -spec winrt-x64-msvc2017
-    - name: Run MakeFile
-      run: make
-    - name: upload artifact
-      uses: actions/upload-artifact@v2
+      run: |
+        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
+        $sfmlDirFwd = $sfmlDir -replace '\\','/'
+        qmake PowerVelo.pro `
+          "VLCQT_INSTALL=C:/vlcqt" `
+          "SFML_INSTALL=$sfmlDirFwd" `
+          "INCLUDEPATH+=..\qwt\include"
+      shell: powershell
+      env:
+        QMAKEFEATURES: ..\qwt\features
+
+    - name: Build
+      run: nmake
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
         name: windows
-        path: build\ 
+        path: build\
 
 
   build_mac:
@@ -72,7 +134,7 @@ jobs:
 
     steps:
     - name: checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: QT Environment Setup
       run:  |
         brew install qt5 qwt sfml
@@ -91,7 +153,7 @@ jobs:
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
         install_name_tool -add_rpath /usr/local/opt/vlc-qt/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
     - name: upload artifact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: macos
-        path: build/ 
+        path: build/

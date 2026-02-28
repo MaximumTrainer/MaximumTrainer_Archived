@@ -135,6 +135,18 @@ win32-msvc* {
     }
 }
 
+win32 {
+    # Windows: VLC-Qt and SFML paths (configure via qmake variables)
+    !isEmpty(VLCQT_INSTALL) {
+        INCLUDEPATH += $${VLCQT_INSTALL}/include
+        LIBS += -L$${VLCQT_INSTALL}/lib -lVLCQtCore -lVLCQtWidgets
+    }
+    !isEmpty(SFML_INSTALL) {
+        INCLUDEPATH += $${SFML_INSTALL}/include
+        LIBS += -L$${SFML_INSTALL}/lib -lsfml-audio -lsfml-system
+    }
+}
+
 
 #////////////////////////////////////////////////////////////////////////////////////////////////////////
 
