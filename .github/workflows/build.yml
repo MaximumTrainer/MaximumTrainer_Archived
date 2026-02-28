@@ -40,7 +40,8 @@ jobs:
         cmake .. \
           -DQT_VERSION=5 \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=/usr/local
+          -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu
         make -j$(nproc)
         sudo make install
         sudo ldconfig
