@@ -154,23 +154,21 @@ macx {
     # Mac native widget support
     QT += macextras
 
-  #  QMAKEFEATURES += /Users/runner/work/MaximumTrainer/Qt/5.12.9/features
-    CONFIG += qwt
-    INCLUDEPATH += /usr/local/Cellar/qwt/6.1.5/lib/qwt.framework/Headers    
-    
-    LIBS += -F/usr/local/Cellar/qwt/6.1.5/lib -framework qwt
+    # VLC-Qt (default install path; override with VLCQT_INSTALL=...)
+    isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = /usr/local/opt/vlc-qt }
+    INCLUDEPATH += $${VLCQT_INSTALL}/include
+    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
+    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
 
-    INCLUDEPATH += /usr/local/Cellar/sfml/2.5.1/include
-    LIBS += -L/usr/local/Cellar/sfml/2.5.1/lib -lsfml-audio -lsfml-system
-
-    INCLUDEPATH += /usr/local/include
-    LIBS += -F/usr/local/opt/vlc-qt/lib -framework VLCQtCore
-
-    LIBS += -F/usr/local/opt/vlc-qt/lib -framework VLCQtWidgets
+    # SFML (configure via SFML_INSTALL=...)
+    !isEmpty(SFML_INSTALL) {
+        INCLUDEPATH += $${SFML_INSTALL}/include
+        LIBS += -L$${SFML_INSTALL}/lib -lsfml-audio -lsfml-system
+    }
 
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
-    
+
 }
 
 
