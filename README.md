@@ -1,8 +1,10 @@
 # MaximumTrainer
 Qt software for indoor cycling, similar to trainerroad, with the ability to get plans from trainerday.com
+Old Qt App under reniveration for fun with Github copilot
+Uses legacy ANT for connections
 
 ## Building
-build with the .pro file inside the project, soon to be added to github actions
+build with the .pro file inside the project & github actions
 
 
 See instruction in PowerVelo.pro, needs to better handle dependencies, used to be build on the same machine
