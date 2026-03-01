@@ -15,4 +15,6 @@ obj
 *.o
 moc_*.cpp
 *.moc
-moc_predefs.h 
+moc_predefs.h
+# CodeQL tool artifact
+_codeql_detected_source_root 
