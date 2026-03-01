@@ -10,6 +10,35 @@ permissions:
   contents: read
 
 jobs:
+  # ── BtleHub unit tests (headless, no hardware required) ───────────────────
+  test_btle:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and Bluetooth dev packages
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          qtconnectivity5-dev \
+          build-essential
+
+    - name: Build BTLE tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        cd tests/btle
+        qmake btle_tests.pro
+        make -j$(nproc)
+
+    - name: Run BTLE tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        cd tests/btle
+        ../../build/tests/btle_tests -v2
+
   build_linux:
     runs-on: ubuntu-22.04
 
@@ -23,6 +52,7 @@ jobs:
         sudo apt-get install -y \
           qtbase5-dev \
           qtwebengine5-dev \
+          qtconnectivity5-dev \
           libqwt-qt5-dev \
           libsfml-dev \
           libvlc-dev \
@@ -152,9 +182,9 @@ jobs:
         curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         tar -xjf qwt.tar.bz2
         cd qwt-6.2.0
-        qmake qwt.pro "QWT_INSTALL_PREFIX=/tmp/qwt"
+        qmake qwt.pro
         make -j$(sysctl -n hw.logicalcpu)
-        make install
+        sudo make install
 
     - name: Install VLC-Qt
       run: |
@@ -179,7 +209,7 @@ jobs:
         qmake PowerVelo.pro \
           "SFML_INSTALL=$(brew --prefix sfml)"
       env:
-        QMAKEFEATURES: /tmp/qwt/features
+        QMAKEFEATURES: /usr/local/qwt-6.2.0/features
 
     - name: Run MakeFile
       run: make

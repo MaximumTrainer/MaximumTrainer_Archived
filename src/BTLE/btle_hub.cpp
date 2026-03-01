@@ -1,0 +1,518 @@
+#include "btle_hub.h"
+#include "btle_uuids.h"
+
+#include <QDebug>
+#include <QLowEnergyDescriptor>
+
+// Standard BLE service and characteristic UUIDs (defined locally in the TU)
+namespace BtleUuid {
+// Services
+static const QBluetoothUuid HeartRate             (QBluetoothUuid::HeartRate);
+static const QBluetoothUuid CyclingSpeedCadence   (QBluetoothUuid::CyclingSpeedAndCadence);
+static const QBluetoothUuid CyclingPower          (QBluetoothUuid::CyclingPower);
+// Fitness Machine Service (FTMS) – not in Qt5 enum, use raw 16-bit UUID
+static const QBluetoothUuid FitnessMachine        (quint16(0x1826));
+
+// Characteristics
+static const QBluetoothUuid HeartRateMeasurement    (QBluetoothUuid::HeartRateMeasurement);
+static const QBluetoothUuid CSCMeasurement          (QBluetoothUuid::CSCMeasurement);
+static const QBluetoothUuid CyclingPowerMeasurement (QBluetoothUuid::CyclingPowerMeasurement);
+static const QBluetoothUuid FtmsIndoorBikeData      (quint16(0x2AD2));
+static const QBluetoothUuid FtmsControlPoint        (quint16(0x2AD9));
+
+// Descriptors
+static const QBluetoothUuid ClientCharacteristicConfig
+    (QBluetoothUuid::ClientCharacteristicConfiguration);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constructor / Destructor
+// ─────────────────────────────────────────────────────────────────────────────
+BtleHub::BtleHub(QObject *parent)
+    : QObject(parent)
+{
+    m_cscStopTimer = new QTimer(this);
+    m_cscStopTimer->setSingleShot(true);
+    connect(m_cscStopTimer, &QTimer::timeout, this, &BtleHub::onCscStopTimer);
+}
+
+BtleHub::~BtleHub()
+{
+    disconnectFromDevice();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────────────────────────────────────
+void BtleHub::setWheelCircumferenceMm(int mm)
+{
+    if (mm > 0)
+        m_wheelCircMm = mm;
+}
+
+void BtleHub::connectToDevice(const QBluetoothDeviceInfo &device)
+{
+    if (m_controller) {
+        m_controller->disconnectFromDevice();
+        delete m_controller;
+        m_controller = nullptr;
+    }
+
+    // Clean up any previously-created service objects
+    delete m_hrService;    m_hrService    = nullptr;
+    delete m_cscService;   m_cscService   = nullptr;
+    delete m_powerService; m_powerService = nullptr;
+    delete m_ftmsService;  m_ftmsService  = nullptr;
+
+    m_firstCscMeasurement   = true;
+    m_ftmsControlRequested  = false;
+
+    m_controller = QLowEnergyController::createCentral(device, this);
+
+    connect(m_controller, &QLowEnergyController::connected,
+            this, &BtleHub::onControllerConnected);
+    connect(m_controller, &QLowEnergyController::disconnected,
+            this, &BtleHub::onControllerDisconnected);
+    connect(m_controller,
+            static_cast<void(QLowEnergyController::*)(QLowEnergyController::Error)>(
+                &QLowEnergyController::error),
+            this, &BtleHub::onControllerError);
+    connect(m_controller, &QLowEnergyController::serviceDiscovered,
+            this, &BtleHub::onServiceDiscovered);
+    connect(m_controller, &QLowEnergyController::discoveryFinished,
+            this, &BtleHub::onDiscoveryFinished);
+
+    m_controller->connectToDevice();
+}
+
+void BtleHub::disconnectFromDevice()
+{
+    if (m_controller) {
+        m_controller->disconnectFromDevice();
+    }
+}
+
+bool BtleHub::isConnected() const
+{
+    return m_controller &&
+           m_controller->state() == QLowEnergyController::DiscoveredState;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public slots – Trainer control (FTMS)
+// ─────────────────────────────────────────────────────────────────────────────
+void BtleHub::setLoad(int /*antID*/, double watts)
+{
+    if (!m_ftmsService)
+        return;
+
+    // FTMS: Set Target Power (opcode 0x05), value = int16 watts
+    QLowEnergyCharacteristic cp =
+        m_ftmsService->characteristic(BtleUuid::FtmsControlPoint);
+    if (!cp.isValid())
+        return;
+
+    qint16 w = static_cast<qint16>(qBound(-32768.0, watts, 32767.0));
+    QByteArray cmd(3, '\0');
+    cmd[0] = 0x05;                      // Set Target Power opcode
+    cmd[1] = static_cast<char>(w & 0xFF);
+    cmd[2] = static_cast<char>((w >> 8) & 0xFF);
+    m_ftmsService->writeCharacteristic(cp, cmd,
+                                       QLowEnergyService::WriteWithResponse);
+}
+
+void BtleHub::setSlope(int /*antID*/, double grade)
+{
+    if (!m_ftmsService)
+        return;
+
+    // FTMS: Set Indoor Bike Simulation (opcode 0x11)
+    // Parameters: wind speed (int16, 0.001 m/s), grade (int16, 0.01 %), crr, cw
+    QLowEnergyCharacteristic cp =
+        m_ftmsService->characteristic(BtleUuid::FtmsControlPoint);
+    if (!cp.isValid())
+        return;
+
+    // grade parameter is int16 in units of 0.01%, range ±327.67% (FTMS spec max is ±200%)
+    qint16 gradeParam = static_cast<qint16>(
+        qBound(-32768.0, grade * 100.0, 32767.0));
+    QByteArray cmd(7, '\0');
+    cmd[0] = 0x11;                             // Simulation opcode
+    cmd[1] = 0x00; cmd[2] = 0x00;             // wind speed = 0
+    cmd[3] = static_cast<char>(gradeParam & 0xFF);
+    cmd[4] = static_cast<char>((gradeParam >> 8) & 0xFF);
+    cmd[5] = 0x00;                             // crr (uint8, 0.0001)
+    cmd[6] = 0x00;                             // cw  (uint8, 0.01)
+    m_ftmsService->writeCharacteristic(cp, cmd,
+                                       QLowEnergyService::WriteWithResponse);
+}
+
+void BtleHub::stopDecodingMsg()
+{
+    disconnectFromDevice();
+}
+
+void BtleHub::simulateNotification(quint16 characteristicUuid, const QByteArray &data)
+{
+    switch (characteristicUuid) {
+    case BTLE_UUID_HR_MEASUREMENT:    parseHrMeasurement(data);      break;
+    case BTLE_UUID_CSC_MEASUREMENT:   parseCscMeasurement(data);     break;
+    case BTLE_UUID_POWER_MEASUREMENT: parsePowerMeasurement(data);   break;
+    case BTLE_UUID_FTMS_BIKE_DATA:    parseFtmsIndoorBikeData(data); break;
+    default: break;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Controller slots
+// ─────────────────────────────────────────────────────────────────────────────
+void BtleHub::onControllerConnected()
+{
+    qDebug() << "BtleHub: device connected, discovering services...";
+    m_controller->discoverServices();
+}
+
+void BtleHub::onControllerDisconnected()
+{
+    qDebug() << "BtleHub: device disconnected";
+    m_cscStopTimer->stop();
+    emit deviceDisconnected();
+}
+
+void BtleHub::onControllerError(QLowEnergyController::Error error)
+{
+    qDebug() << "BtleHub: controller error" << error;
+    emit connectionError(m_controller->errorString());
+}
+
+void BtleHub::onServiceDiscovered(const QBluetoothUuid &serviceUuid)
+{
+    qDebug() << "BtleHub: service discovered" << serviceUuid;
+
+    if (serviceUuid == BtleUuid::HeartRate) {
+        m_hrService = m_controller->createServiceObject(serviceUuid, this);
+        if (m_hrService)
+            setupService(m_hrService);
+    }
+    else if (serviceUuid == BtleUuid::CyclingSpeedCadence) {
+        m_cscService = m_controller->createServiceObject(serviceUuid, this);
+        if (m_cscService)
+            setupService(m_cscService);
+    }
+    else if (serviceUuid == BtleUuid::CyclingPower) {
+        m_powerService = m_controller->createServiceObject(serviceUuid, this);
+        if (m_powerService)
+            setupService(m_powerService);
+    }
+    else if (serviceUuid == BtleUuid::FitnessMachine) {
+        m_ftmsService = m_controller->createServiceObject(serviceUuid, this);
+        if (m_ftmsService)
+            setupService(m_ftmsService);
+    }
+}
+
+void BtleHub::onDiscoveryFinished()
+{
+    qDebug() << "BtleHub: service discovery finished";
+    emit serviceDiscoveryFinished();
+    emit deviceConnected();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Service helpers
+// ─────────────────────────────────────────────────────────────────────────────
+void BtleHub::setupService(QLowEnergyService *service)
+{
+    connect(service, &QLowEnergyService::stateChanged,
+            this, &BtleHub::onServiceStateChanged);
+    connect(service, &QLowEnergyService::characteristicChanged,
+            this, &BtleHub::onCharacteristicChanged);
+
+    if (service->state() == QLowEnergyService::DiscoveryRequired)
+        service->discoverDetails();
+}
+
+void BtleHub::enableNotification(QLowEnergyService *service,
+                                  const QLowEnergyCharacteristic &characteristic)
+{
+    if (!characteristic.isValid())
+        return;
+
+    QLowEnergyDescriptor cccd =
+        characteristic.descriptor(BtleUuid::ClientCharacteristicConfig);
+    if (cccd.isValid())
+        service->writeDescriptor(cccd, QByteArray::fromHex("0100")); // enable notifications
+}
+
+void BtleHub::requestFtmsControl()
+{
+    if (!m_ftmsService || m_ftmsControlRequested)
+        return;
+
+    QLowEnergyCharacteristic cp =
+        m_ftmsService->characteristic(BtleUuid::FtmsControlPoint);
+    if (!cp.isValid())
+        return;
+
+    // Opcode 0x00 = Request Control
+    m_ftmsService->writeCharacteristic(cp, QByteArray(1, '\x00'),
+                                       QLowEnergyService::WriteWithResponse);
+    m_ftmsControlRequested = true;
+}
+
+void BtleHub::onServiceStateChanged(QLowEnergyService::ServiceState state)
+{
+    QLowEnergyService *service = qobject_cast<QLowEnergyService*>(sender());
+    if (!service)
+        return;
+
+    if (state != QLowEnergyService::ServiceDiscovered)
+        return;
+
+    // Enable notifications for every measurement characteristic we care about
+    if (service == m_hrService) {
+        enableNotification(service,
+            service->characteristic(BtleUuid::HeartRateMeasurement));
+    }
+    else if (service == m_cscService) {
+        enableNotification(service,
+            service->characteristic(BtleUuid::CSCMeasurement));
+    }
+    else if (service == m_powerService) {
+        enableNotification(service,
+            service->characteristic(BtleUuid::CyclingPowerMeasurement));
+    }
+    else if (service == m_ftmsService) {
+        enableNotification(service,
+            service->characteristic(BtleUuid::FtmsIndoorBikeData));
+        requestFtmsControl();
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Characteristic notification dispatcher
+// ─────────────────────────────────────────────────────────────────────────────
+void BtleHub::onCharacteristicChanged(const QLowEnergyCharacteristic &characteristic,
+                                      const QByteArray &value)
+{
+    const QBluetoothUuid uuid = characteristic.uuid();
+
+    if (uuid == BtleUuid::HeartRateMeasurement)
+        parseHrMeasurement(value);
+    else if (uuid == BtleUuid::CSCMeasurement)
+        parseCscMeasurement(value);
+    else if (uuid == BtleUuid::CyclingPowerMeasurement)
+        parsePowerMeasurement(value);
+    else if (uuid == BtleUuid::FtmsIndoorBikeData)
+        parseFtmsIndoorBikeData(value);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Parsers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Heart Rate Measurement (0x2A37)
+// Byte 0: flags  bit0=HR-format(0=uint8,1=uint16)  bit4=RR-interval present
+// Byte 1(+2): HR value in bpm
+void BtleHub::parseHrMeasurement(const QByteArray &data)
+{
+    if (data.isEmpty())
+        return;
+
+    quint8 flags = static_cast<quint8>(data[0]);
+    int hr = 0;
+
+    if (flags & 0x01) {
+        // 16-bit HR value
+        if (data.size() < 3)
+            return;
+        hr = static_cast<quint8>(data[1]) | (static_cast<quint8>(data[2]) << 8);
+    } else {
+        // 8-bit HR value
+        if (data.size() < 2)
+            return;
+        hr = static_cast<quint8>(data[1]);
+    }
+
+    emit signal_hr(0, hr);
+}
+
+// CSC Measurement (0x2A5B) – mirrors ANT+ speed/cadence computation
+// Byte 0: flags  bit0=wheel data present  bit1=crank data present
+// If wheel: bytes 1-4 cumulative wheel revs (uint32), bytes 5-6 last event time (uint16, 1/1024s)
+// If crank: bytes 7-8 (or 1-2) cumul crank revs (uint16), bytes 9-10 (or 3-4) last event time
+void BtleHub::parseCscMeasurement(const QByteArray &data)
+{
+    if (data.isEmpty())
+        return;
+
+    quint8 flags = static_cast<quint8>(data[0]);
+    bool wheelPresent = (flags & 0x01) != 0;
+    bool crankPresent = (flags & 0x02) != 0;
+
+    int offset = 1;
+
+    quint32 wheelRevs = 0;
+    quint16 wheelTime = 0;
+    quint16 crankRevs = 0;
+    quint16 crankTime = 0;
+
+    if (wheelPresent) {
+        if (data.size() < offset + 6)
+            return;
+        wheelRevs  = static_cast<quint8>(data[offset])
+                   | (static_cast<quint8>(data[offset+1]) << 8)
+                   | (static_cast<quint8>(data[offset+2]) << 16)
+                   | (static_cast<quint8>(data[offset+3]) << 24);
+        wheelTime  = static_cast<quint8>(data[offset+4])
+                   | (static_cast<quint8>(data[offset+5]) << 8);
+        offset += 6;
+    }
+
+    if (crankPresent) {
+        if (data.size() < offset + 4)
+            return;
+        crankRevs = static_cast<quint8>(data[offset])
+                  | (static_cast<quint8>(data[offset+1]) << 8);
+        crankTime = static_cast<quint8>(data[offset+2])
+                  | (static_cast<quint8>(data[offset+3]) << 8);
+    }
+
+    if (m_firstCscMeasurement) {
+        m_lastWheelRevolutions = wheelRevs;
+        m_lastWheelEventTime   = wheelTime;
+        m_lastCrankRevolutions = crankRevs;
+        m_lastCrankEventTime   = crankTime;
+        m_firstCscMeasurement  = false;
+        return;
+    }
+
+    // Cadence (RPM) – same rollover-safe math as ANT+ cadence_controller
+    if (crankPresent) {
+        quint16 deltaCrankTime = crankTime - m_lastCrankEventTime; // rollover safe (uint16)
+        quint16 deltaCrankRevs = crankRevs - m_lastCrankRevolutions;
+
+        if (deltaCrankTime > 0) {
+            // cadence = revs * 60 * 1024 / deltaTime
+            int cadence = static_cast<int>((static_cast<quint32>(deltaCrankRevs) * 60UL * 1024UL)
+                                           / deltaCrankTime);
+            emit signal_cadence(0, cadence);
+        } else if (deltaCrankRevs == 0) {
+            emit signal_cadence(0, 0);
+        }
+
+        m_lastCrankRevolutions = crankRevs;
+        m_lastCrankEventTime   = crankTime;
+    }
+
+    // Speed (km/h)
+    if (wheelPresent) {
+        quint16 deltaWheelTime = wheelTime - m_lastWheelEventTime;
+        quint32 deltaWheelRevs = wheelRevs - m_lastWheelRevolutions;
+
+        if (deltaWheelTime > 0) {
+            // speed (m/s) = circumference(m) * revs / (deltaTime / 1024)
+            double speedMs = (static_cast<double>(m_wheelCircMm) / 1000.0)
+                           * deltaWheelRevs
+                           * 1024.0
+                           / deltaWheelTime;
+            double speedKmh = speedMs * 3.6;
+            emit signal_speed(0, speedKmh);
+        } else if (deltaWheelRevs == 0) {
+            emit signal_speed(0, 0.0);
+        }
+
+        m_lastWheelRevolutions = wheelRevs;
+        m_lastWheelEventTime   = wheelTime;
+    }
+
+    // Restart the stop-timer so we zero-out values if messages cease
+    m_cscStopTimer->start(CSC_STOP_TIMEOUT_MS);
+}
+
+// Cycling Power Measurement (0x2A63)
+// Bytes 0-1: flags (16-bit)
+// Bytes 2-3: Instantaneous Power (int16, watts)
+void BtleHub::parsePowerMeasurement(const QByteArray &data)
+{
+    if (data.size() < 4)
+        return;
+
+    qint16 power = static_cast<qint16>(
+        static_cast<quint8>(data[2]) | (static_cast<quint8>(data[3]) << 8));
+
+    emit signal_power(0, static_cast<int>(power));
+}
+
+// FTMS Indoor Bike Data (0x2AD2)
+// Flags (2 bytes) indicate which fields are present; we read what we can.
+// Field order (all little-endian):
+//   Instantaneous Speed  (uint16, 0.01 km/h) – flag bit 0 = NOT present (inverted!)
+//   Average Speed        (uint16) – bit 1
+//   Instantaneous Cadence (uint16, 0.5 rpm) – bit 2 = NOT present
+//   Average Cadence      (uint16) – bit 3
+//   Total Distance       (uint24) – bit 4
+//   Resistance Level     (int16) – bit 5
+//   Instantaneous Power  (int16, 1 W) – bit 6 = NOT present
+//   Average Power        (int16) – bit 7
+//   Expended Energy      (uint16+uint16+uint8) – bit 8
+//   Heart Rate           (uint8) – bit 9
+//   Metabolic Equivalent (uint8) – bit 10
+//   Elapsed Time         (uint16) – bit 11
+//   Remaining Time       (uint16) – bit 12
+void BtleHub::parseFtmsIndoorBikeData(const QByteArray &data)
+{
+    if (data.size() < 2)
+        return;
+
+    quint16 flags = static_cast<quint8>(data[0])
+                  | (static_cast<quint8>(data[1]) << 8);
+
+    int offset = 2;
+
+    // Helper: read little-endian uint16 and advance offset
+    auto readU16 = [&]() -> quint16 {
+        if (offset + 2 > data.size()) return 0;
+        quint16 v = static_cast<quint8>(data[offset])
+                  | (static_cast<quint8>(data[offset+1]) << 8);
+        offset += 2;
+        return v;
+    };
+
+    // Bit 0: More Data (Instantaneous Speed NOT present when set)
+    if (!(flags & 0x0001)) {
+        emit signal_speed(0, readU16() * 0.01);
+    }
+
+    // Bit 1: Average Speed present
+    if (flags & 0x0002) offset += 2;
+
+    // Bit 2: Instantaneous Cadence NOT present when set
+    if (!(flags & 0x0004)) {
+        emit signal_cadence(0, static_cast<int>(readU16() * 0.5));
+    }
+
+    // Bit 3: Average Cadence present
+    if (flags & 0x0008) offset += 2;
+
+    // Bit 4: Total Distance present (uint24)
+    if (flags & 0x0010) offset += 3;
+
+    // Bit 5: Resistance Level present
+    if (flags & 0x0020) offset += 2;
+
+    // Bit 6: Instantaneous Power NOT present when set
+    if (!(flags & 0x0040)) {
+        qint16 power = static_cast<qint16>(readU16());
+        emit signal_power(0, static_cast<int>(power));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Zero-out cadence & speed when messages stop arriving
+// ─────────────────────────────────────────────────────────────────────────────
+void BtleHub::onCscStopTimer()
+{
+    emit signal_cadence(0, 0);
+    emit signal_speed(0, 0.0);
+}

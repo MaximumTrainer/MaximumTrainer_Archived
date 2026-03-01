@@ -702,6 +702,10 @@ void WorkoutDialog::startCalibrateFEC() {
         return;
     }
 
+    if (vecHub.isEmpty()) {
+        return; // No ANT+ hub available (e.g. BTLE mode)
+    }
+
     //Pause workout if active
     if (isWorkoutStarted && !isWorkoutPaused) {
         start_or_pause_workout();
@@ -729,6 +733,10 @@ void WorkoutDialog::startCalibrationPM() {
 
     if (isCalibrating || account->enable_studio_mode) {
         return;
+    }
+
+    if (vecHub.isEmpty()) {
+        return; // No ANT+ hub available (e.g. BTLE mode)
     }
 
     //Pause workout if active
