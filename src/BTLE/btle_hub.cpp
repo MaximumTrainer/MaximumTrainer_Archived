@@ -57,6 +57,12 @@ void BtleHub::connectToDevice(const QBluetoothDeviceInfo &device)
         m_controller = nullptr;
     }
 
+    // Clean up any previously-created service objects
+    delete m_hrService;    m_hrService    = nullptr;
+    delete m_cscService;   m_cscService   = nullptr;
+    delete m_powerService; m_powerService = nullptr;
+    delete m_ftmsService;  m_ftmsService  = nullptr;
+
     m_firstCscMeasurement   = true;
     m_ftmsControlRequested  = false;
 
