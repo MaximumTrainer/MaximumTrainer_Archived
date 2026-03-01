@@ -163,20 +163,21 @@ jobs:
         7z x -o/tmp/vlcqt_temp /tmp/VLC-Qt_1.1.0_macos.7z
         # Handle both flat archives and archives with a single root directory
         VLCQT_SRC=$(find /tmp/vlcqt_temp -maxdepth 1 -mindepth 1 -type d | head -n 1)
-        mkdir -p /usr/local/opt/vlc-qt
+        mkdir -p $HOME/vlc-qt
         if [ -n "$VLCQT_SRC" ] && [ -d "$VLCQT_SRC/lib" ]; then
-          cp -r "$VLCQT_SRC"/* /usr/local/opt/vlc-qt/
+          cp -r "$VLCQT_SRC"/* $HOME/vlc-qt/
         else
-          cp -r /tmp/vlcqt_temp/* /usr/local/opt/vlc-qt/
+          cp -r /tmp/vlcqt_temp/* $HOME/vlc-qt/
         fi
-        test -d /usr/local/opt/vlc-qt/lib || { echo "VLC-Qt lib directory not found after extraction"; exit 1; }
-        mkdir -p /usr/local/include
-        ln -sf /usr/local/opt/vlc-qt/lib/VLCQtCore.framework/Headers /usr/local/include/VLCQtCore
-        ln -sf /usr/local/opt/vlc-qt/lib/VLCQtWidgets.framework/Headers /usr/local/include/VLCQtWidgets
+        test -d $HOME/vlc-qt/lib || { echo "VLC-Qt lib directory not found after extraction"; exit 1; }
+        mkdir -p $HOME/vlc-qt/include
+        ln -sf $HOME/vlc-qt/lib/VLCQtCore.framework/Headers $HOME/vlc-qt/include/VLCQtCore
+        ln -sf $HOME/vlc-qt/lib/VLCQtWidgets.framework/Headers $HOME/vlc-qt/include/VLCQtWidgets
 
     - name: Create Makefile
       run: |
         qmake PowerVelo.pro \
+          "VLCQT_INSTALL=$HOME/vlc-qt" \
           "SFML_INSTALL=$(brew --prefix sfml)"
       env:
         QMAKEFEATURES: /tmp/qwt/features
@@ -187,7 +188,7 @@ jobs:
     - name: Bind rpath for Qt frameworks
       run: |
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
-        install_name_tool -add_rpath /usr/local/opt/vlc-qt/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+        install_name_tool -add_rpath $HOME/vlc-qt/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
 
     - name: upload artifact
       uses: actions/upload-artifact@v4

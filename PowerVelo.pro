@@ -155,7 +155,7 @@ macx {
     QT += macextras
 
     # VLC-Qt (default install path; override with VLCQT_INSTALL=...)
-    isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = /usr/local/opt/vlc-qt }
+    isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = $$(HOME)/vlc-qt }
     INCLUDEPATH += $${VLCQT_INSTALL}/include
     LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
     LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
