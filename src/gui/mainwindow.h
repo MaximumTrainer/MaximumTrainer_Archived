@@ -18,6 +18,7 @@
 #include "userstudio.h"
 #include "myconstants.h"
 #include "hub.h"
+#include "btle_hub.h"
 
 
 namespace Ui {

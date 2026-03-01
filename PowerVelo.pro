@@ -18,6 +18,7 @@ CONFIG += c++11
 # include
 QT       += core gui widgets
 QT       += network printsupport concurrent
+QT       += bluetooth
 
 #QT += serialport
 #QT += multimedia
@@ -199,6 +200,7 @@ include (src/ANT/power/ANT_Power.pri)
 include (src/ANT/fec/ANT_fec.pri)
 include (src/ANT/oxygen/ANT_Oxygen.pri)
 include (src/ANT/ANT.pri)
+include (src/BTLE/BTLE.pri)
 include (src/Fit_20_16/Fit.pri)
 
 
