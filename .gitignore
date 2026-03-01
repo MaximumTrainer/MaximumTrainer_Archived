@@ -10,4 +10,9 @@ obj
 .idea/encodings.xml
 .idea/Qt_Project.iml
 .idea/QtGithub.iml
-.qmake.stash 
+.qmake.stash
+# Qt build artifacts
+*.o
+moc_*.cpp
+*.moc
+moc_predefs.h 

@@ -6,7 +6,8 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/btle_hub.h \
-    $$PWD/btle_scanner_dialog.h
+    $$PWD/btle_scanner_dialog.h \
+    $$PWD/btle_uuids.h
 
 FORMS += \
     $$PWD/btle_scanner_dialog.ui

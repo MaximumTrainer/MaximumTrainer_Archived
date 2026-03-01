@@ -10,6 +10,35 @@ permissions:
   contents: read
 
 jobs:
+  # ── BtleHub unit tests (headless, no hardware required) ───────────────────
+  test_btle:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and Bluetooth dev packages
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          qtconnectivity5-dev \
+          build-essential
+
+    - name: Build BTLE tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        cd tests/btle
+        qmake btle_tests.pro
+        make -j$(nproc)
+
+    - name: Run BTLE tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        cd tests/btle
+        ../../build/tests/btle_tests -v2
+
   build_linux:
     runs-on: ubuntu-22.04
 
@@ -23,7 +52,7 @@ jobs:
         sudo apt-get install -y \
           qtbase5-dev \
           qtwebengine5-dev \
-          libqt5bluetooth5-dev \
+          qtconnectivity5-dev \
           libqwt-qt5-dev \
           libsfml-dev \
           libvlc-dev \

@@ -1,4 +1,5 @@
 #include "btle_hub.h"
+#include "btle_uuids.h"
 
 #include <QDebug>
 #include <QLowEnergyDescriptor>
@@ -149,6 +150,17 @@ void BtleHub::setSlope(int /*antID*/, double grade)
 void BtleHub::stopDecodingMsg()
 {
     disconnectFromDevice();
+}
+
+void BtleHub::simulateNotification(quint16 characteristicUuid, const QByteArray &data)
+{
+    switch (characteristicUuid) {
+    case BTLE_UUID_HR_MEASUREMENT:    parseHrMeasurement(data);      break;
+    case BTLE_UUID_CSC_MEASUREMENT:   parseCscMeasurement(data);     break;
+    case BTLE_UUID_POWER_MEASUREMENT: parsePowerMeasurement(data);   break;
+    case BTLE_UUID_FTMS_BIKE_DATA:    parseFtmsIndoorBikeData(data); break;
+    default: break;
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -61,6 +61,12 @@ public slots:
     void setSlope(int antID, double grade);
     void stopDecodingMsg();
 
+    // Test hook: inject raw BLE notification bytes as if received from hardware.
+    // uuid is the 16-bit BT SIG characteristic UUID (e.g. 0x2A37 = Heart Rate).
+    // Signals (signal_hr / signal_cadence / signal_speed / signal_power) are
+    // emitted exactly as they would be on real hardware.
+    void simulateNotification(quint16 characteristicUuid, const QByteArray &data);
+
 private slots:
     void onControllerConnected();
     void onControllerDisconnected();
