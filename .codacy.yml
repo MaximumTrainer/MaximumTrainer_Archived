@@ -1,0 +1,5 @@
+tools:
+  trivy:
+    enabled: true
+    patterns:
+      - security
