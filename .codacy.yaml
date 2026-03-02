@@ -1,0 +1,6 @@
+tools:
+  trivy:
+    enabled: true
+    patterns:
+      - vuln
+      - config
