@@ -62,7 +62,7 @@ void MyDialBox::createDial()  {
 
     QwtDialSimpleNeedle *needle = new QwtDialSimpleNeedle(
                 QwtDialSimpleNeedle::Arrow, true, needleColor,
-                QColor( Qt::gray ).light( 130 ) );
+                QColor( Qt::gray ).lighter( 130 ) );
     d_dial->setNeedle( needle );
 
     ////////////////////////////////////////////////////////////
@@ -71,16 +71,16 @@ void MyDialBox::createDial()  {
     QColor fillColor25 = Util::getColor(Util::SQUARE_POWER);
     QColor niceBlue = Util::getColor(Util::TOO_LOW);
     QColor brownColor = Util::getColor(Util::TOO_HIGH);
-    const QColor base( QColor( Qt::darkGray ).dark( 150 ) );
+    const QColor base( QColor( Qt::darkGray ).darker( 150 ) );
 
 
     paletteGood.setColor( QPalette::Base, base );
-    paletteGood.setColor( QPalette::Window, base.dark( 150 ) );
-    paletteGood.setColor( QPalette::Mid, base.dark( 110 ) );
-    //    paletteGood.setColor( QPalette::Light, base.light( 170 ) );
+    paletteGood.setColor( QPalette::Window, base.darker( 150 ) );
+    paletteGood.setColor( QPalette::Mid, base.darker( 110 ) );
+    //    paletteGood.setColor( QPalette::Light, base.lighter( 170 ) );
     paletteGood.setColor( QPalette::Light, fillColor25 );
-    paletteGood.setColor( QPalette::Dark, base.dark( 170 ) );
-    paletteGood.setColor( QPalette::Text, base.dark( 200 ).light( 800 ) );
+    paletteGood.setColor( QPalette::Dark, base.darker( 170 ) );
+    paletteGood.setColor( QPalette::Text, base.darker( 200 ).lighter( 800 ) );
 
     paletteToLow = QPalette(paletteGood);
     paletteToLow.setColor( QPalette::Light, niceBlue );

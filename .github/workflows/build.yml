@@ -109,8 +109,7 @@ jobs:
 
     - name: Download and install SFML
       run: |
-        . C:\helpers.ps1
-        Invoke-WebRequestWithRetry -Uri "https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip" -OutFile "$env:TEMP\sfml.zip"
+        curl.exe -L -o "$env:TEMP\sfml.zip" "https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip"
         Expand-Archive -Path "$env:TEMP\sfml.zip" -DestinationPath "C:\sfml"
       shell: powershell
 

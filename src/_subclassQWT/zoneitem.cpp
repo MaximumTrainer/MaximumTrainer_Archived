@@ -1,4 +1,5 @@
 #include "zoneitem.h"
+#include <QColor>
 
 
 /* Used to put background color indication on the graphs */
