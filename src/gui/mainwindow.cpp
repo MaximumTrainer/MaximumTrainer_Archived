@@ -33,7 +33,6 @@
 #include "myqwebenginepage.h"
 
 #include "extrequest.h"
-#include "dialog_connection_method.h"
 #include "btle_scanner_dialog.h"
 
 
@@ -1348,9 +1347,9 @@ void MainWindow::on_actionOpen_Ride_triggered()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::executeWorkout(Workout workout) {
 
-    // Ask the user which connection method to use
-    DialogConnectionMethod connDlg(numberStickFound > 0, this);
-    if (connDlg.exec() != QDialog::Accepted)
+    // ── BTLE path (only connection method) ──────────────────────────────────
+    BtleScannerDialog scanner(this);
+    if (scanner.exec() != QDialog::Accepted || !scanner.hasSelection())
         return;
 
     //wait cursor
@@ -1362,92 +1361,63 @@ void MainWindow::executeWorkout(Workout workout) {
         qDebug() << "Before Execute__ User Studio power Curve is_WORKOUTDIALOG:" << userStudio.getPowerCurve().getFullName() << userStudio.getPowerCurve().getId() << "test att:" << userStudio.getDisplayName();
     }
 
-    if (connDlg.selectedMethod() == DialogConnectionMethod::BTLE) {
-        // ── BTLE path ───────────────────────────────────────────────────────
+    // Create a BtleHub and connect it to the selected device
+    BtleHub *btleHub = new BtleHub(this);
+    if (account->wheel_circ > 0)
+        btleHub->setWheelCircumferenceMm(account->wheel_circ);
+
+    // Wait for the device to connect and services to be discovered before
+    // opening WorkoutDialog, using a local event loop
+    {
+        QEventLoop loop;
+        connect(btleHub, &BtleHub::deviceConnected,    &loop, &QEventLoop::quit);
+        connect(btleHub, &BtleHub::deviceDisconnected, &loop, &QEventLoop::quit);
+        connect(btleHub, &BtleHub::connectionError,
+                &loop, [&loop](const QString &) { loop.quit(); });
+        btleHub->connectToDevice(scanner.selectedDevice());
+
         QApplication::restoreOverrideCursor();
+        loop.exec(); // blocks until connected or error
+    }
 
-        BtleScannerDialog scanner(this);
-        if (scanner.exec() != QDialog::Accepted || !scanner.hasSelection())
-            return;
-
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-
-        // Create a BtleHub and connect it to the selected device
-        BtleHub *btleHub = new BtleHub(this);
-        if (account->wheel_circ > 0)
-            btleHub->setWheelCircumferenceMm(account->wheel_circ);
-
-        // Wait for the device to connect and services to be discovered before
-        // opening WorkoutDialog, using a local event loop
-        {
-            QEventLoop loop;
-            connect(btleHub, &BtleHub::deviceConnected,    &loop, &QEventLoop::quit);
-            connect(btleHub, &BtleHub::deviceDisconnected, &loop, &QEventLoop::quit);
-            connect(btleHub, &BtleHub::connectionError,
-                    &loop, [&loop](const QString &) { loop.quit(); });
-            btleHub->connectToDevice(scanner.selectedDevice());
-
-            QApplication::restoreOverrideCursor();
-            loop.exec(); // blocks until connected or error
-        }
-
-        if (!btleHub->isConnected()) {
-            QMessageBox::warning(this,
-                                 tr("Connection Failed"),
-                                 tr("Could not connect to the selected Bluetooth device.\n"
-                                    "Please check the device is powered on and try again."));
-            delete btleHub;
-            return;
-        }
-
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-
-        // Open WorkoutDialog with empty ANT+ hub vectors; wire up BtleHub signals
-        QVector<Hub*> emptyHubs;
-        QVector<int>  emptySticks;
-        WorkoutDialog w(emptyHubs, emptySticks, workout, lstRadio, vecUserStudio);
-
-        // Data received from the BLE device → WorkoutDialog display slots
-        connect(btleHub, SIGNAL(signal_hr(int,int)),         &w, SLOT(HrDataReceived(int,int)));
-        connect(btleHub, SIGNAL(signal_cadence(int,int)),    &w, SLOT(CadenceDataReceived(int,int)));
-        connect(btleHub, SIGNAL(signal_speed(int,double)),   &w, SLOT(TrainerSpeedDataReceived(int,double)));
-        connect(btleHub, SIGNAL(signal_power(int,int)),      &w, SLOT(PowerDataReceived(int,int)));
-
-        // Trainer control signals (WorkoutDialog → BtleHub → FTMS)
-        connect(&w, SIGNAL(setLoad(int,double)),  btleHub, SLOT(setLoad(int,double)));
-        connect(&w, SIGNAL(setSlope(int,double)), btleHub, SLOT(setSlope(int,double)));
-        connect(&w, SIGNAL(stopDecodingMsgHub()), btleHub, SLOT(stopDecodingMsg()));
-
-        connect(&w, SIGNAL(fitFileReady(QString, QString, QString)), this, SLOT(checkToUploadFile(QString,QString,QString)) );
-        connect(&w, SIGNAL(ftp_lthr_changed()), this, SLOT(updateZoneInterface()));
-        connect(&w, SIGNAL(ftp_lthr_changed()), ui->tab_workout1, SLOT(updateTableViewMetrics()));
-        connect(&w, SIGNAL(ftpUserStudioChanged(QVector<UserStudio>)), this, SLOT(updateVecStudio(QVector<UserStudio>)) );
-
-        workoutExecuting();
-        w.exec();
-        workoutOver();
-
-        btleHub->disconnectFromDevice();
+    if (!btleHub->isConnected()) {
+        QMessageBox::warning(this,
+                             tr("Connection Failed"),
+                             tr("Could not connect to the selected Bluetooth device.\n"
+                                "Please check the device is powered on and try again."));
         delete btleHub;
-
-        ui->webView_achiev->reload();
         return;
     }
 
-    // ── ANT+ path (existing behaviour) ─────────────────────────────────────
-    WorkoutDialog w(vecHub, vecStickIdUsed, workout, lstRadio, vecUserStudio);
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    // Open WorkoutDialog; wire up BtleHub signals
+    QVector<Hub*> emptyHubs;
+    QVector<int>  emptySticks;
+    WorkoutDialog w(emptyHubs, emptySticks, workout, lstRadio, vecUserStudio);
+
+    // Data received from the BLE device → WorkoutDialog display slots
+    connect(btleHub, SIGNAL(signal_hr(int,int)),         &w, SLOT(HrDataReceived(int,int)));
+    connect(btleHub, SIGNAL(signal_cadence(int,int)),    &w, SLOT(CadenceDataReceived(int,int)));
+    connect(btleHub, SIGNAL(signal_speed(int,double)),   &w, SLOT(TrainerSpeedDataReceived(int,double)));
+    connect(btleHub, SIGNAL(signal_power(int,int)),      &w, SLOT(PowerDataReceived(int,int)));
+
+    // Trainer control signals (WorkoutDialog → BtleHub → FTMS)
+    connect(&w, SIGNAL(setLoad(int,double)),  btleHub, SLOT(setLoad(int,double)));
+    connect(&w, SIGNAL(setSlope(int,double)), btleHub, SLOT(setSlope(int,double)));
+    connect(&w, SIGNAL(stopDecodingMsgHub()), btleHub, SLOT(stopDecodingMsg()));
 
     connect(&w, SIGNAL(fitFileReady(QString, QString, QString)), this, SLOT(checkToUploadFile(QString,QString,QString)) );
     connect(&w, SIGNAL(ftp_lthr_changed()), this, SLOT(updateZoneInterface()));
     connect(&w, SIGNAL(ftp_lthr_changed()), ui->tab_workout1, SLOT(updateTableViewMetrics()));
-
-
     connect(&w, SIGNAL(ftpUserStudioChanged(QVector<UserStudio>)), this, SLOT(updateVecStudio(QVector<UserStudio>)) );
-
 
     workoutExecuting();
     w.exec();
     workoutOver();
+
+    btleHub->disconnectFromDevice();
+    delete btleHub;
 
     ui->webView_achiev->reload();
 }
