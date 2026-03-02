@@ -13,7 +13,7 @@ CONFIG += qwt qt thread
 CONFIG += release
 CONFIG += c++11
 
-#INCLUDEPATH	+= /usr/lib/x86_64-linux-gnu/qt5
+#INCLUDEPATH += /usr/lib/x86_64-linux-gnu/qt5
 
 # include
 QT       += core gui widgets
@@ -27,7 +27,6 @@ QT       += bluetooth
 #QT += webenginecore
 QT += webenginewidgets
 
-
 # For Release, disable QDebug for performance
 DEFINES += QT_NO_DEBUG_OUTPUT
 
@@ -39,7 +38,6 @@ CONFIG(debug, debug|release) { QMAKE_CXXFLAGS += -DGC_DEBUG }
 
 qtHaveModule(uitools):!embedded: QT += uitools
 else: DEFINES += QT_NO_UITOOLS
-
 
 ###=============================================================
 ### Obuild directory
@@ -59,7 +57,7 @@ UI_DIR = $$DESTDIR/.u
 
 ###=============================================================
 ### OPTIONAL => VLC [Windows, Linux and OSX]
-###=============================================================
+###============================================================= 
 
 !isEmpty(VLC_INSTALL) {
 
@@ -78,23 +76,18 @@ UI_DIR = $$DESTDIR/.u
 INCLUDEPATH += ./src/core
 QMAKE_CFLAGS_ISYSTEM =
 
-
-
 # to make sure we are toolchain neutral NEVER refer to a lib
 # via file extensions .lib or .a in src.pro unless the section is
 # platform specific. Instead we use directives -Ldir and -llib
 win32 {
     #QWT is configured to build 2 libs (release/debug) on win32 (see qwtbuild.pri)
+    INCLUDEPATH += ../qwt/include
     CONFIG(release, debug|release){
-    LIBS += -L$${PWD}/../qwt/lib -lqwt
+        LIBS += -L../qwt/lib -lqwt
     }
     CONFIG(debug, debug|release) {
-    LIBS += -L$${PWD}/../qwt/lib -lqwtd
+        LIBS += -L../qwt/lib -lqwtd
     }
-
-#} else {
-#    #QWT is configured to build 1 lib for all other OS (see qwtbuild.pri)
-#    LIBS += -L$${PWD}/../qwt/lib -lqwt
 }
 
 # compress and math libs must be defined in gcconfig.pri
@@ -112,15 +105,12 @@ LIBS += $${GSL_LIBS}
 
 # Microsoft Visual Studion toolchain dependencies
 win32-msvc* {
-
     # we need windows kit 8.2 or higher with MSVC, offer default location
     isEmpty(WINKIT_INSTALL) WINKIT_INSTALL= "C:/Program Files (x86)/Windows Kits/8.1/Lib/winv6.3/um/x64"
     LIBS += -L$${WINKIT_INSTALL} -lGdi32 -lUser32
     CONFIG += force_debug_info
 
-
 } else {
-
     # gnu toolchain wants math libs
     LIBS += -lm
 
@@ -148,38 +138,22 @@ win32 {
     }
 }
 
-
-#////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+# macOS and X11 sections unchanged
 macx {
-    # Mac native widget support
     QT += macextras
-
-    # VLC-Qt (default install path; override with VLCQT_INSTALL=...)
     isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = $$(HOME)/vlc-qt }
     INCLUDEPATH += $${VLCQT_INSTALL}/include
     LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
     LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
-
-    # SFML (configure via SFML_INSTALL=...)
     !isEmpty(SFML_INSTALL) {
         INCLUDEPATH += $${SFML_INSTALL}/include
         LIBS += -L$${SFML_INSTALL}/lib -lsfml-audio -lsfml-system
     }
-
-    # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
-
 }
-
-
-# X11
 if (defined(GC_WANT_X11)) {
     LIBS += -lX11
 }
-
-
-
 include (src/_db/_db.pri)
 include (src/_subclassQT/_subclassQT.pri)
 include (src/_subclassQWT/_subclassQWT.pri)
@@ -191,7 +165,6 @@ include (src/gui/gui.pri)
 include (src/io_file/io_file.pri)
 include (src/workout/workout.pri)
 include (src/webBrowser/webBrowser.pri)
-
 include (src/ANT/heart_rate/ANT_HeartRate.pri)
 include (src/ANT/cadence/ANT_Cadence.pri)
 include (src/ANT/speed/ANT_Speed.pri)
@@ -202,6 +175,4 @@ include (src/ANT/oxygen/ANT_Oxygen.pri)
 include (src/ANT/ANT.pri)
 include (src/BTLE/BTLE.pri)
 include (src/Fit_20_16/Fit.pri)
-
-
 RESOURCES += MyResources.qrc
