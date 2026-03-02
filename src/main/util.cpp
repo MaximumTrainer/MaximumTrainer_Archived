@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QDesktopServices>
+#include <QRegularExpression>
 
 #include "account.h"
 #include "settings.h"
@@ -506,15 +507,15 @@ void Util::parseJsonObjectAccount(QString data) {
 QString Util::cleanQString(QString toClean) {
 
     QString toReturn = toClean;
-    //        toReturn.remove(QRegExp(QString::fromUtf8("[-`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\\[\\\]\\\\]")));
-    toReturn.remove(QRegExp(QString::fromUtf8("[-`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\[\\]\\\\]")));
+    //        toReturn.remove(QRegularExpression(QString::fromUtf8("[-`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\\[\\\]\\\\]")));
+    toReturn.remove(QRegularExpression(QString::fromUtf8("[-`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\[\\]\\\\]")));
     return toReturn;
 }
 //--------------------------------------------------------------------------
 QString Util::cleanForOsSaving(QString toClean) {
 
     QString toReturn = toClean;
-    toReturn.remove(QRegExp(QString::fromUtf8("[-`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\[\\]\\\\]")));
+    toReturn.remove(QRegularExpression(QString::fromUtf8("[-`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\[\\]\\\\]")));
     return toReturn;
 
 

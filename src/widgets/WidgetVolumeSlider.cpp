@@ -19,15 +19,9 @@
 #include <QtCore/QTimer>
 #include <QtGui/QMouseEvent>
 
-#if QT_VERSION >= 0x050000
-    #include <QtWidgets/QHBoxLayout>
-    #include <QtWidgets/QLabel>
-    #include <QtWidgets/QSlider>
-#else
-    #include <QtGui/QHBoxLayout>
-    #include <QtGui/QLabel>
-    #include <QtGui/QSlider>
-#endif
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QSlider>
 
 #include "core/Audio.h"
 #include "core/Error.h"

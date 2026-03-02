@@ -21,15 +21,9 @@
 #include <QtGui/QMouseEvent>
 #include <QtGui/QWheelEvent>
 
-#if QT_VERSION >= 0x050000
-    #include <QtWidgets/QHBoxLayout>
-    #include <QtWidgets/QLabel>
-    #include <QtWidgets/QProgressBar>
-#else
-    #include <QtGui/QHBoxLayout>
-    #include <QtGui/QLabel>
-    #include <QtGui/QProgressBar>
-#endif
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QProgressBar>
 
 #include "core/Error.h"
 #include "core/MediaPlayer.h"
