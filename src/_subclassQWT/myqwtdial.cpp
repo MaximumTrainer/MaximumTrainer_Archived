@@ -11,7 +11,7 @@ myQwtDial::myQwtDial( QWidget* parent ): QwtDial( parent ) {
 
 
     scaleDraw()->enableComponent( QwtAbstractScaleDraw::Backbone, false );
-    scaleDraw()->setPenWidth( 2 );
+    scaleDraw()->setPenWidth( 2.0 );
 
     setReadOnly(true);
     setTracking( false );

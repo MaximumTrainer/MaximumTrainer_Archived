@@ -1,5 +1,7 @@
 #include "workoutplot.h"
 
+#include <QPen>
+#include <qwt_text.h>
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QSplitter>
@@ -1023,4 +1025,3 @@ void WorkoutPlot::addShapeFromPoints(const QString &title, const QColor &color, 
         lstTargetHr.append(item);
     }
 }
-

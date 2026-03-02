@@ -11,7 +11,6 @@ src/gui/workoutdialog.cpp \
     src/gui/savingwindow.cpp \
     src/gui/dialogmainwindowconfig.cpp \
     src/gui/dialoginfowebview.cpp \
-    src/gui/dialog_connection_method.cpp \
     #$$PWD/main_coursepage.cpp
 
 HEADERS += src/gui/mainwindow.h\
@@ -24,7 +23,6 @@ src/gui/workoutdialog.h \
     src/gui/savingwindow.h \
     src/gui/dialogmainwindowconfig.h \
     src/gui/dialoginfowebview.h \
-    src/gui/dialog_connection_method.h \
     #$$PWD/main_coursepage.h
 
 FORMS    += src/gui/mainwindow.ui \
@@ -37,7 +35,6 @@ FORMS    += src/gui/mainwindow.ui \
     src/gui/savingwindow.ui \
     src/gui/dialogmainwindowconfig.ui \
     src/gui/dialoginfowebview.ui \
-    src/gui/dialog_connection_method.ui \
     #$$PWD/main_coursepage.ui
 
 
