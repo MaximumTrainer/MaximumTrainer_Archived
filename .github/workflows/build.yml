@@ -149,9 +149,8 @@ jobs:
 
     - name: Build QWT
       run: |
-        . C:\helpers.ps1
         Set-Location ..
-        Invoke-WebRequestWithRetry -Uri "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download" -OutFile "$env:TEMP\qwt.tar.bz2"
+        curl.exe -L "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download" -o "$env:TEMP\qwt.tar.bz2"
         7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
         7z x "$env:TEMP\qwt.tar" -o"." -y
         Rename-Item "qwt-6.2.0" "qwt-src"
