@@ -72,18 +72,18 @@ void myQwtDial::drawScaleContents( QPainter *painter, const QPointF &center, dou
     painter->drawPie(rectangle, (180 * 16), (54 * 16) );
 
     //NORMAL COLOR DEADZONE
-    painter->setBrush(QBrush(QColor( Qt::darkGray ).dark( 150 )));
-    painter->setPen( QPen( QColor( Qt::darkGray ).dark( 150 ), 2 ) );
+    painter->setBrush(QBrush(QColor( Qt::darkGray ).darker( 150 )));
+    painter->setPen( QPen( QColor( Qt::darkGray ).darker( 150 ), 2 ) );
     painter->drawPie(rectangle, (234 * 16), (72 * 16) );
 
-    //    setPalette( colorTheme( QColor( Qt::darkGray ).dark( 150 ) ) );
+    //    setPalette( colorTheme( QColor( Qt::darkGray ).darker( 150 ) ) );
     //    palette.setColor( QPalette::Base, base );
-    //    palette.setColor( QPalette::Window, base.dark( 150 ) );
-    //    palette.setColor( QPalette::Mid, base.dark( 110 ) );
+    //    palette.setColor( QPalette::Window, base.darker( 150 ) );
+    //    palette.setColor( QPalette::Mid, base.darker( 110 ) );
     //    palette.setColor( QPalette::Light, base.light( 170 ) );
-    //    palette.setColor( QPalette::Dark, base.dark( 170 ) );
-    //    palette.setColor( QPalette::Text, base.dark( 200 ).light( 800 ) );
-    //    palette.setColor( QPalette::WindowText, base.dark( 200 ) );
+    //    palette.setColor( QPalette::Dark, base.darker( 170 ) );
+    //    palette.setColor( QPalette::Text, base.darker( 200 ).light( 800 ) );
+    //    palette.setColor( QPalette::WindowText, base.darker( 200 ) );
 
     //ROUGE +25
     painter->setBrush(QBrush(brownColor));
