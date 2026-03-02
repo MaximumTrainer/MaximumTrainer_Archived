@@ -89,7 +89,7 @@ void VlcWidgetSeek::mouseMoveEvent(QMouseEvent *event)
     if (!_lock)
         return;
 
-    updateEvent(event->pos());
+    updateEvent(event->position().toPoint());
 }
 
 void VlcWidgetSeek::mousePressEvent(QMouseEvent *event)
@@ -103,7 +103,7 @@ void VlcWidgetSeek::mouseReleaseEvent(QMouseEvent *event)
 {
     event->ignore();
 
-    updateEvent(event->pos());
+    updateEvent(event->position().toPoint());
 
     unlock();
 }
@@ -115,7 +115,7 @@ void VlcWidgetSeek::wheelEvent(QWheelEvent *event)
     if (!_vlcMediaPlayer)
         return;
 
-    if (event->delta() > 0)
+    if (event->angleDelta().y() > 0)
         _vlcMediaPlayer->setTime(_vlcMediaPlayer->time() + _vlcMediaPlayer->length() * 0.01);
     else
         _vlcMediaPlayer->setTime(_vlcMediaPlayer->time() - _vlcMediaPlayer->length() * 0.01);

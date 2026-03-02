@@ -4,7 +4,8 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QKeyEvent>
-#include <QDesktopWidget>
+#include <QScreen>
+#include <QGuiApplication>
 
 #include "interval.h"
 #include "workout.h"
@@ -3327,8 +3328,8 @@ void WorkoutDialog::createUserStudioWidget() {
 
 
     // Get Main Screen Resolution
-    QDesktopWidget widget;
-    int widthCurrentComputer = widget.availableGeometry(widget.primaryScreen()).width();
+    QScreen *screen = QGuiApplication::primaryScreen();
+    int widthCurrentComputer = screen->availableGeometry().width();
     qDebug() << "WHAT IS THE WIDTH??" << widthCurrentComputer;
 
 

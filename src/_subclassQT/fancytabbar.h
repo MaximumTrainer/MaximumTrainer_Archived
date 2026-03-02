@@ -59,7 +59,7 @@ public:
     void paintTab(QPainter *painter, int tabIndex) const;
     void mousePressEvent(QMouseEvent *);
     void mouseMoveEvent(QMouseEvent *);
-    void enterEvent(QEvent *);
+    void enterEvent(QEnterEvent *);
     void leaveEvent(QEvent *);
     bool validIndex(int index) const { return index >= 0 && index < mAttachedTabs.count(); }
 

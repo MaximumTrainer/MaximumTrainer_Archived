@@ -23,7 +23,7 @@ MyTableView::MyTableView(QWidget *parent) : QTableView(parent) {
 
 void MyTableView::mouseMoveEvent(QMouseEvent* event) {
 
-    QPoint pos = event->pos();
+    QPoint pos = event->position().toPoint();
     QModelIndex index = indexAt(pos);
     int row = index.row();
 

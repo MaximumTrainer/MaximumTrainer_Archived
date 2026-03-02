@@ -20,12 +20,10 @@
 
 #if QT_VERSION >= 0x050000
     #include <QtWidgets/QApplication>
-    #include <QtWidgets/QDesktopWidget>
     #include <QtWidgets/QHBoxLayout>
     #include <QtWidgets/QToolBar>
 #else
     #include <QtGui/QApplication>
-    #include <QtGui/QDesktopWidget>
     #include <QtGui/QHBoxLayout>
     #include <QtGui/QToolBar>
 #endif

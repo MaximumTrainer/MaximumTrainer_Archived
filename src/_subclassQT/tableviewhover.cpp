@@ -69,7 +69,7 @@ void TableViewHover::mouseMoveEvent(QMouseEvent* event) {
 
     //fdsafsdfdsaf fix rectangle map to parent grid only not header?
 
-    QPoint pos = event->pos();
+    QPoint pos = event->position().toPoint();
     QModelIndex index = indexAt(pos);
     int row = index.row();
 

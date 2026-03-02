@@ -552,7 +552,7 @@ void DialogConfig::on_checkBox_showElapsedTime_clicked(bool checked)
     parentDialog->showTimerWorkoutElapsed(checked);
 }
 
-void DialogConfig::on_comboBox_fontSizeTimer_currentIndexChanged(const QString &arg1)
+void DialogConfig::on_comboBox_fontSizeTimer_currentTextChanged(const QString &arg1)
 {
     parentDialog->setTimerFontSize(arg1.toInt());
 }

@@ -104,7 +104,7 @@ private slots:
     void on_checkBox_showIntervalRemainingTime_clicked(bool checked);
     void on_checkBox_showWorkoutRemainingTime_clicked(bool checked);
     void on_checkBox_showElapsedTime_clicked(bool checked);
-    void on_comboBox_fontSizeTimer_currentIndexChanged(const QString &arg1);
+    void on_comboBox_fontSizeTimer_currentTextChanged(const QString &arg1);
 
 
 

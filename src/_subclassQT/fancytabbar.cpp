@@ -212,7 +212,7 @@ void FancyTabBar::mouseMoveEvent(QMouseEvent *e)
     for (int i = 0; i < count(); ++i)
     {
         QRect area = tabRect(i);
-        if (area.contains(e->pos())) {
+        if (area.contains(e->position().toPoint())) {
             newHover = i;
             break;
         }
@@ -240,7 +240,7 @@ bool FancyTabBar::event(QEvent *event)
         if (validIndex(mHoverIndex)) {
             QString tt = tabToolTip(mHoverIndex);
             if (!tt.isEmpty()) {
-                QToolTip::showText(static_cast<QHelpEvent*>(event)->globalPos(), tt, this);
+                QToolTip::showText(static_cast<QHelpEvent*>(event)->globalPosition().toPoint(), tt, this);
                 return true;
             }
         }
@@ -249,7 +249,7 @@ bool FancyTabBar::event(QEvent *event)
 }
 
 // Resets hover animation on mouse enter
-void FancyTabBar::enterEvent(QEvent *e)
+void FancyTabBar::enterEvent(QEnterEvent *e)
 {
     Q_UNUSED(e)
     mHoverRect = QRect();
@@ -324,7 +324,7 @@ void FancyTabBar::mousePressEvent(QMouseEvent *e)
     e->accept();
     for (int index = 0; index < mAttachedTabs.count(); ++index)
     {
-        if (tabRect(index).contains(e->pos()))
+        if (tabRect(index).contains(e->position().toPoint()))
         {
             if (isTabEnabled(index))
             {

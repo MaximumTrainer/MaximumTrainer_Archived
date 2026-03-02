@@ -90,7 +90,7 @@ void RepeatWidget::on_pushButton_delete_clicked()
     emit deleteSignal(data->getId());
 }
 
-void RepeatWidget::on_comboBox_repeat_currentIndexChanged(const QString &arg1)
+void RepeatWidget::on_comboBox_repeat_currentTextChanged(const QString &arg1)
 {
     this->data->setNumberRepeat(arg1.toInt());
     emit updateSignal(this->data->getId());

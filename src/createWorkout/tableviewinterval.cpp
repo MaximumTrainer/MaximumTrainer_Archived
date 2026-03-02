@@ -21,7 +21,7 @@ TableViewInterval::TableViewInterval(QWidget *parent) :
 void TableViewInterval::mouseMoveEvent(QMouseEvent* event) {
 
 
-    QPoint pos = event->pos();
+    QPoint pos = event->position().toPoint();
     QModelIndex index = indexAt(pos);
 
     //    qDebug() << "mouseMoveEvent" << index.row();

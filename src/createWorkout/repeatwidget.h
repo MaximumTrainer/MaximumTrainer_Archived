@@ -39,7 +39,7 @@ signals:
 
 private slots:
     void on_pushButton_delete_clicked();
-    void on_comboBox_repeat_currentIndexChanged(const QString &arg1);
+    void on_comboBox_repeat_currentTextChanged(const QString &arg1);
 
 
 private:
