@@ -18,16 +18,14 @@
 
 #include <QtGlobal>
 
-#if QT_VERSION >= 0x050000
-    #include <QtWidgets/QApplication>
-    #include <QtWidgets/QDesktopWidget>
-    #include <QtWidgets/QHBoxLayout>
-    #include <QtWidgets/QToolBar>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QToolBar>
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    #include <QScreen>
 #else
-    #include <QtGui/QApplication>
-    #include <QtGui/QDesktopWidget>
-    #include <QtGui/QHBoxLayout>
-    #include <QtGui/QToolBar>
+    #include <QtWidgets/QDesktopWidget>
 #endif
 
 #if defined(Q_WS_X11)

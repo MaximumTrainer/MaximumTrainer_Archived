@@ -21,11 +21,7 @@
 
 #include <QtCore/QPoint>
 
-#if QT_VERSION >= 0x050000
-    #include <QtWidgets/QWidget>
-#else
-    #include <QtGui/QWidget>
-#endif
+#include <QtWidgets/QWidget>
 
 #include "SharedExportWidgets.h"
 

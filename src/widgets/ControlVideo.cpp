@@ -18,10 +18,10 @@
 
 #include <QtCore/QTimer>
 
-#if QT_VERSION >= 0x050000
-    #include <QtWidgets/QAction>
-#else
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     #include <QtGui/QAction>
+#else
+    #include <QtWidgets/QAction>
 #endif
 
 #include "core/Error.h"
