@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-build_linux:
+  build_linux:
     runs-on: ubuntu-22.04
 
     steps:
@@ -152,7 +152,6 @@ build_linux:
       with:
         name: windows
         path: build\
-
 
   build_mac:
     runs-on: macos-latest
