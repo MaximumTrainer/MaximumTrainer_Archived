@@ -5,7 +5,65 @@ on:
     branches: ["**"]
 
 jobs:
-  build:
+
+build_linux:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and system dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          qtwebengine5-dev \
+          qtconnectivity5-dev \
+          libqwt-qt5-dev \
+          libsfml-dev \
+          libvlc-dev \
+          libvlccore-dev \
+          libusb-1.0-0-dev \
+          cmake \
+          build-essential
+
+    - name: Build and install VLC-Qt
+      run: |
+        cd /tmp
+        git clone --branch 1.1.1 --depth 1 https://github.com/vlc-qt/vlc-qt
+        cd vlc-qt
+        mkdir build && cd build
+        cmake .. \
+          -DQT_VERSION=5 \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig
+
+    - name: Create Makefile
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        qmake PowerVelo.pro "INCLUDEPATH+=/usr/local/include" "LIBS+=-L/usr/local/lib"
+      env:
+        QMAKEFEATURES: /usr/share/qt5/mkspecs/features
+
+    - name: Build
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        make -j$(nproc)
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux
+        path: build/
+
+
+
+  build_windows:
     runs-on: windows-latest
 
     steps:
