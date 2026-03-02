@@ -105,6 +105,8 @@ Workout ImporterWorkout::parseMrcErgFile(QString filename, int userFTP) {
     bool parsingCourseDataNow = false;
     bool parsingOver = false;
 
+    static const QRegularExpression whitespaceRegex("\\s");
+
 
     //Interval parsing
     bool firstDataPointInterval = true;
@@ -163,7 +165,7 @@ Workout ImporterWorkout::parseMrcErgFile(QString filename, int userFTP) {
                     break;
                 }
                 else {
-                    QStringList dataLine = line.split(QRegularExpression("\\s"));
+                    QStringList dataLine = line.split(whitespaceRegex);
                     qDebug() << "dataLineSize:" << dataLine.size();
                     if (dataLine.size() >= 2) { //last line is empty, do not try to parse
 
