@@ -149,9 +149,9 @@ jobs:
 
     - name: Build QWT
       run: |
-        . C:\helpers.ps1
         Set-Location ..
-        Invoke-WebRequestWithRetry -Uri "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download" -OutFile "$env:TEMP\qwt.tar.bz2"
+        # Use curl.exe -L to follow SourceForge redirects reliably
+        curl.exe -L -o "$env:TEMP\qwt.tar.bz2" "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
         7z x "$env:TEMP\qwt.tar" -o"." -y
         Rename-Item "qwt-6.2.0" "qwt-src"
@@ -194,10 +194,19 @@ jobs:
     - name: checkout
       uses: actions/checkout@v4
 
-    - name: Install Qt and SFML
-      run: |
-        brew install qt@5 sfml
-        echo "$(brew --prefix qt@5)/bin" >> $GITHUB_PATH
+    - name: Install Qt
+      # brew install qt@5 on macOS ARM64 does not include QtWebEngine; use
+      # install-qt-action (same as Windows) to get 5.15.2 with webenginewidgets.
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+        modules: 'qtwebengine'
+
+    - name: Install SFML
+      run: brew install sfml
 
     - name: Build and install QWT
       run: |

@@ -34,42 +34,9 @@ make -j$(nproc)
 ../../build/tests/btle_tests -v2
 ```
 
-### Test output (Ubuntu 22.04, Qt 5.15)
+### Test output (Ubuntu 24.04, Qt 5.15.13)
 
-```
-********* Start testing of TstBtleHub *********
-Config: Using QtTest library 5.15.13, Qt 5.15.13 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 13.2.0), Ubuntu 24.04
-PASS   : TstBtleHub::initTestCase()
-PASS   : TstBtleHub::testHr_uint8()
-PASS   : TstBtleHub::testHr_uint16()
-PASS   : TstBtleHub::testHr_uint8WithRR()
-PASS   : TstBtleHub::testHr_zero()
-PASS   : TstBtleHub::testHr_maxBpm()
-PASS   : TstBtleHub::testCsc_firstMeasurementDiscarded()
-PASS   : TstBtleHub::testCsc_crankOnly()
-PASS   : TstBtleHub::testCsc_wheelOnly()
-PASS   : TstBtleHub::testCsc_combined()
-PASS   : TstBtleHub::testCsc_uint16Rollover()
-PASS   : TstBtleHub::testCsc_standstill()
-PASS   : TstBtleHub::testPower_positive()
-PASS   : TstBtleHub::testPower_zero()
-PASS   : TstBtleHub::testPower_negative()
-PASS   : TstBtleHub::testPower_tooShort_ignored()
-PASS   : TstBtleHub::testFtms_speedOnly()
-PASS   : TstBtleHub::testFtms_cadenceOnly()
-PASS   : TstBtleHub::testFtms_powerOnly()
-PASS   : TstBtleHub::testFtms_allThree()
-PASS   : TstBtleHub::testFtms_zeroValues()
-PASS   : TstBtleHub::testFtms_tooShort_ignored()
-PASS   : TstBtleHub::testEliteTrainer_singlePacket()
-PASS   : TstBtleHub::testEliteTrainer_sequence()
-PASS   : TstBtleHub::testWahooKickr_powerAndCsc()
-PASS   : TstBtleHub::testWahooKickr_cscRollover()
-PASS   : TstBtleHub::testGarminTacx_ftmsPlusCsc()
-PASS   : TstBtleHub::cleanupTestCase()
-Totals: 28 passed, 0 failed, 0 skipped, 0 blacklisted, 2ms
-********* Finished testing of TstBtleHub *********
-```
+![BTLE tests — 28 passed, 0 failed](https://github.com/user-attachments/assets/62d82bce-1dd0-40c4-91fe-159ee6aeb8b9)
 
 ## Language
 Language files are used at runtime in the `/language` folder.
