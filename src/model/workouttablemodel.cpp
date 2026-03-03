@@ -114,7 +114,7 @@ QVariant WorkoutTableModel::data(const QModelIndex &index, int role) const {
 
 
     ///Background
-    if (role == Qt::BackgroundColorRole && account->hashWorkoutDone.contains(work.getName())) {
+    if (role == Qt::BackgroundRole && account->hashWorkoutDone.contains(work.getName())) {
         //        QColor colorCadenceShapeTarget(150,150,150);
         QLinearGradient linearGrad(QPointF(0, 0), QPointF(0, 125));
         linearGrad.setColorAt(1, Qt::white);
@@ -125,9 +125,9 @@ QVariant WorkoutTableModel::data(const QModelIndex &index, int role) const {
 
 
     ///BlueName for UserCreatedWorkout
-    if (role == Qt::TextColorRole && index.column() == 0 && account->enable_studio_mode && work.getWorkoutNameEnum() == Workout::MAP_TEST)
+    if (role == Qt::ForegroundRole && index.column() == 0 && account->enable_studio_mode && work.getWorkoutNameEnum() == Workout::MAP_TEST)
         return QVariant::fromValue(QColor(Qt::lightGray));
-    else if (role == Qt::TextColorRole && index.column() == 0 && work.getWorkoutNameEnum() == Workout::USER_MADE) {
+    else if (role == Qt::ForegroundRole && index.column() == 0 && work.getWorkoutNameEnum() == Workout::USER_MADE) {
         return QVariant::fromValue(QColor(Qt::blue));
     }
 
