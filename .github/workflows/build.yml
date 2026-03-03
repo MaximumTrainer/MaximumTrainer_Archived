@@ -193,6 +193,7 @@ jobs:
         curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         tar -xjf qwt.tar.bz2
         cd qwt-6.2.0
+        sed -i.bak 's/QwtFramework//' qwtconfig.pri
         qmake qwt.pro
         make -j$(sysctl -n hw.logicalcpu)
         sudo make install
