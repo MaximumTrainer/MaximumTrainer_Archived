@@ -3,6 +3,7 @@
 #include <QDebug>
 
 #include "qwt_date_scale_draw.h"
+#include "qwt_text.h"
 //#include "qwt_plot_zoneitem.h"
 
 #include "util.h"

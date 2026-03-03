@@ -1,4 +1,5 @@
 #include "myqwtplotpicker.h"
+#include "qwt_text.h"
 #include "util.h"
 
 
