@@ -17,6 +17,7 @@
 
 
 #include "util.h"
+#include "markeritem.h"
 #include "iconitem.h"
 
 
