@@ -1,6 +1,7 @@
 #include "mycreatorplot.h"
 
 #include <QDebug>
+#include <QPen>
 
 #include "qwt_date_scale_draw.h"
 #include "qwt_text.h"
