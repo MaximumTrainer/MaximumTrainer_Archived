@@ -1409,7 +1409,7 @@ void Hub::ProcessMessage(ANT_MESSAGE stMessage, USHORT usSize_)
                 break;
             }
             default: {
-                qDebug() << "Unhandled channel event:" <<  hex << stMessage.aucData[2];
+                qDebug() << "Unhandled channel event:" << QString("0x%1").arg(stMessage.aucData[2], 2, 16, QChar('0'));
                 break;
             }
             }
@@ -1587,7 +1587,7 @@ void Hub::ProcessMessage(ANT_MESSAGE stMessage, USHORT usSize_)
                 qDebug() << "Burst Rx: ";
             //                printf("Burst(0x%02x) Rx:(%d): ", ((stMessage.aucData[MESSAGE_BUFFER_DATA1_INDEX] & 0xE0) >> 5), stMessage.aucData[MESSAGE_BUFFER_DATA1_INDEX] & 0x1F );
             //            else
-            //                deb << "Rx:(" << hex << stMessage.aucData[MESSAGE_BUFFER_DATA1_INDEX] << ")";
+            //                deb << "Rx:(" << Qt::hex << stMessage.aucData[MESSAGE_BUFFER_DATA1_INDEX] << ")";
 
         }
         break;
@@ -1621,7 +1621,7 @@ void Hub::ProcessMessage(ANT_MESSAGE stMessage, USHORT usSize_)
             else if(stMessage.ucMessageID == MESG_EXT_BURST_DATA_ID)
                 printf("- Burst(0x%02x) Rx:(%d): ", ((stMessage.aucData[MESSAGE_BUFFER_DATA1_INDEX] & 0xE0) >> 5), stMessage.aucData[MESSAGE_BUFFER_DATA1_INDEX] & 0x1F );
             //            else
-            //                deb << "Rx:" << hex << stMessage.aucData[MESSAGE_BUFFER_DATA1_INDEX] << " :";
+            //                deb << "Rx:" << Qt::hex << stMessage.aucData[MESSAGE_BUFFER_DATA1_INDEX] << " :";
         }
         break;
     }
@@ -1637,14 +1637,14 @@ void Hub::ProcessMessage(ANT_MESSAGE stMessage, USHORT usSize_)
 
 
 
-        //        deb << "Data_Message: " << hex << stMessage.aucData[ucDataOffset + 0] << "- "
-        //            << hex << stMessage.aucData[ucDataOffset + 1] << "- "
-        //            << hex << stMessage.aucData[ucDataOffset + 2] << "- "
-        //            << hex << stMessage.aucData[ucDataOffset + 3] << "- "
-        //            << hex << stMessage.aucData[ucDataOffset + 4] << "- "
-        //            << hex << stMessage.aucData[ucDataOffset + 5] << "- "
-        //            << hex << stMessage.aucData[ucDataOffset + 6] << "- "
-        //            << hex << stMessage.aucData[ucDataOffset + 7];
+        //        deb << "Data_Message: " << Qt::hex << stMessage.aucData[ucDataOffset + 0] << "- "
+        //            << Qt::hex << stMessage.aucData[ucDataOffset + 1] << "- "
+        //            << Qt::hex << stMessage.aucData[ucDataOffset + 2] << "- "
+        //            << Qt::hex << stMessage.aucData[ucDataOffset + 3] << "- "
+        //            << Qt::hex << stMessage.aucData[ucDataOffset + 4] << "- "
+        //            << Qt::hex << stMessage.aucData[ucDataOffset + 5] << "- "
+        //            << Qt::hex << stMessage.aucData[ucDataOffset + 6] << "- "
+        //            << Qt::hex << stMessage.aucData[ucDataOffset + 7];
 
 
 
