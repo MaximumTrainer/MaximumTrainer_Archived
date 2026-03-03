@@ -109,7 +109,7 @@ jobs:
 
     - name: Download and install SFML
       run: |
-        curl.exe -L -o "$env:TEMP\sfml.zip" "https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip"
+        curl.exe -L --retry 5 --retry-delay 5 --retry-connrefused -o "$env:TEMP\sfml.zip" "https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip"
         Expand-Archive -Path "$env:TEMP\sfml.zip" -DestinationPath "C:\sfml"
       shell: powershell
 
@@ -182,6 +182,10 @@ jobs:
         curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         tar -xjf qwt.tar.bz2
         cd qwt-6.2.0
+        # Disable framework mode to avoid Clang resolving the same header via two
+        # different canonical paths (-I flat vs -F framework), which causes ODR
+        # violations and 'cannot convert WorkoutPlotZoomer* to QwtPlot*' errors.
+        sed -i.bak 's/QwtFramework//' qwtconfig.pri
         qmake qwt.pro
         make -j$(sysctl -n hw.logicalcpu)
         sudo make install
