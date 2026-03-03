@@ -20,7 +20,9 @@
 #include "faderlabel.h"
 #include "faderframe.h"
 #include "radio.h"
+#ifdef GC_HAVE_VLCQT
 #include "myvlcplayer.h"
+#endif
 #include "userstudiowidget.h"
 #include "myconstants.h"
 #include "userstudio.h"
@@ -263,7 +265,9 @@ private:
 
 
     //Internet radio player
+#ifdef GC_HAVE_VLCQT
     MyVlcPlayer *radioPlayer;
+#endif
     DialogConfig *dconfig;
     QList<Radio> lstRadio;
 

@@ -176,11 +176,9 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install Qt
-      # brew install qt@5 on macOS ARM64 does not include QtWebEngine; use
-      # install-qt-action (same as Windows) to get 5.15.2 with webenginewidgets.
       uses: jurplel/install-qt-action@v3
       with:
-        version: '5.15.2'
+        version: '6.7.3'
         host: 'mac'
         target: 'desktop'
         arch: 'clang_64'
@@ -195,38 +193,14 @@ jobs:
         curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         tar -xjf qwt.tar.bz2
         cd qwt-6.2.0
-        # Disable framework mode to avoid Clang resolving the same header via two
-        # different canonical paths (-I flat vs -F framework), which causes ODR
-        # violations and 'cannot convert WorkoutPlotZoomer* to QwtPlot*' errors.
-        sed -i.bak 's/QwtFramework//' qwtconfig.pri
         qmake qwt.pro
         make -j$(sysctl -n hw.logicalcpu)
         sudo make install
 
-    - name: Install VLC-Qt
-      run: |
-        curl -L -o /tmp/VLC-Qt_1.1.0_macos.7z "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_macos.7z"
-        mkdir -p /tmp/vlcqt_temp
-        7z x -o/tmp/vlcqt_temp /tmp/VLC-Qt_1.1.0_macos.7z
-        # Handle both flat archives and archives with a single root directory
-        VLCQT_SRC=$(find /tmp/vlcqt_temp -maxdepth 1 -mindepth 1 -type d | head -n 1)
-        mkdir -p $HOME/vlc-qt
-        if [ -n "$VLCQT_SRC" ] && [ -d "$VLCQT_SRC/lib" ]; then
-          cp -r "$VLCQT_SRC"/* $HOME/vlc-qt/
-        else
-          cp -r /tmp/vlcqt_temp/* $HOME/vlc-qt/
-        fi
-        test -d $HOME/vlc-qt/lib || { echo "VLC-Qt lib directory not found after extraction"; exit 1; }
-        mkdir -p $HOME/vlc-qt/include
-        ln -sf $HOME/vlc-qt/lib/VLCQtCore.framework/Headers $HOME/vlc-qt/include/VLCQtCore
-        ln -sf $HOME/vlc-qt/lib/VLCQtWidgets.framework/Headers $HOME/vlc-qt/include/VLCQtWidgets
-
     - name: Create Makefile
       run: |
         qmake PowerVelo.pro \
-          "VLCQT_INSTALL=$HOME/vlc-qt" \
-          "SFML_INSTALL=$(brew --prefix sfml)" \
-          "QMAKE_CXXFLAGS+=-fno-modules"
+          "SFML_INSTALL=$(brew --prefix sfml)"
       env:
         QMAKEFEATURES: /usr/local/qwt-6.2.0/features
 
@@ -236,7 +210,6 @@ jobs:
     - name: Bind rpath for Qt frameworks
       run: |
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
-        install_name_tool -add_rpath $HOME/vlc-qt/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
 
     - name: upload artifact
       uses: actions/upload-artifact@v4

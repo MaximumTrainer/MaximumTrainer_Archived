@@ -591,6 +591,7 @@ WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, 
     dconfig->setModal(true);
 
     //Internet Radio Player
+#ifdef GC_HAVE_VLCQT
     radioPlayer = new MyVlcPlayer(this);
     radioPlayer->setVisible(false);
     radioPlayer->setRadio(true);
@@ -605,6 +606,7 @@ WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, 
     connect(radioPlayer, SIGNAL(playing()), ui->widget_topMenu, SLOT(radioStartedPlaying()) );
     connect(radioPlayer, SIGNAL(paused()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
     connect(radioPlayer, SIGNAL(stopped()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
+#endif
 
     connect(dconfig, SIGNAL(radioStatus(QString)), ui->widget_topMenu, SLOT(updateRadioStatus(QString)) );
 

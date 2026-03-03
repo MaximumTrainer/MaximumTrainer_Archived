@@ -152,11 +152,13 @@ win32 {
 
 macx {
 
-    # VLC-Qt (default install path; override with VLCQT_INSTALL=...)
-    isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = $$(HOME)/vlc-qt }
-    INCLUDEPATH += $${VLCQT_INSTALL}/include
-    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
-    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
+    # VLC-Qt (optional; enable by passing VLCQT_INSTALL=... to qmake)
+    !isEmpty(VLCQT_INSTALL) {
+        DEFINES += GC_HAVE_VLCQT
+        INCLUDEPATH += $${VLCQT_INSTALL}/include
+        LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
+        LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
+    }
 
     # SFML (configure via SFML_INSTALL=...)
     !isEmpty(SFML_INSTALL) {
