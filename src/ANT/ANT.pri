@@ -83,8 +83,11 @@ macx {
 
     INCLUDEPATH += $$PWD/libs/software/USB/iokit_driver
 
-
     #static ANT_LIB builded with ANT_LIB project (Download source from thisisant.com, build with XCode)
     LIBS += $$PWD/libs/mac/libantbase.a
+
+    # DSISerialGeneric is not in libantbase.a on macOS – use a stub so the
+    # rest of the code links.  Remove once ANT is fully dropped on macOS.
+    SOURCES += $$PWD/dsi_serial_generic_mac_stub.cpp
 
 }

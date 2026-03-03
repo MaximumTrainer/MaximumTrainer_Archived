@@ -10,8 +10,9 @@ SOURCES += src/main/main.cpp\
 
 contains(DEFINES, GC_HAVE_VLCQT) {
     SOURCES += $$PWD/myvlcplayer.cpp
-    HEADERS += $$PWD/myvlcplayer.h
 }
+# Always include header so MOC generates the meta-object / vtable for the stub class
+HEADERS += $$PWD/myvlcplayer.h
 
 
 
