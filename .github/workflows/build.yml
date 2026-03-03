@@ -4,6 +4,9 @@ on:
   push:
     branches: ["**"]
 
+env:
+  VLC_VERSION: '3.0.21'
+
 jobs:
 
   build_linux:
@@ -108,7 +111,7 @@ jobs:
 
     - name: Download VLC Windows SDK
       run: |
-        curl.exe -L -o "$env:TEMP\vlc.zip" "https://download.videolan.org/pub/videolan/vlc/3.0.21/win64/vlc-3.0.21-win64.zip"
+        curl.exe -L -o "$env:TEMP\vlc.zip" "https://download.videolan.org/pub/videolan/vlc/$env:VLC_VERSION/win64/vlc-$env:VLC_VERSION-win64.zip"
         Expand-Archive -Path "$env:TEMP\vlc.zip" -DestinationPath "C:\vlc_temp"
         $vlcDir = (Get-ChildItem "C:\vlc_temp" -Directory | Select-Object -First 1).FullName
         Move-Item $vlcDir "C:\vlc"
@@ -201,9 +204,9 @@ jobs:
         # VLC.app does not ship development headers; extract them from the
         # official VLC Win64 SDK zip (the C API headers are platform-neutral).
         curl -L -o /tmp/vlc-win.zip \
-          "https://download.videolan.org/pub/videolan/vlc/3.0.21/win64/vlc-3.0.21-win64.zip"
-        unzip /tmp/vlc-win.zip "vlc-3.0.21/sdk/include/*" -d /tmp/vlc-sdk
-        echo "VLC_INCLUDE_DIR=/tmp/vlc-sdk/vlc-3.0.21/sdk/include" >> "$GITHUB_ENV"
+          "https://download.videolan.org/pub/videolan/vlc/$VLC_VERSION/win64/vlc-$VLC_VERSION-win64.zip"
+        unzip /tmp/vlc-win.zip "vlc-$VLC_VERSION/sdk/include/*" -d /tmp/vlc-sdk
+        echo "VLC_INCLUDE_DIR=/tmp/vlc-sdk/vlc-$VLC_VERSION/sdk/include" >> "$GITHUB_ENV"
 
     - name: Build and install QWT
       run: |
