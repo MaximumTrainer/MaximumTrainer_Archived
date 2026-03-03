@@ -63,6 +63,11 @@ jobs:
 
   build_windows:
     runs-on: windows-latest
+    env:
+      # Qt installation root - install-qt-action places Qt under $QT_HOME\Qt\$version\$arch.
+      # For local Windows builds, set QT_HOME to the parent of your Qt installation
+      # (e.g. C:\ if Qt is at C:\Qt\5.15.2\msvc2019_64).
+      QT_HOME: C:\Qt
 
     steps:
     - name: MSVC Environment Setup
@@ -76,6 +81,7 @@ jobs:
       with:
         version: '5.15.2'
         modules: 'qtwebengine'
+        dir: ${{ env.QT_HOME }}
 
     - name: Write PowerShell helpers
       run: |
@@ -115,18 +121,23 @@ jobs:
 
     - name: Build QWT
       run: |
-        Set-Location ..
-        # Capture absolute install path before changing into qwt-src
-        $qwtInstallDir = (Get-Location).Path + "\qwt"
+        # Install QWT to a stable user-profile directory that works both locally
+        # and in CI - avoids path issues with workspace-relative paths
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
         $qwtInstallDirFwd = $qwtInstallDir -replace '\\', '/'
+        Set-Location ..
         # Use curl.exe -L to follow SourceForge redirects reliably
         curl.exe -L -o "$env:TEMP\qwt.tar.bz2" "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
         7z x "$env:TEMP\qwt.tar" -o"." -y
         Rename-Item "qwt-6.2.0" "qwt-src"
         Set-Location "qwt-src"
-        # Patch qwtconfig.pri to override the hardcoded C:/Qwt-x.x.x install prefix
-        (Get-Content "qwtconfig.pri") -replace '(?m)^(win32[^{]*\{[^}]*QWT_INSTALL_PREFIX\s*=|QWT_INSTALL_PREFIX\s*=)\s*.*$', "`$1 $qwtInstallDirFwd" | Set-Content "qwtconfig.pri"
+        # Patch every QWT_INSTALL_PREFIX assignment to use the new path
+        (Get-Content "qwtconfig.pri") | ForEach-Object {
+            if ($_ -match 'QWT_INSTALL_PREFIX\s*=') {
+                $_ -replace '(QWT_INSTALL_PREFIX\s*=\s*).*', "`$1$qwtInstallDirFwd"
+            } else { $_ }
+        } | Set-Content "qwtconfig.pri"
         qmake qwt.pro
         nmake
         nmake install
@@ -134,19 +145,19 @@ jobs:
 
     - name: Create Makefile
       run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtInstallDirFwd = $qwtInstallDir -replace '\\','/'
         $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
         $sfmlDirFwd = $sfmlDir -replace '\\','/'
         $kitRoot = "${env:ProgramFiles(x86)}\Windows Kits\10\Lib"
         $kitVersion = (Get-ChildItem $kitRoot | Sort-Object Name -Descending | Select-Object -First 1).Name
         $winkitInstall = "$kitRoot\$kitVersion\um\x64" -replace '\\','/'
+        $env:QMAKEFEATURES = "$qwtInstallDir\features"
         qmake PowerVelo.pro `
           "VLCQT_INSTALL=C:/vlcqt" `
           "SFML_INSTALL=$sfmlDirFwd" `
-          "INCLUDEPATH+=..\qwt\include" `
           "WINKIT_INSTALL=$winkitInstall"
       shell: powershell
-      env:
-        QMAKEFEATURES: ..\qwt\features
 
     - name: Build
       run: nmake
@@ -215,7 +226,7 @@ jobs:
         qmake PowerVelo.pro \
           "VLCQT_INSTALL=$HOME/vlc-qt" \
           "SFML_INSTALL=$(brew --prefix sfml)" \
-          "QMAKE_CXXFLAGS+=-fno-implicit-module-maps"
+          "QMAKE_CXXFLAGS+=-fno-modules"
       env:
         QMAKEFEATURES: /usr/local/qwt-6.2.0/features
 

@@ -1,15 +1,15 @@
 #ifndef WORKOUTPLOTCADENCE_H
 #define WORKOUTPLOTCADENCE_H
 
-#include <qwt_plot.h>
-#include <qwt_plot_grid.h>
+#include "qwt_plot.h"
+#include "qwt_plot_grid.h"
 #include "workout.h"
-#include <qwt_plot_curve.h>
-#include <qwt_plot_histogram.h>
+#include "qwt_plot_curve.h"
+#include "qwt_plot_histogram.h"
 #include "shapefactory.h"
-#include <qwt_plot_marker.h>
-#include <qwt_plot_textlabel.h>
-#include <qwt_plot_shapeitem.h>
+#include "qwt_plot_marker.h"
+#include "qwt_plot_textlabel.h"
+#include "qwt_plot_shapeitem.h"
 #include "zoneitem.h"
 
 // Forward declarations avoid pulling "qwt_plot_item.h" via double-quote
