@@ -182,7 +182,7 @@ jobs:
         host: 'mac'
         target: 'desktop'
         arch: 'clang_64'
-        modules: 'qtwebengine'
+        modules: 'qtwebengine qtconnectivity qtwebchannel qtpositioning'
 
     - name: Install SFML
       run: brew install sfml
