@@ -116,13 +116,16 @@ jobs:
     - name: Build QWT
       run: |
         Set-Location ..
+        # Capture absolute install path before changing into qwt-src
+        $qwtInstallDir = (Get-Location).Path + "\qwt"
         # Use curl.exe -L to follow SourceForge redirects reliably
         curl.exe -L -o "$env:TEMP\qwt.tar.bz2" "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
         7z x "$env:TEMP\qwt.tar" -o"." -y
         Rename-Item "qwt-6.2.0" "qwt-src"
         Set-Location "qwt-src"
-        qmake qwt.pro "QWT_INSTALL_PREFIX=..\qwt"
+        # Use -after so the assignment overrides the hardcoded prefix in qwtconfig.pri
+        qmake qwt.pro -after "QWT_INSTALL_PREFIX=$qwtInstallDir"
         nmake
         nmake install
       shell: powershell
