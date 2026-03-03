@@ -20,7 +20,11 @@ void ReportUtil::printWorkoutToPdf(Workout workout, QwtPlot *plot, QString filen
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setOutputFileName(filename);
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+    printer.setPageOrientation(QPageLayout::Landscape);
+#else
     printer.setOrientation(QPrinter::Landscape);
+#endif
 
     int width = printer.width();
     int height = printer.height();
