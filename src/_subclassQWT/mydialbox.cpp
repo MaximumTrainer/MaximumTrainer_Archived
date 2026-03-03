@@ -29,7 +29,7 @@ MyDialBox::MyDialBox(QWidget *parent): QWidget( parent ) {
     d_label_current_value->setText("0");
 
 
-    gridLayout->setMargin(0);
+    gridLayout->setContentsMargins(0, 0, 0, 0);
     gridLayout->setRowMinimumHeight(0, 10);
     gridLayout->setColumnMinimumWidth(1, 5);
     gridLayout->setColumnMinimumWidth(3, 25);

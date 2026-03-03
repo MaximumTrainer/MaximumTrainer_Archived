@@ -365,7 +365,7 @@ void WorkoutPlot::init(bool firstInit) {
         //------------------------------
         widgetCanvas = this->canvas();
         QGridLayout *gridLayout = new QGridLayout(this);
-        gridLayout->setMargin(0);
+        gridLayout->setContentsMargins(0, 0, 0, 0);
         gridLayout->setSpacing(0);
         gridLayout->setContentsMargins(0,0,0,0);
         gridLayout->addWidget(spinBoxDifficulty, 0, 1, 1, 1, Qt::AlignRight | Qt::AlignTop);
