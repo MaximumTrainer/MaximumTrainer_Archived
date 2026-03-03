@@ -3,10 +3,18 @@ DEPENDPATH += $$PWD
 
 
 SOURCES     += \
-    src/ANT/hub.cpp \
     $$PWD/antmsg.cpp \
     $$PWD/ant_controller.cpp \
     $$PWD/kickrant.cpp
+
+# hub.cpp uses DSIFramerANT/DSISerialGeneric/DSIThread which are not available
+# on macOS ARM64 (libantbase.a is x86_64 only).  Use a no-op stub on macOS.
+!macx {
+    SOURCES += src/ANT/hub.cpp
+}
+macx {
+    SOURCES += $$PWD/hub_mac_stub.cpp
+}
 
 HEADERS     += \
     src/ANT/hub.h \
@@ -83,11 +91,7 @@ macx {
 
     INCLUDEPATH += $$PWD/libs/software/USB/iokit_driver
 
-    #static ANT_LIB builded with ANT_LIB project (Download source from thisisant.com, build with XCode)
-    LIBS += $$PWD/libs/mac/libantbase.a
-
-    # DSISerialGeneric is not in libantbase.a on macOS – use a stub so the
-    # rest of the code links.  Remove once ANT is fully dropped on macOS.
-    SOURCES += $$PWD/dsi_serial_generic_mac_stub.cpp
+    # libantbase.a is x86_64 only — not linked on ARM64 macOS.
+    # hub_mac_stub.cpp (above) replaces hub.cpp; no DSI symbols are referenced.
 
 }
