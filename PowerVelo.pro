@@ -132,6 +132,7 @@ win32-msvc* {
         QMAKE_CXXFLAGS += -Wno-sign-compare
 
         LIBS += -lsfml-audio -lsfml-system -lVLCQtCore -lVLCQtWidgets
+        DEFINES += GC_HAVE_VLCQT
     }
 }
 
