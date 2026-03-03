@@ -35,10 +35,10 @@ QwtText MyQwtPlotPicker::trackerTextF( const QPointF &pos ) const
     switch ( rubberBand() )
     {
     case HLineRubberBand:
-        text.sprintf( "%.4f", pos.y() );
+        text = QString::asprintf( "%.4f", pos.y() );
         break;
     case VLineRubberBand:
-        text.sprintf( "%.4f", pos.x() );
+        text = QString::asprintf( "%.4f", pos.x() );
         break;
     default:
 //        double sec = pos.x()/60.0;
