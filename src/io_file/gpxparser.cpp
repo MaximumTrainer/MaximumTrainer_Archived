@@ -138,7 +138,7 @@ QList<Trackpoint> GpxParser::parseGpxFile(QString filePath) {
                 return lstTrack;
             }
             xml.readNext();
-            if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name() == "trkpt") {
+            if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name() == QLatin1String("trkpt")) {
                 Trackpoint tp = parseTrackpointGpx(xml);
                 lstTrack.append(tp);
             }
@@ -166,7 +166,7 @@ QList<Trackpoint> GpxParser::parseTcxFile(QString filePath) {
                 return lstTrack;
             }
             xml.readNext();
-            if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name() == "Trackpoint") {
+            if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name() == QLatin1String("Trackpoint")) {
                 Trackpoint tp = parseTrackpointTcx(xml);
                 lstTrack.append(tp);
             }
@@ -194,7 +194,7 @@ QList<Trackpoint> GpxParser::parseKmlFile(QString filePath) {
                 return lstTrack;
             }
             xml.readNext();
-            if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name() == "coordinates") {
+            if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name() == QLatin1String("coordinates")) {
 
                 QString blockText = xml.readElementText().remove(" ");
                 blockText = blockText.replace("\n", ",");

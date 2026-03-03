@@ -31,11 +31,11 @@ void XmlUtil::parseCourseDone(Account *account, QXmlStreamReader& xml) {
         qDebug() << "name now:" << xml.name();
 
         //stop condition
-        if (xml.tokenType() == QXmlStreamReader::EndElement && xml.name() == "CourseDone")
+        if (xml.tokenType() == QXmlStreamReader::EndElement && xml.name() == QLatin1String("CourseDone"))
             return;
 
         ///-------------------------------------------------------------------------------
-        if(xml.name() == "Course") {
+        if(xml.name() == QLatin1String("Course")) {
             QString courseName  = xml.readElementText();
             qDebug() << "courseName XML is:" << courseName;
             if (courseName.size() > 0)
@@ -61,11 +61,11 @@ void XmlUtil::parseWorkoutDone(Account *account, QXmlStreamReader& xml) {
         qDebug() << "name now:" << xml.name();
 
         //stop condition
-        if (xml.tokenType() == QXmlStreamReader::EndElement && xml.name() == "WorkoutDone")
+        if (xml.tokenType() == QXmlStreamReader::EndElement && xml.name() == QLatin1String("WorkoutDone"))
             return;
 
         ///-------------------------------------------------------------------------------
-        if(xml.name() == "Workout") {
+        if(xml.name() == QLatin1String("Workout")) {
             QString workoutName  = xml.readElementText();
             qDebug() << "workoutName XML is:" << workoutName;
             if (workoutName.size() > 0)
@@ -106,11 +106,11 @@ void XmlUtil::parseLocalSaveFile(Account *account) {
             }
             xml.readNextStartElement();
 
-            if (xml.name() == "WorkoutDone" && xml.isStartElement()) {
+            if (xml.name() == QLatin1String("WorkoutDone") && xml.isStartElement()) {
                 parseWorkoutDone(account, xml);
             }
 
-            else if (xml.name() == "CourseDone" && xml.isStartElement()) {
+            else if (xml.name() == QLatin1String("CourseDone") && xml.isStartElement()) {
                 parseCourseDone(account, xml);
             }
 
@@ -158,7 +158,7 @@ QVector<UserStudio> XmlUtil::parseUserStudioFile(QString filepath) {
             }
             xml.readNext();
 
-            if (xml.tokenType() == QXmlStreamReader::StartElement  && xml.name() == "User") {
+            if (xml.tokenType() == QXmlStreamReader::StartElement  && xml.name() == QLatin1String("User")) {
                 UserStudio userStudio = parseUserStudio(xml);
                 vecUserStudio.append(userStudio);
             }
@@ -205,41 +205,41 @@ UserStudio XmlUtil::parseUserStudio(QXmlStreamReader &xml) {
         xml.readNextStartElement();
 
 
-        if(xml.name() == "displayName") {
+        if(xml.name() == QLatin1String("displayName")) {
             displayName = xml.readElementText();
         }
-        else if(xml.name() == "FTP") {
+        else if(xml.name() == QLatin1String("FTP")) {
             FTP = xml.readElementText().toInt();
         }
-        else if(xml.name() == "LTHR") {
+        else if(xml.name() == QLatin1String("LTHR")) {
             LTHR = xml.readElementText().toInt();
         }
-        else if(xml.name() == "hrID") {
+        else if(xml.name() == QLatin1String("hrID")) {
             hrID = xml.readElementText().toInt();
         }
-        else if(xml.name() == "powerID") {
+        else if(xml.name() == QLatin1String("powerID")) {
             powerID = xml.readElementText().toInt();
         }
-        else if(xml.name() == "cadenceID") {
+        else if(xml.name() == QLatin1String("cadenceID")) {
             cadenceID = xml.readElementText().toInt();
         }
-        else if(xml.name() == "speedID") {
+        else if(xml.name() == QLatin1String("speedID")) {
             speedID = xml.readElementText().toInt();
         }
-        else if(xml.name() == "fecID") {
+        else if(xml.name() == QLatin1String("fecID")) {
             fecID = xml.readElementText().toInt();
         }
 
-        else if(xml.name() == "wheelCircMM") {
+        else if(xml.name() == QLatin1String("wheelCircMM")) {
             wheelCircMM = xml.readElementText().toInt();
         }
-        else if(xml.name() == "usingPowerCurve") {
+        else if(xml.name() == QLatin1String("usingPowerCurve")) {
             usingPowerCurve = xml.readElementText().toInt();
         }
-        else if(xml.name() == "companyID") {
+        else if(xml.name() == QLatin1String("companyID")) {
             companyID = xml.readElementText().toInt();
         }
-        else if(xml.name() == "brandID") {
+        else if(xml.name() == QLatin1String("brandID")) {
             brandID = xml.readElementText().toInt();
         }
     }
@@ -705,19 +705,19 @@ Trackpoint XmlUtil::parseTrackpoint(QXmlStreamReader &xml) {
         xml.readNextStartElement();
 
 
-        if(xml.name() == "Lon") {
+        if(xml.name() == QLatin1String("Lon")) {
             lon = xml.readElementText().toDouble();
         }
-        else if(xml.name() == "Lat") {
+        else if(xml.name() == QLatin1String("Lat")) {
             lat = xml.readElementText().toDouble();
         }
-        else if(xml.name() == "ElevationMeters") {
+        else if(xml.name() == QLatin1String("ElevationMeters")) {
             elevation = xml.readElementText().toDouble();
         }
-        else if(xml.name() == "SlopePercentage") {
+        else if(xml.name() == QLatin1String("SlopePercentage")) {
             slopePercentage = xml.readElementText().toDouble();
         }
-        else if(xml.name() == "Distance") {
+        else if(xml.name() == QLatin1String("Distance")) {
             distanceAtThisPoint = xml.readElementText().toDouble();
         }
     }
@@ -764,29 +764,29 @@ Workout XmlUtil::parseSingleWorkoutXml(QString filePath) {
             }
             xml.readNextStartElement();
 
-            if(xml.name() == "Version") {
+            if(xml.name() == QLatin1String("Version")) {
                 versionXml  = xml.readElementText();
             }
-            else if(xml.name() == "Plan") {
+            else if(xml.name() == QLatin1String("Plan")) {
                 plan = xml.readElementText();
             }
-            else if(xml.name() == "Author") {
+            else if(xml.name() == QLatin1String("Author")) {
                 creator = xml.readElementText();
             }
-            else if(xml.name() == "Description") {
+            else if(xml.name() == QLatin1String("Description")) {
                 description = xml.readElementText();
             }
-            else if(xml.name() == "Type") {
+            else if(xml.name() == QLatin1String("Type")) {
                 type = static_cast<Workout::Type>(xml.readElementText().toInt());
             }
             /// --------------------------------- Parse Interval -------------------------------------------------
-            else if(xml.name() == "Interval") {
+            else if(xml.name() == QLatin1String("Interval")) {
                 Interval interval = parseInterval(xml);
                 lstIntervalSource.append(interval);
             }
 
             /// --------------------------------- Parse Repeat -------------------------------------------------
-            else if(xml.name() == "Repeat") {
+            else if(xml.name() == QLatin1String("Repeat")) {
                 RepeatData rep = parseRepeat(xml);
                 //                qDebug() << "RepeatWidget parsed, first row is" << rep.getFirstRow();
                 if (rep.getId() != -1)
@@ -845,89 +845,89 @@ Interval XmlUtil::parseInterval(QXmlStreamReader &xml) {
         xml.readNextStartElement();
 
 
-        if(xml.name() == "Duration") {
+        if(xml.name() == QLatin1String("Duration")) {
             duration = QTime::fromString( xml.readElementText(), "hh:mm:ss");
         }
-        else if(xml.name() == "DisplayMessage") {
+        else if(xml.name() == QLatin1String("DisplayMessage")) {
             displayMessage = xml.readElementText();
 
         }
-        else if(lang == "fr" && xml.name() == "DisplayMessageFr") {
+        else if(lang == "fr" && xml.name() == QLatin1String("DisplayMessageFr")) {
             displayMessage = xml.readElementText();
         }
-        else if(xml.name() == "TestInterval") {
+        else if(xml.name() == QLatin1String("TestInterval")) {
             testInterval = xml.readElementText().toInt();
         }
-        else if(xml.name() == "RepeatIncreaseFTP") {
+        else if(xml.name() == QLatin1String("RepeatIncreaseFTP")) {
             repeatIncreaseFTP = xml.readElementText().toDouble();
         }
-        else if(xml.name() == "RepeatIncreaseCadence") {
+        else if(xml.name() == QLatin1String("RepeatIncreaseCadence")) {
             repeatIncreaseCadence = xml.readElementText().toInt();
         }
-        else if(xml.name() == "RepeatIncreaseLTHR") {
+        else if(xml.name() == QLatin1String("RepeatIncreaseLTHR")) {
             repeatIncreaseLTHR = xml.readElementText().toDouble();
         }
 
 
         /// ----------------------------- POWER -------------------------------------
-        else if(xml.name() == "Power")
+        else if(xml.name() == QLatin1String("Power"))
         {
             while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "Power")
             {
                 xml.readNextStartElement();
-                if(xml.name() == "StepType") {
+                if(xml.name() == QLatin1String("StepType")) {
                     powerStepType = static_cast<Interval::StepType>(xml.readElementText().toInt());
                 }
-                else if(xml.name() == "Start") {
+                else if(xml.name() == QLatin1String("Start")) {
                     targetFTP_start = xml.readElementText().toDouble();
                 }
-                else if(xml.name() == "End") {
+                else if(xml.name() == QLatin1String("End")) {
                     targetFTP_end = xml.readElementText().toDouble();
                 }
-                else if(xml.name() == "Range") {
+                else if(xml.name() == QLatin1String("Range")) {
                     targetFTP_range = xml.readElementText().toDouble();
                 }
-                else if(xml.name() == "RightBalance") {
+                else if(xml.name() == QLatin1String("RightBalance")) {
                     rightPowerTarget = xml.readElementText().toInt();
                 }
             }
         }
         /// ----------------------------- CADENCE -------------------------------------
-        else if(xml.name() == "Cadence")
+        else if(xml.name() == QLatin1String("Cadence"))
         {
             while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "Cadence")
             {
                 xml.readNextStartElement();
-                if(xml.name() == "StepType") {
+                if(xml.name() == QLatin1String("StepType")) {
                     cadenceStepType= static_cast<Interval::StepType>(xml.readElementText().toInt());
                 }
-                else if(xml.name() == "Start") {
+                else if(xml.name() == QLatin1String("Start")) {
                     targetCadence_start = xml.readElementText().toInt();
                 }
-                else if(xml.name() == "End") {
+                else if(xml.name() == QLatin1String("End")) {
                     targetCadence_end = xml.readElementText().toInt();
                 }
-                else if(xml.name() == "Range") {
+                else if(xml.name() == QLatin1String("Range")) {
                     cadence_range = xml.readElementText().toInt();
                 }
             }
         }
         /// ----------------------------- HR -------------------------------------
-        else if(xml.name() == "HeartRate")
+        else if(xml.name() == QLatin1String("HeartRate"))
         {
             while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "HeartRate")
             {
                 xml.readNextStartElement();
-                if(xml.name() == "StepType") {
+                if(xml.name() == QLatin1String("StepType")) {
                     hrStepType = static_cast<Interval::StepType>(xml.readElementText().toInt());
                 }
-                else if(xml.name() == "Start") {
+                else if(xml.name() == QLatin1String("Start")) {
                     targetHR_start = xml.readElementText().toDouble();
                 }
-                else if(xml.name() == "End") {
+                else if(xml.name() == QLatin1String("End")) {
                     targetHR_end = xml.readElementText().toDouble();
                 }
-                else if(xml.name() == "Range") {
+                else if(xml.name() == QLatin1String("Range")) {
                     HR_range = xml.readElementText().toInt();
                 }
             }
@@ -962,16 +962,16 @@ RepeatData XmlUtil::parseRepeat(QXmlStreamReader &xml) {
 
         //        qDebug() << "parseRepeat:" << xml.name();
 
-        if(xml.name() == "Id") {
+        if(xml.name() == QLatin1String("Id")) {
             rep.setId(xml.readElementText().toInt());
         }
-        else if(xml.name() == "FirstRow") {
+        else if(xml.name() == QLatin1String("FirstRow")) {
             rep.setFirstRow(xml.readElementText().toInt());
         }
-        else if(xml.name() == "LastRow") {
+        else if(xml.name() == QLatin1String("LastRow")) {
             rep.setLastRow(xml.readElementText().toInt());
         }
-        else if(xml.name() == "NumberRepeat") {
+        else if(xml.name() == QLatin1String("NumberRepeat")) {
             rep.setNumberRepeat(xml.readElementText().toInt());
         }
     }
