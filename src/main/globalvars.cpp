@@ -14,9 +14,9 @@
 
 #include <QWebEngineSettings>
 #include <QWebEngineProfile>
+#ifdef GC_HAVE_VLCQT
 #include <VLCQtCore/Common.h>
-
-
+#endif
 
 
 
@@ -57,7 +57,9 @@ GlobalVars::GlobalVars(QObject *parent) :
 
 
     //plugin path using by libvlc
+#ifdef GC_HAVE_VLCQT
     VlcCommon::setPluginPath(qApp->applicationDirPath() + "/plugins");
+#endif
 
 
     ///-------- INIT GLOBAL VAR ---------------------------
