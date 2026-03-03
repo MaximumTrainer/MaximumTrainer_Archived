@@ -1,6 +1,7 @@
 #ifndef SOUNDPLAYER_H
 #define SOUNDPLAYER_H
 
+#include <optional>
 #include <QResource>
 #include <QtCore>
 
@@ -54,39 +55,39 @@ private :
 
     /// Achievement
     sf::SoundBuffer bufferSoundAchievement;
-    sf::Sound soundAchievement;
+    std::optional<sf::Sound> soundAchievement;
 
     /// LastBeepInterval
     sf::SoundBuffer bufferSoundLastBeepInterval;
-    sf::Sound soundLastBeepInterval;
+    std::optional<sf::Sound> soundLastBeepInterval;
 
     //    /// FirstBeepInterval
     sf::SoundBuffer bufferSoundFirstBeepInterval;
-    sf::Sound soundFirstBeepInterval;
+    std::optional<sf::Sound> soundFirstBeepInterval;
 
     //    /// EndWorkout
     sf::SoundBuffer bufferSoundEndWorkout;
-    sf::Sound soundEndWorkout;
+    std::optional<sf::Sound> soundEndWorkout;
 
     //    /// StartWorkout = PauseWorkout
     sf::SoundBuffer bufferSoundStartWorkout;
-    sf::Sound soundStartWorkout;
+    std::optional<sf::Sound> soundStartWorkout;
 
     //    /// CadenceTooLow
     sf::SoundBuffer bufferSoundCadenceTooLow;
-    sf::Sound soundCadenceTooLow;
+    std::optional<sf::Sound> soundCadenceTooLow;
 
     //    /// CadenceTooHigh
     sf::SoundBuffer bufferSoundCadenceTooHigh;
-    sf::Sound soundCadenceTooHigh;
+    std::optional<sf::Sound> soundCadenceTooHigh;
 
     //    /// PowerTooLow
     sf::SoundBuffer bufferSoundPowerTooLow;
-    sf::Sound soundPowerTooLow;
+    std::optional<sf::Sound> soundPowerTooLow;
 
     //    /// PowerTooHigh
     sf::SoundBuffer bufferSoundPowerTooHigh;
-    sf::Sound soundPowerTooHigh;
+    std::optional<sf::Sound> soundPowerTooHigh;
 
 };
 Q_DECLARE_METATYPE(SoundPlayer*)
