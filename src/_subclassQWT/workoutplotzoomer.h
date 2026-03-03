@@ -10,6 +10,7 @@
 #include "qwt_plot_marker.h"
 #include "qwt_plot_textlabel.h"
 #include "qwt_plot_shapeitem.h"
+#include "qwt_text.h"
 #include "zoneitem.h"
 
 // Forward declarations avoid pulling "qwt_plot_item.h" via double-quote
