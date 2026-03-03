@@ -212,7 +212,8 @@ jobs:
       run: |
         qmake PowerVelo.pro \
           "VLCQT_INSTALL=$HOME/vlc-qt" \
-          "SFML_INSTALL=$(brew --prefix sfml)"
+          "SFML_INSTALL=$(brew --prefix sfml)" \
+          "QMAKE_CXXFLAGS+=-fno-implicit-module-maps"
       env:
         QMAKEFEATURES: /usr/local/qwt-6.2.0/features
 
