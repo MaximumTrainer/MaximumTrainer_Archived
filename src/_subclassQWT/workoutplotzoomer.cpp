@@ -6,13 +6,13 @@
 #include <QVBoxLayout>
 #include <QPixmap>
 
-#include <qwt_date_scale_draw.h>
-#include <qwt_symbol.h>
-#include <qwt_plot_shapeitem.h>
-#include <qwt_scale_widget.h>
-#include <qwt_plot_layout.h>
-#include <qwt_plot_textlabel.h>
-#include <qwt_text.h>
+#include "qwt_date_scale_draw.h"
+#include "qwt_symbol.h"
+#include "qwt_plot_shapeitem.h"
+#include "qwt_scale_widget.h"
+#include "qwt_plot_layout.h"
+#include "qwt_plot_textlabel.h"
+#include "qwt_text.h"
 
 
 #include "util.h"

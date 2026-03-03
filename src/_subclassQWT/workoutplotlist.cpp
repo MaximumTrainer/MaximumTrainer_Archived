@@ -1,9 +1,9 @@
 #include "workoutplotlist.h"
 #include "util.h"
 
-#include <qwt_date_scale_draw.h>
-#include <qwt_plot_shapeitem.h>
-#include <qwt_text.h>
+#include "qwt_date_scale_draw.h"
+#include "qwt_plot_shapeitem.h"
+#include "qwt_text.h"
 
 #include "util.h"
 #include <QVBoxLayout>

@@ -1,7 +1,7 @@
 #ifndef CURVEDATAHEARTRATE_H
 #define CURVEDATAHEARTRATE_H
 
-#include <qwt_series_data.h>
+#include "qwt_series_data.h"
 #include <qpointer.h>
 
 class DataHeartRate;

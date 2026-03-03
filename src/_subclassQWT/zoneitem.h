@@ -1,7 +1,7 @@
 #ifndef ZONEITEM_H
 #define ZONEITEM_H
 
-#include <qwt_plot_zoneitem.h>
+#include "qwt_plot_zoneitem.h"
 
 class ZoneItem : public QwtPlotZoneItem
 {

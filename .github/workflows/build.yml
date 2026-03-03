@@ -189,6 +189,8 @@ jobs:
 
     - name: Build and install QWT
       run: |
+        # Remove any pre-installed Homebrew qwt that could shadow our headers
+        brew uninstall qwt --force --ignore-dependencies 2>/dev/null || true
         cd /tmp
         curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         tar -xjf qwt.tar.bz2
@@ -203,6 +205,13 @@ jobs:
         qmake PowerVelo.pro \
           "SFML_INSTALL=$(brew --prefix sfml)" \
           "QWT_INSTALL=/usr/local/qwt-6.2.0"
+
+    - name: Diagnose QWT installation
+      run: |
+        echo "=== All qwt_plot.h on system ==="
+        find /opt/homebrew /usr/local -name "qwt_plot.h" 2>/dev/null || true
+        echo "=== Installed qwtconfig.pri ==="
+        cat /usr/local/qwt-6.2.0/features/qwtconfig.pri 2>/dev/null || true
 
     - name: Run MakeFile
       run: make

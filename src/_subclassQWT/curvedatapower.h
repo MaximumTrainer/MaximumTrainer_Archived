@@ -1,7 +1,7 @@
 #ifndef CURVEDATAPOWER_H
 #define CURVEDATAPOWER_H
 
-#include <qwt_series_data.h>
+#include "qwt_series_data.h"
 #include <qpointer.h>
 
 class DataPower;

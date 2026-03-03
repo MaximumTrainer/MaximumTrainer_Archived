@@ -1,7 +1,7 @@
 #include "workoutplot.h"
 
 #include <QPen>
-#include <qwt_text.h>
+#include "qwt_text.h"
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QSplitter>
@@ -9,9 +9,9 @@
 #include <QSpinBox>
 #include <QKeyEvent>
 
-#include <qwt_date_scale_draw.h>
-#include <qwt_plot_zoneitem.h>
-#include <qwt_plot_layout.h>
+#include "qwt_date_scale_draw.h"
+#include "qwt_plot_zoneitem.h"
+#include "qwt_plot_layout.h"
 
 #include "util.h"
 #include "curvedatacadence.h"
