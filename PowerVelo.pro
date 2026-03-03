@@ -170,11 +170,16 @@ macx {
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
 
-    # Disable Clang's implicit module system for Qt6 framework headers.
-    # Without this, QwtPlot gets two type-universe identities (one from
-    # double-quote includes and one from Qt framework module imports),
-    # causing ODR errors like "WorkoutPlotZoomer* cannot convert to QwtPlot*".
-    QMAKE_CXXFLAGS += -fno-modules
+    # QWT: configure directly against the flat (non-framework) install.
+    # This bypasses qwt.prf, which on Qt6/macOS detects qt_framework in CONFIG
+    # and sets INCLUDEPATH to qwt.framework/Headers — creating two QwtPlot type
+    # identities (flat + framework headers) and causing Clang ODR errors like
+    # "WorkoutPlotZoomer* cannot convert to QwtPlot*".
+    !isEmpty(QWT_INSTALL) {
+        INCLUDEPATH += $${QWT_INSTALL}/include
+        LIBS += -L$${QWT_INSTALL}/lib -lqwt
+        DEFINES += QWT_DLL
+    }
 
 }
 

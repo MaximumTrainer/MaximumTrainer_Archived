@@ -201,9 +201,8 @@ jobs:
     - name: Create Makefile
       run: |
         qmake PowerVelo.pro \
-          "SFML_INSTALL=$(brew --prefix sfml)"
-      env:
-        QMAKEFEATURES: /usr/local/qwt-6.2.0/features
+          "SFML_INSTALL=$(brew --prefix sfml)" \
+          "QWT_INSTALL=/usr/local/qwt-6.2.0"
 
     - name: Run MakeFile
       run: make
