@@ -171,7 +171,7 @@ void FEC_Controller::decodeFecMessage(ANT_MESSAGE stMessage) {
 
     //UCHAR ucDataOffset = MESSAGE_BUFFER_DATA2_INDEX;   // For most data messages
 
-    //qDebug() << "FEC_MESSAGE: [" << hex << "[" << hex << stMessage.aucData[1] << "]" << "[" << hex << stMessage.aucData[2] << "]" << "[" << hex << stMessage.aucData[3] << "]" << "[" << hex << stMessage.aucData[4] << "]" << "[" << hex << stMessage.aucData[5] << "]" << "[" << hex << stMessage.aucData[6] << "]" << "[" << hex << stMessage.aucData[7]  << "]" << "[" << hex << stMessage.aucData[8] << "]";
+    //qDebug() << "FEC_MESSAGE: [" << Qt::hex << "[" << Qt::hex << stMessage.aucData[1] << "]" << "[" << Qt::hex << stMessage.aucData[2] << "]" << "[" << Qt::hex << stMessage.aucData[3] << "]" << "[" << Qt::hex << stMessage.aucData[4] << "]" << "[" << Qt::hex << stMessage.aucData[5] << "]" << "[" << Qt::hex << stMessage.aucData[6] << "]" << "[" << Qt::hex << stMessage.aucData[7]  << "]" << "[" << Qt::hex << stMessage.aucData[8] << "]";
 
 
 
@@ -186,7 +186,7 @@ void FEC_Controller::decodeFecMessage(ANT_MESSAGE stMessage) {
     {
 
         //        CALIBRATION_PAGE_1: [ [ 1 ] [ 40 ] [ 0 ] [ 32 ] [ f4 ] [ 1 ] [ f4 ] [ 1 ]
-        qDebug() << "CALIBRATION_PAGE_1: [" << hex << "[" << hex << stMessage.aucData[1] << "]" << "[" << hex << stMessage.aucData[2] << "]" << "[" << hex << stMessage.aucData[3] << "]" << "[" << hex << stMessage.aucData[4] << "]" << "[" << hex << stMessage.aucData[5] << "]" << "[" << hex << stMessage.aucData[6] << "]" << "[" << hex << stMessage.aucData[7]  << "]" << "[" << hex << stMessage.aucData[8] << "]";
+        qDebug() << "CALIBRATION_PAGE_1:" << QByteArray(reinterpret_cast<const char*>(&stMessage.aucData[1]), 8).toHex(' ');
 
         uint8_t calibrationResponse = stMessage.aucData[2];
 
@@ -247,7 +247,7 @@ void FEC_Controller::decodeFecMessage(ANT_MESSAGE stMessage) {
     {
 
         //        CALIBRATION_PAGE_1: [ [ 1 ] [ 40 ] [ 0 ] [ 32 ] [ f4 ] [ 1 ] [ f4 ] [ 1 ]
-        qDebug() << "CALIBRATION_PAGE_2: [" << hex << "[" << hex << stMessage.aucData[1] << "]" << "[" << hex << stMessage.aucData[2] << "]" << "[" << hex << stMessage.aucData[3] << "]" << "[" << hex << stMessage.aucData[4] << "]" << "[" << hex << stMessage.aucData[5] << "]" << "[" << hex << stMessage.aucData[6] << "]" << "[" << hex << stMessage.aucData[7]  << "]" << "[" << hex << stMessage.aucData[8] << "]";
+        qDebug() << "CALIBRATION_PAGE_2:" << QByteArray(reinterpret_cast<const char*>(&stMessage.aucData[1]), 8).toHex(' ');
 
         uint8_t calibrationStatus = stMessage.aucData[2];
         uint8_t calibrationCondition = stMessage.aucData[3];

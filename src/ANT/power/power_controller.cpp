@@ -312,7 +312,7 @@ void Power_Controller::decodePowerMessage(ANT_MESSAGE stMessage) {
     {
         qDebug() << "Measurement Output Data Page (0x03)";
 
-        qDebug() << "BPS_PAGE_3: [" << hex << "[" << hex << stMessage.aucData[1] << "]" << "[" << hex << stMessage.aucData[2] << "]" << "[" << hex << stMessage.aucData[3] << "]" << "[" << hex << stMessage.aucData[4] << "]" << "[" << hex << stMessage.aucData[5] << "]" << "[" << hex << stMessage.aucData[6] << "]" << "[" << hex << stMessage.aucData[7]  << "]" << "[" << hex << stMessage.aucData[8] << "]";
+        qDebug() << "BPS_PAGE_3:" << QByteArray(reinterpret_cast<const char*>(&stMessage.aucData[1]), 8).toHex(' ');
 
 
         uint8_t numberOfDataType = stMessage.aucData[2];

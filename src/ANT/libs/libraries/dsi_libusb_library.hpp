@@ -47,7 +47,7 @@ class LibusbLibrary
 {
   public:
                                                                   //!!maybe return another smart pointer like shared_ptr?
-   static BOOL Load(std::auto_ptr<const LibusbLibrary>& clAutoLibrary_);  //!! Alternative to creating directly and having to worry about try statements
+   static BOOL Load(std::unique_ptr<const LibusbLibrary>& clAutoLibrary_);  //!! Alternative to creating directly and having to worry about try statements
                                                             /* Otherwise you'd have to do this...
                                                             //Get a reference to library
                                                             auto_ptr<LibusbLibrary> pclAutoSiLibrary(NULL);
@@ -115,7 +115,7 @@ class LibusbLibrary
    LibusbError::Enum LoadFunctions();
    void FreeFunctions();
 
-   static std::auto_ptr<LibusbLibrary> clAutoInstance;  //keeps the library loaded for the duration of the application
+   static std::unique_ptr<LibusbLibrary> clAutoInstance;  //keeps the library loaded for the duration of the application
                                                                //NOTE: There is no control when this gets destroyed at end of program
                                                                //       but it doesn't matter because it's main purpose is to keep the library loaded
                                                                //       during the duration of the whole application.

@@ -36,7 +36,7 @@ USBDeviceLibusb::USBDeviceLibusb(struct usb_device& stDevice_)
    szSerialString[0] = '\0';
 
    //Get a reference to library
-   auto_ptr<const LibusbLibrary> pclAutoLibusbLibrary(NULL);
+   std::unique_ptr<const LibusbLibrary> pclAutoLibusbLibrary;
    if(LibusbLibrary::Load(pclAutoLibusbLibrary) == FALSE)
       return;
    const LibusbLibrary& clLibusbLibrary = *pclAutoLibusbLibrary;
