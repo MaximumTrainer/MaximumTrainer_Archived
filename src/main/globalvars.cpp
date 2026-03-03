@@ -13,6 +13,7 @@
 #include "userstudio.h"
 
 #include <QWebEngineSettings>
+#include <QWebEngineProfile>
 #include <VLCQtCore/Common.h>
 
 
@@ -32,9 +33,11 @@ GlobalVars::GlobalVars(QObject *parent) :
     QCoreApplication::setOrganizationDomain("maximumtrainer.com");
     QCoreApplication::setApplicationName("MaximumTrainer");
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
-    QWebEngineSettings::globalSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
 
 
     // Used in Signal/Slots connection

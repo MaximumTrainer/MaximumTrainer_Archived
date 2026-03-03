@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include <QApplication>
 #include <QWebEngineSettings>
+#include <QWebEngineProfile>
 
 #include "environnement.h"
 
@@ -79,7 +80,7 @@ WebBrowserV2::WebBrowserV2(QWidget *parent) : QWidget(parent)
     webEngineView->load(QUrl(urlSaved));
 
 
-    QWebEngineSettings::globalSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
 
 
 }

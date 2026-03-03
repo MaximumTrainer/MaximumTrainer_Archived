@@ -11,7 +11,7 @@ else: DEFINES += QT_NO_UITOOLS
 
 CONFIG += qwt qt thread
 CONFIG += release
-CONFIG += c++11
+CONFIG += c++17
 
 #INCLUDEPATH	+= /usr/lib/x86_64-linux-gnu/qt5
 
@@ -151,14 +151,10 @@ win32 {
 #////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 macx {
-    # Mac native widget support
-    QT += macextras
-
     # VLC-Qt (default install path; override with VLCQT_INSTALL=...)
-    isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = $$(HOME)/vlc-qt }
+    isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = /usr/local }
     INCLUDEPATH += $${VLCQT_INSTALL}/include
-    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
-    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
+    LIBS += -L$${VLCQT_INSTALL}/lib -lVLCQtCore -lVLCQtWidgets
 
     # SFML (configure via SFML_INSTALL=...)
     !isEmpty(SFML_INSTALL) {

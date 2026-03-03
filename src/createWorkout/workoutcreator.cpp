@@ -840,7 +840,7 @@ void WorkoutCreator::createWorkout(const QString& name, const QString& plan, con
 /////////////////////////////////////////////////////////////////////////////////////////
 void WorkoutCreator::paintEvent(QPaintEvent *) {
     QStyleOption opt;
-    opt.init(this);
+    opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
