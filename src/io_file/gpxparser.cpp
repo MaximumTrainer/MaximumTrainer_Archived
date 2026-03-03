@@ -249,7 +249,7 @@ Trackpoint GpxParser::parseTrackpointGpx(QXmlStreamReader& xml) {
 //        }
 //    }
 
-//    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "trkpt") {
+//    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("trkpt")) {
 //        xml.readNext();
 
 //        if (xml.name().compare("ele", Qt::CaseInsensitive) == 0) {
@@ -270,7 +270,7 @@ Trackpoint GpxParser::parseTrackpointTcx(QXmlStreamReader& xml) {
     double ele = 0;
 
 
-//    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "Trackpoint") {
+//    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("Trackpoint")) {
 //        xml.readNext();
 
 //        if (xml.name().compare("LatitudeDegrees", Qt::CaseInsensitive) == 0) {

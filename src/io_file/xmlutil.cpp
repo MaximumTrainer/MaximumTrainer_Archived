@@ -196,7 +196,7 @@ UserStudio XmlUtil::parseUserStudio(QXmlStreamReader &xml) {
     int brandID;
 
 
-    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "User")
+    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("User"))
     {
         if (xml.hasError()) {
             qDebug() << "Error in XML,-- method" << xml.error();
@@ -696,7 +696,7 @@ Trackpoint XmlUtil::parseTrackpoint(QXmlStreamReader &xml) {
     double slopePercentage;
     double distanceAtThisPoint = -1;
 
-    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "Trackpoint")
+    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("Trackpoint"))
     {
         if (xml.hasError()) {
             qDebug() << "Error in XML, parseTrackpoint method" << xml.error();
@@ -836,7 +836,7 @@ Interval XmlUtil::parseInterval(QXmlStreamReader &xml) {
 
 
 
-    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "Interval")
+    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("Interval"))
     {
         if (xml.hasError()) {
             qDebug() << "Error in XML, parseInterval method" << xml.error();
@@ -872,7 +872,7 @@ Interval XmlUtil::parseInterval(QXmlStreamReader &xml) {
         /// ----------------------------- POWER -------------------------------------
         else if(xml.name() == QLatin1String("Power"))
         {
-            while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "Power")
+            while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("Power"))
             {
                 xml.readNextStartElement();
                 if(xml.name() == QLatin1String("StepType")) {
@@ -895,7 +895,7 @@ Interval XmlUtil::parseInterval(QXmlStreamReader &xml) {
         /// ----------------------------- CADENCE -------------------------------------
         else if(xml.name() == QLatin1String("Cadence"))
         {
-            while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "Cadence")
+            while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("Cadence"))
             {
                 xml.readNextStartElement();
                 if(xml.name() == QLatin1String("StepType")) {
@@ -915,7 +915,7 @@ Interval XmlUtil::parseInterval(QXmlStreamReader &xml) {
         /// ----------------------------- HR -------------------------------------
         else if(xml.name() == QLatin1String("HeartRate"))
         {
-            while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "HeartRate")
+            while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("HeartRate"))
             {
                 xml.readNextStartElement();
                 if(xml.name() == QLatin1String("StepType")) {
@@ -951,7 +951,7 @@ RepeatData XmlUtil::parseRepeat(QXmlStreamReader &xml) {
 
     RepeatData rep;
 
-    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != "Repeat")
+    while (xml.tokenType() != QXmlStreamReader::EndElement || xml.name() != QLatin1String("Repeat"))
     {
         if (xml.hasError()) {
             qDebug() << "Error in XML, parseRepeat method" << xml.error();
