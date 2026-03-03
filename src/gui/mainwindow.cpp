@@ -205,33 +205,47 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->webView_settings, SIGNAL(loadFinished(bool)), this, SLOT(fillSettingPage()));
     connect(ui->webView_studio, SIGNAL(loadFinished(bool)), this, SLOT(fillStudioPage()));
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+    connect(ui->webView_ergDb->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadRequest*)),
+                    this, SLOT(downloadRequested(QWebEngineDownloadRequest*)));
+#else
     connect(ui->webView_ergDb->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadItem*)),
                     this, SLOT(downloadRequested(QWebEngineDownloadItem*)));
+#endif
 
 }
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MainWindow::downloadRequested(QWebEngineDownloadItem* download) {
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+void MainWindow::downloadRequested(QWebEngineDownloadRequest* download) {
+    qDebug() << "Format: " <<  download->savePageFormat();
+    QString filename = download->downloadFileName();
+    qDebug() << "Path: " << download->downloadDirectory() + QDir::separator() + filename;
 
+    download->setDownloadDirectory(Util::getSystemPathWorkout() + QDir::separator() + "ergdb");
+    download->setDownloadFileName(filename);
+    download->accept();
+
+    this->lastWorkoutNameDownloaded = QFileInfo(filename).completeBaseName();
+    connect(download, SIGNAL(isFinishedChanged()), this, SLOT(goToWorkoutNameFilter()));
+}
+#else
+void MainWindow::downloadRequested(QWebEngineDownloadItem* download) {
     qDebug() << "Format: " <<  download->savePageFormat();
     qDebug() << "Path: " << download->path();
 
     QFileInfo fileInfo(download->path());
     QString filename(fileInfo.fileName());
 
-//    fileInfo.
-
     download->setPath(Util::getSystemPathWorkout() + QDir::separator() + "ergdb" + QDir::separator() + filename);
     qDebug() << "Path: " << download->path();
     download->accept();
 
-
     this->lastWorkoutNameDownloaded = fileInfo.completeBaseName();
-    // should show the workout in the list so user is ready to do it?
-    connect(download, SIGNAL(finished()),
-            this, SLOT(goToWorkoutNameFilter()));
+    connect(download, SIGNAL(finished()), this, SLOT(goToWorkoutNameFilter()));
 }
+#endif
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
