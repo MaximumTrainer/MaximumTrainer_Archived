@@ -170,6 +170,12 @@ macx {
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
 
+    # Disable Clang's implicit module system for Qt6 framework headers.
+    # Without this, QwtPlot gets two type-universe identities (one from
+    # double-quote includes and one from Qt framework module imports),
+    # causing ODR errors like "WorkoutPlotZoomer* cannot convert to QwtPlot*".
+    QMAKE_CXXFLAGS += -fno-modules
+
 }
 
 

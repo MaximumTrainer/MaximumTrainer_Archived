@@ -20,16 +20,16 @@ HEADERS     += \
 
 #////////////////////////////////////////////////////////////////////////////////////////////////////////
 # ANT LIBS - Download source from thisisant.com
-    INCLUDEPATH += $$PWD/libs/inc \
-    INCLUDEPATH += $$PWD/libs/common \
-    INCLUDEPATH += $$PWD/libs/libraries \
-    INCLUDEPATH += $$PWD/libs/software/ANTFS \
-    INCLUDEPATH += $$PWD/libs/software/serial \
-    INCLUDEPATH += $$PWD/libs/software/serial/device_management \
-    INCLUDEPATH += $$PWD/libs/software/system \
-    INCLUDEPATH += $$PWD/libs/software/USB \
-    INCLUDEPATH += $$PWD/libs/software/USB/device_handles \
-    INCLUDEPATH += $$PWD/libs/software/USB/devices \
+INCLUDEPATH += $$PWD/libs/inc
+INCLUDEPATH += $$PWD/libs/common
+INCLUDEPATH += $$PWD/libs/libraries
+INCLUDEPATH += $$PWD/libs/software/ANTFS
+INCLUDEPATH += $$PWD/libs/software/serial
+INCLUDEPATH += $$PWD/libs/software/serial/device_management
+INCLUDEPATH += $$PWD/libs/software/system
+INCLUDEPATH += $$PWD/libs/software/USB
+INCLUDEPATH += $$PWD/libs/software/USB/device_handles
+INCLUDEPATH += $$PWD/libs/software/USB/devices
 
 
 #////////////////////////////////////////////////////////////////////////////////////////////////////////
