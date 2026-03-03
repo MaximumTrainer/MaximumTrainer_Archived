@@ -1,8 +1,7 @@
 // macOS stub for Hub (ANT USB stick support).
 // ANT USB hardware is not supported on macOS ARM64. All methods are no-ops.
+// This file is only compiled on macOS (see ANT.pri).
 // TODO: Remove this file (and all ANT code) once BTLE replaces ANT.
-
-#ifdef Q_OS_MAC
 
 #include "hub.h"
 #include <string.h>
@@ -57,5 +56,3 @@ void Hub::configureSendChannelOxy(int) {}
 DSI_THREAD_RETURN Hub::RunMessageThread(void*) { return nullptr; }
 void Hub::MessageThread() {}
 void Hub::ProcessMessage(ANT_MESSAGE, USHORT) {}
-
-#endif // Q_OS_MAC
