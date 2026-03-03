@@ -42,11 +42,11 @@ void ReportUtil::printWorkoutToPdf(Workout workout, QwtPlot *plot, QString filen
     QString creator = QApplication::translate("ReportUtil: ", "Creator: ");
     QString description = QApplication::translate("ReportUtil: ", "Description: ");
     QString signature = QApplication::translate("ReportUtil: ", "Workout created with MaximumTrainer.com");
-    int sizeName = painter.fontMetrics().width(name);
-    int sizeType = painter.fontMetrics().width(type);
-    int sizePlan = painter.fontMetrics().width(plan);
-    int sizeCreator = painter.fontMetrics().width(creator);
-    int sizeDescription = painter.fontMetrics().width(description);
+    int sizeName = painter.fontMetrics().horizontalAdvance(name);
+    int sizeType = painter.fontMetrics().horizontalAdvance(type);
+    int sizePlan = painter.fontMetrics().horizontalAdvance(plan);
+    int sizeCreator = painter.fontMetrics().horizontalAdvance(creator);
+    int sizeDescription = painter.fontMetrics().horizontalAdvance(description);
 
 
     QRectF recNameLabel = QRectF(QPointF(0, 0), QPointF(width/2, 200));

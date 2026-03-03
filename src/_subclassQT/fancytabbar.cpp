@@ -101,7 +101,7 @@ QSize FancyTabBar::tabSizeHint(bool minimum) const
     int width = widthBar;
     int maxLabelwidth = 0;
     for (int tab=0 ; tab<count() ;++tab) {
-        int width = fm.width(tabText(tab));
+        int width = fm.horizontalAdvance(tabText(tab));
         if (width > maxLabelwidth)
             maxLabelwidth = width;
     }
@@ -249,7 +249,7 @@ bool FancyTabBar::event(QEvent *event)
 }
 
 // Resets hover animation on mouse enter
-void FancyTabBar::enterEvent(QEvent *e)
+void FancyTabBar::enterEvent(QEnterEvent *e)
 {
     Q_UNUSED(e)
     mHoverRect = QRect();
