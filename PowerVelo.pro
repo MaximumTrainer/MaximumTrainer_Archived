@@ -112,9 +112,9 @@ LIBS += $${GSL_LIBS}
 # Microsoft Visual Studion toolchain dependencies
 win32-msvc* {
 
-    # we need windows kit 8.2 or higher with MSVC, offer default location
-    isEmpty(WINKIT_INSTALL) WINKIT_INSTALL= "C:/Program Files (x86)/Windows Kits/8.1/Lib/winv6.3/um/x64"
-    LIBS += -L$${WINKIT_INSTALL} -lGdi32 -lUser32
+    # Gdi32 and User32 are standard system libs resolved automatically by the
+    # MSVC linker via the LIB environment variable.  No explicit -L path needed.
+    LIBS += -lGdi32 -lUser32
     CONFIG += force_debug_info
 
 
