@@ -83,6 +83,10 @@ jobs:
         modules: 'qtwebengine'
         dir: ${{ env.QT_HOME }}
 
+    - name: Set QTDIR
+      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
+      shell: powershell
+
     - name: Write PowerShell helpers
       run: |
         @'
@@ -111,6 +115,10 @@ jobs:
         7z x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt_temp"
         $vlcqtDir = (Get-ChildItem "C:\vlcqt_temp" -Directory | Select-Object -First 1).FullName
         Move-Item $vlcqtDir "C:\vlcqt"
+      shell: powershell
+
+    - name: Set VLCQT_DIR
+      run: echo "VLCQT_DIR=C:\vlcqt" >> $env:GITHUB_ENV
       shell: powershell
 
     - name: Download and install SFML
