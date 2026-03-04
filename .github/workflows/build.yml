@@ -115,6 +115,8 @@ jobs:
         7z x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt_temp"
         $vlcqtDir = (Get-ChildItem "C:\vlcqt_temp" -Directory | Select-Object -First 1).FullName
         Move-Item $vlcqtDir "C:\vlcqt"
+        Write-Host "=== VLC-Qt directory tree ==="
+        Get-ChildItem -Recurse "C:\vlcqt" | Select-Object FullName | Format-Table -AutoSize
       shell: powershell
 
     - name: Set VLCQT_DIR
@@ -159,7 +161,7 @@ jobs:
         $sfmlDirFwd = $sfmlDir -replace '\\','/'
         $env:QMAKEFEATURES = "$qwtInstallDir\features"
         qmake PowerVelo.pro `
-          "VLCQT_INSTALL=C:/vlcqt" `
+          "VLCQT_INSTALL=$($env:VLCQT_DIR -replace '\\','/')" `
           "SFML_INSTALL=$sfmlDirFwd"
       shell: powershell
 
