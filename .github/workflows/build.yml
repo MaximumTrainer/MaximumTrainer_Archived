@@ -151,7 +151,9 @@ jobs:
         $sfmlDirFwd = $sfmlDir -replace '\\','/'
         $kitRoot = "${env:ProgramFiles(x86)}\Windows Kits\10\Lib"
         $kitVersion = (Get-ChildItem $kitRoot | Sort-Object Name -Descending | Select-Object -First 1).Name
-        $winkitInstall = "$kitRoot\$kitVersion\um\x64" -replace '\\','/'
+        $kitLongPath = "$kitRoot\$kitVersion\um\x64"
+        # Use 8.3 short path to avoid spaces in the linker /LIBPATH argument
+        $winkitInstall = [System.IO.Path]::GetShortPathName($kitLongPath) -replace '\\','/'
         $env:QMAKEFEATURES = "$qwtInstallDir\features"
         qmake PowerVelo.pro `
           "VLCQT_INSTALL=C:/vlcqt" `
