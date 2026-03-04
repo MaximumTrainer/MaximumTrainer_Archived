@@ -20,6 +20,7 @@ All rights reserved.
 #include <time.h>
 
 #if defined(DSI_TYPES_WINDOWS)
+   #include <tchar.h>
    #include "WinDevice.h"
 #endif
 
