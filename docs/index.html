@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maximum Trainer — Open-Source Indoor Cycling Software</title>
+  <meta name="description" content="Maximum Trainer Redux is a free, open-source indoor cycling training application with ERG mode, BLE sensor support, and structured interval workouts." />
+  <link rel="icon" type="image/png" href="assets/images/main_icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════ NAV ═══════════════════════════════════════ -->
+  <header class="nav-header" id="top">
+    <nav class="nav-container">
+      <a href="#top" class="nav-logo">
+        <img src="assets/images/logo.png" alt="Maximum Trainer logo" height="36" />
+        <span>Maximum Trainer</span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu">&#9776;</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#story">Story</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+        <li><a href="#download">Download</a></li>
+        <li><a href="#license">License</a></li>
+        <li>
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux" class="btn btn-outline" target="_blank" rel="noopener">
+            GitHub
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ═══════════════════════════════════════ HERO ══════════════════════════════════════ -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <img src="assets/images/main_icon.png" alt="Maximum Trainer icon" class="hero-icon" />
+      <h1>Maximum Trainer</h1>
+      <p class="hero-tagline">
+        Free, open-source indoor cycling training — ERG mode, real-time power, BLE sensors &amp; structured intervals.
+      </p>
+      <div class="hero-actions">
+        <a href="#download" class="btn btn-primary">Download</a>
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux" class="btn btn-outline" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+      <div class="hero-badges">
+        <span class="badge">GPL-3.0</span>
+        <span class="badge">C++17 · Qt</span>
+        <span class="badge">Bluetooth LE</span>
+        <span class="badge">Cross-Platform</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ STORY ═════════════════════════════════════ -->
+  <section class="section" id="story">
+    <div class="container">
+      <h2 class="section-title">The Story</h2>
+      <div class="story-grid">
+        <div class="story-card story-card--origin">
+          <div class="story-card-icon">🚴</div>
+          <h3>The Origin</h3>
+          <p>
+            Maximum Trainer was a pioneering <strong>free</strong> indoor cycling platform developed primarily by
+            <strong>Maxime Blais (Max)</strong>. It offered advanced features typically found only in paid applications
+            like TrainerRoad or Zwift — ERG resistance control, real-time power balance, studio mode, and native Moxy
+            muscle-oxygen sensor support — all at no cost to the rider.
+          </p>
+        </div>
+        <div class="story-card story-card--closure">
+          <div class="story-card-icon">📅</div>
+          <h3>The Closure — 7 September 2019</h3>
+          <p>
+            On September&nbsp;7,&nbsp;2019, the project officially ceased operations and support. According to
+            <a href="https://www.smartbiketrainers.com/maximumtrainer-is-closing-8971" target="_blank" rel="noopener">SmartBikeTrainers.com</a>,
+            the developer cited a <strong>lack of external developer help</strong> and
+            <strong>insufficient donations</strong> to cover server hosting costs as the primary reasons for shutdown.
+          </p>
+        </div>
+        <div class="story-card story-card--rebirth">
+          <div class="story-card-icon">⚡</div>
+          <h3>The Rebirth — Maximum Trainer Redux</h3>
+          <p>
+            This repository is the rebirth of Maximum Trainer. The codebase has been modernised to
+            <strong>C++17 and Qt 6</strong>, the build system updated for all three platforms, and the project
+            re-launched as a fully open-source interval trainer for indoor cycling and indoor rowing. The legacy lives
+            on — and it is open to contributions from every developer.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════ FEATURES ═══════════════════════════════════ -->
+  <section class="section section--dark" id="features">
+    <div class="container">
+      <h2 class="section-title">Technical Features</h2>
+
+      <div class="features-grid">
+
+        <!-- Architecture -->
+        <div class="feature-card">
+          <div class="feature-icon">🏗️</div>
+          <h3>Architecture</h3>
+          <p>Built in <strong>C++17 (≈ 95 %)</strong> using the <strong>Qt Framework</strong> with qmake
+             <code>.pro</code> build files and Qt Linguist <code>.qm</code> files for multi-language support.</p>
+        </div>
+
+        <!-- BLE -->
+        <div class="feature-card">
+          <div class="feature-icon"><img src="assets/images/fa-bolt.png" alt="" class="feature-img" /></div>
+          <h3>Bluetooth Smart (BLE)</h3>
+          <p>One of the early adopters of open trainer standards. Supports
+             <strong>FTMS (0x1826)</strong> for automatic ERG resistance, plus Heart Rate (0x180D),
+             Cycling Power (0x1818) and Speed &amp; Cadence (0x1816).</p>
+        </div>
+
+        <!-- ERG Mode -->
+        <div class="feature-card">
+          <div class="feature-icon"><img src="assets/images/fa-target.png" alt="" class="feature-img" /></div>
+          <h3>ERG Mode</h3>
+          <p>Automatic resistance control keeps your power on target throughout structured intervals.
+             The workout player overlays your <strong>live power</strong> on top of the coloured target-band
+             graph in real time.</p>
+        </div>
+
+        <!-- Power Balance -->
+        <div class="feature-card">
+          <div class="feature-icon"><img src="assets/images/fa-dashboard.png" alt="" class="feature-img" /></div>
+          <h3>L/R Power Balance</h3>
+          <p>Real-time feedback on pedalling efficiency from dual-sided power meters — displayed live
+             during the workout and recorded to the <strong>.FIT</strong> activity file.</p>
+        </div>
+
+        <!-- Moxy / SpO₂ -->
+        <div class="feature-card">
+          <div class="feature-icon"><img src="assets/images/fa-heart.png" alt="" class="feature-img" /></div>
+          <h3>Moxy Muscle Oxygen</h3>
+          <p>Native BLE support for <strong>Moxy Near-Infrared Spectroscopy</strong> monitors
+             (service UUID 0xAAB0) with live SmO₂ and tHb display, full <code>.FIT</code> file
+             integration and built-in simulator — fully implemented.</p>
+        </div>
+
+        <!-- Studio Mode -->
+        <div class="feature-card">
+          <div class="feature-icon">🏟️</div>
+          <h3>Studio Mode</h3>
+          <p>Support for <strong>multiple riders / users concurrently</strong> on a single installation
+             — ideal for spinning studios and group training sessions.</p>
+        </div>
+
+        <!-- Workout Formats -->
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <h3>Workout Formats</h3>
+          <p>Import standard interval files (<strong>.erg</strong>, <strong>.mrc</strong>) or browse
+             thousands of workouts directly from the integrated
+             <a href="https://www.trainerday.com/" target="_blank" rel="noopener">TrainerDay.com</a> library.
+             Export completed activities as <strong>.FIT</strong> files.</p>
+        </div>
+
+        <!-- Offline Mode -->
+        <div class="feature-card">
+          <div class="feature-icon">📡</div>
+          <h3>Offline Mode</h3>
+          <p>Fully functional without an active internet connection. All core training features —
+             ERG control, sensor recording, and workout playback — work <strong>completely offline</strong>.</p>
+        </div>
+
+        <!-- Upload -->
+        <div class="feature-card">
+          <div class="feature-icon">☁️</div>
+          <h3>Activity Upload</h3>
+          <p>Post-workout upload to <strong>Strava</strong>, <strong>TrainingPeaks</strong>, and
+             <strong>SelfLoops</strong> directly from the app.</p>
+        </div>
+
+      </div>
+
+      <!-- Tech Specs table -->
+      <div class="specs-table-wrap">
+        <h3 class="subsection-title">Technical Specifications</h3>
+        <table class="specs-table">
+          <thead>
+            <tr><th>Item</th><th>Detail</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Language</td><td>C++17 (≈ 95 %)</td></tr>
+            <tr><td>Framework</td><td>Qt 5.15.2 (Windows · Linux) &nbsp;·&nbsp; Qt 6.7.3 (macOS)</td></tr>
+            <tr><td>Build file</td><td><code>PowerVelo.pro</code> (qmake)</td></tr>
+            <tr><td>Trainer protocol</td><td>Bluetooth LE FTMS (0x1826)</td></tr>
+            <tr><td>Sensor profiles</td><td>Heart Rate (0x180D) · CSC (0x1816) · Power (0x1818)</td></tr>
+            <tr><td>Workout formats</td><td><code>.erg</code> · <code>.mrc</code> · <code>.fit</code> (native XML)</td></tr>
+            <tr><td>License</td><td>GPL-3.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════ GALLERY ════════════════════════════════════ -->
+  <section class="section" id="gallery">
+    <div class="container">
+      <h2 class="section-title">Gallery</h2>
+      <p class="section-subtitle">
+        Screenshots extracted from the application's <code>/resources</code> folder, plus visuals from the
+        <a href="https://www.youtube.com/watch?v=nAhDABkaHmw" target="_blank" rel="noopener">SmartBikeTrainers YouTube walkthrough</a>
+        showcasing the <strong>Power &amp; Goal Band UI</strong>.
+      </p>
+
+      <div class="gallery-grid">
+
+        <div class="gallery-item">
+          <img src="assets/images/general.png" alt="General application UI" loading="lazy" />
+          <div class="gallery-caption">General application interface</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="assets/images/studio.png" alt="Studio mode — multiple riders" loading="lazy" />
+          <div class="gallery-caption">Studio mode — multiple riders</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="assets/images/Config1.png" alt="Configuration &amp; settings screen" loading="lazy" />
+          <div class="gallery-caption">Configuration &amp; settings</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="assets/images/mac_display.png" alt="macOS display" loading="lazy" />
+          <div class="gallery-caption">macOS display</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="assets/images/workoutMan.png" alt="Workout selector" loading="lazy" />
+          <div class="gallery-caption">Workout selector</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="assets/images/road.png" alt="Road / course view" loading="lazy" />
+          <div class="gallery-caption">Road &amp; course view</div>
+        </div>
+
+      </div>
+
+      <p class="gallery-youtube">
+        🎬 Full video walkthrough by SmartBikeTrainers:&nbsp;
+        <a href="https://www.youtube.com/watch?v=nAhDABkaHmw" target="_blank" rel="noopener">
+          youtube.com/watch?v=nAhDABkaHmw
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════ DOWNLOAD ════════════════════════════════════ -->
+  <section class="section section--dark" id="download">
+    <div class="container">
+      <h2 class="section-title">Download &amp; Build</h2>
+      <p class="section-subtitle">
+        Pre-built binaries are produced automatically by GitHub Actions CI. Choose your platform below.
+      </p>
+
+      <div class="download-grid">
+
+        <!-- Windows -->
+        <div class="download-card">
+          <div class="download-icon">🪟</div>
+          <h3>Windows</h3>
+          <p class="download-desc">Windows 10/11 — 64-bit (MSVC build)</p>
+          <ul class="download-deps">
+            <li>Qt 6.5.3 (win64_msvc2019_64)</li>
+            <li>QWT 6.3.0</li>
+            <li>VLC-Qt (from source)</li>
+            <li>SFML 2.6.1</li>
+          </ul>
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest" class="btn btn-primary" target="_blank" rel="noopener">
+            Latest Release
+          </a>
+          <details class="build-details">
+            <summary>Build from source</summary>
+            <pre><code>$env:QMAKEFEATURES = "C:\qwt\features"
+qmake PowerVelo.pro `
+  "VLCQT_INSTALL=C:/vlcqt" `
+  "SFML_INSTALL=C:/sfml/SFML-2.6.1"
+nmake</code></pre>
+          </details>
+        </div>
+
+        <!-- Linux -->
+        <div class="download-card">
+          <div class="download-icon">🐧</div>
+          <h3>Linux</h3>
+          <p class="download-desc">Ubuntu 22.04+ / Debian-based distros</p>
+          <ul class="download-deps">
+            <li>Qt 5.15.x (from apt)</li>
+            <li>libqwt-qt5-dev</li>
+            <li>VLC-Qt 1.1.1 (from source)</li>
+            <li>libsfml-dev</li>
+          </ul>
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest" class="btn btn-primary" target="_blank" rel="noopener">
+            Latest Release
+          </a>
+          <details class="build-details">
+            <summary>Build from source</summary>
+            <pre><code>sudo apt-get install -y \
+  qtbase5-dev qtwebengine5-dev \
+  qtconnectivity5-dev \
+  libqwt-qt5-dev libsfml-dev \
+  libvlc-dev cmake build-essential
+
+qmake PowerVelo.pro
+make -j$(nproc)</code></pre>
+          </details>
+        </div>
+
+        <!-- macOS -->
+        <div class="download-card">
+          <div class="download-icon">🍎</div>
+          <h3>macOS</h3>
+          <p class="download-desc">macOS 12+ (Apple Silicon &amp; Intel)</p>
+          <ul class="download-deps">
+            <li>Qt 6.5.3 (via Qt Installer)</li>
+            <li>QWT 6.3.0 (from source)</li>
+            <li>VLC-Qt (from source)</li>
+            <li>SFML (brew install sfml)</li>
+          </ul>
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest" class="btn btn-primary" target="_blank" rel="noopener">
+            Latest Release
+          </a>
+          <details class="build-details">
+            <summary>Build from source</summary>
+            <pre><code>brew install sfml
+qmake PowerVelo.pro \
+  "SFML_INSTALL=$(brew --prefix sfml)" \
+  "QWT_INSTALL=/usr/local/qwt-6.3.0"
+make -j$(sysctl -n hw.logicalcpu)</code></pre>
+          </details>
+        </div>
+
+      </div>
+
+      <p class="download-note">
+        For full build instructions including dependencies, environment variables, and CI configuration see the
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux#building" target="_blank" rel="noopener">README on GitHub</a>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════ LICENSE ════════════════════════════════════ -->
+  <section class="section" id="license">
+    <div class="container">
+      <h2 class="section-title">License</h2>
+      <div class="license-box">
+        <div class="license-badge">GPL-3.0</div>
+        <p>
+          Maximum Trainer Redux is free software licensed under the
+          <strong>GNU General Public License v3.0</strong>.
+        </p>
+        <p>
+          You are free to use, study, modify, and distribute this software under the terms of the GPL-3.0.
+          Any derivative work must also be distributed under the same license.
+        </p>
+        <p>
+          The full license text is available in the
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/blob/main/LICENSE" target="_blank" rel="noopener">LICENSE</a>
+          file of the repository, and at
+          <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">gnu.org/licenses/gpl-3.0</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ FOOTER ═══════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-logo">
+        <img src="assets/images/logo.png" alt="Maximum Trainer" height="28" />
+        <span>Maximum Trainer Redux</span>
+      </div>
+      <nav class="footer-nav">
+        <a href="#story">Story</a>
+        <a href="#features">Features</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#download">Download</a>
+        <a href="#license">License</a>
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <p class="footer-copy">
+        GPL-3.0 &nbsp;·&nbsp; Originally created by Maxime Blais &nbsp;·&nbsp; Revived as open source
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
