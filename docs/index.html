@@ -260,7 +260,9 @@
     <div class="container">
       <h2 class="section-title">Download &amp; Build</h2>
       <p class="section-subtitle">
-        Pre-built binaries are produced automatically by GitHub Actions CI. Choose your platform below.
+        Pre-built binaries are produced by GitHub Actions on every tagged release.
+        Choose your platform below, or browse
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases" target="_blank" rel="noopener">all releases on GitHub</a>.
       </p>
 
       <div class="download-grid">
@@ -271,9 +273,9 @@
           <h3>Windows</h3>
           <p class="download-desc">Windows 10/11 — 64-bit (MSVC build)</p>
           <ul class="download-deps">
-            <li>Qt 6.5.3 (win64_msvc2019_64)</li>
-            <li>QWT 6.3.0</li>
-            <li>VLC-Qt (from source)</li>
+            <li>Qt 5.15.2 (win64_msvc2019_64)</li>
+            <li>QWT 6.2.0</li>
+            <li>VLC-Qt 1.1.0 (pre-built MSVC)</li>
             <li>SFML 2.6.1</li>
           </ul>
           <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-windows-x64.zip" class="btn btn-primary" target="_blank" rel="noopener">
@@ -322,9 +324,8 @@ make -j$(nproc)</code></pre>
           <h3>macOS</h3>
           <p class="download-desc">macOS 12+ (Apple Silicon &amp; Intel)</p>
           <ul class="download-deps">
-            <li>Qt 6.5.3 (via Qt Installer)</li>
-            <li>QWT 6.3.0 (from source)</li>
-            <li>VLC-Qt (from source)</li>
+            <li>Qt 6.7.3 (via Qt Installer)</li>
+            <li>QWT 6.2.0 (from source)</li>
             <li>SFML (brew install sfml)</li>
           </ul>
           <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-macos.dmg" class="btn btn-primary" target="_blank" rel="noopener">
@@ -335,7 +336,7 @@ make -j$(nproc)</code></pre>
             <pre><code>brew install sfml
 qmake PowerVelo.pro \
   "SFML_INSTALL=$(brew --prefix sfml)" \
-  "QWT_INSTALL=/usr/local/qwt-6.3.0"
+  "QWT_INSTALL=/usr/local/qwt-6.2.0"
 make -j$(sysctl -n hw.logicalcpu)</code></pre>
           </details>
         </div>
@@ -343,6 +344,9 @@ make -j$(sysctl -n hw.logicalcpu)</code></pre>
       </div>
 
       <p class="download-note">
+        If a download link above returns a 404, no release has been published yet — check the
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases" target="_blank" rel="noopener">GitHub Releases page</a>
+        directly, or build from source using the instructions above.
         For full build instructions including dependencies, environment variables, and CI configuration see the
         <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux#building" target="_blank" rel="noopener">README on GitHub</a>.
       </p>

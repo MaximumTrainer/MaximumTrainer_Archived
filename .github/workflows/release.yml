@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (e.g. v1.0.0) - used only when triggered manually'
+        required: true
 
 jobs:
 
@@ -369,6 +374,7 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
         generate_release_notes: true
         files: |
           MaximumTrainer-linux-x86_64.AppImage
