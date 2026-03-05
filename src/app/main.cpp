@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
     Z_StyleSheet styleSheetDummy;
     app.setStyleSheet(styleSheetDummy.styleSheet());
 
+#ifndef Q_OS_WASM
     DialogLogin login;
     if (login.exec() != QDialog::Accepted) {
         return 0; // Login refused
@@ -43,6 +44,8 @@ int main(int argc, char *argv[]) {
     if (login.getGotUpdate()) {
         return 0; // Executed DialogLogin and redirected to download new version
     }
+#endif // Q_OS_WASM
+
     MainWindow w;
     w.show();
 

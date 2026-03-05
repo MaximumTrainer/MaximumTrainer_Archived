@@ -1,0 +1,190 @@
+#include "btle_hub_wasm.h"
+#include "webbluetooth_bridge.h"
+#include "btle_uuids.h"
+
+#include <QDebug>
+#include <cstring>
+#include <cmath>
+
+BtleHubWasm::BtleHubWasm(QObject *parent) : QObject(parent)
+{
+    WebBluetoothBridge::setNotificationCallback(
+        [this](quint16 uuid16, const QByteArray &data) {
+            onBleNotification(uuid16, data);
+        });
+}
+
+BtleHubWasm::~BtleHubWasm()
+{
+    WebBluetoothBridge::disconnectDevice();
+}
+
+void BtleHubWasm::scanForDevice()
+{
+    WebBluetoothBridge::scanForDevices();
+    m_connected = true;
+    emit deviceConnected();
+    emit serviceDiscoveryFinished();
+}
+
+void BtleHubWasm::disconnectFromDevice()
+{
+    WebBluetoothBridge::disconnectDevice();
+    m_connected = false;
+    emit deviceDisconnected();
+}
+
+bool BtleHubWasm::isConnected() const { return m_connected; }
+
+void BtleHubWasm::setWheelCircumferenceMm(int mm) { m_wheelCircMm = mm; }
+
+void BtleHubWasm::setLoad(int /*antID*/, double watts)
+{
+    WebBluetoothBridge::sendFtmsSetTargetPower(static_cast<int>(watts));
+}
+
+void BtleHubWasm::setSlope(int /*antID*/, double grade)
+{
+    WebBluetoothBridge::sendFtmsSetIndoorBikeSimulation(static_cast<int>(grade * 100.0));
+}
+
+void BtleHubWasm::stopDecodingMsg() {}
+
+void BtleHubWasm::simulateNotification(quint16 characteristicUuid, const QByteArray &data)
+{
+    onBleNotification(characteristicUuid, data);
+}
+
+// ─── Notification dispatch ────────────────────────────────────────────────────
+
+void BtleHubWasm::onBleNotification(quint16 uuid16, const QByteArray &data)
+{
+    switch (uuid16) {
+    case 0x2A37: parseHrMeasurement(data);       break; // Heart Rate Measurement
+    case 0x2A63: parsePowerMeasurement(data);    break; // Cycling Power Measurement
+    case 0x2A5B: parseCscMeasurement(data);      break; // CSC Measurement
+    case 0x2AD2: parseFtmsIndoorBikeData(data);  break; // Indoor Bike Data
+    default:
+        qDebug() << "[BtleHubWasm] Unknown characteristic UUID:" << Qt::hex << uuid16;
+        break;
+    }
+}
+
+// ─── Parsers (same logic as BtleHub native) ──────────────────────────────────
+
+void BtleHubWasm::parseHrMeasurement(const QByteArray &data)
+{
+    if (data.isEmpty()) return;
+    const quint8 flags = static_cast<quint8>(data[0]);
+    int hr = 0;
+    if (flags & 0x01) {
+        // 16-bit HR value
+        if (data.size() < 3) return;
+        hr = static_cast<quint8>(data[1]) | (static_cast<quint8>(data[2]) << 8);
+    } else {
+        if (data.size() < 2) return;
+        hr = static_cast<quint8>(data[1]);
+    }
+    emit signal_hr(0, hr);
+}
+
+void BtleHubWasm::parseCscMeasurement(const QByteArray &data)
+{
+    if (data.isEmpty()) return;
+    const quint8 flags = static_cast<quint8>(data[0]);
+    int offset = 1;
+
+    double speed = 0.0;
+    int cadence = 0;
+
+    if (flags & 0x01) { // Wheel Revolution Data present
+        if (data.size() < offset + 6) return;
+        quint32 revs;
+        std::memcpy(&revs, data.constData() + offset, 4); offset += 4;
+        quint16 eventTime;
+        std::memcpy(&eventTime, data.constData() + offset, 2); offset += 2;
+
+        if (!m_firstCsc) {
+            quint32 revDiff  = revs - m_lastWheelRevs;
+            quint16 timeDiff = eventTime - m_lastWheelTime;
+            if (timeDiff > 0) {
+                double rps = (revDiff * 1024.0) / timeDiff;
+                speed = rps * m_wheelCircMm / 1000000.0 * 3600.0; // km/h
+            }
+        }
+        m_lastWheelRevs = revs;
+        m_lastWheelTime = eventTime;
+    }
+
+    if (flags & 0x02) { // Crank Revolution Data present
+        if (data.size() < offset + 4) return;
+        quint16 cranks;
+        std::memcpy(&cranks, data.constData() + offset, 2); offset += 2;
+        quint16 eventTime;
+        std::memcpy(&eventTime, data.constData() + offset, 2);
+
+        if (!m_firstCsc) {
+            quint16 crankDiff = cranks - m_lastCrankRevs;
+            quint16 timeDiff  = eventTime - m_lastCrankTime;
+            if (timeDiff > 0)
+                cadence = static_cast<int>(std::round((crankDiff * 1024.0 * 60.0) / timeDiff));
+        }
+        m_lastCrankRevs = cranks;
+        m_lastCrankTime = eventTime;
+    }
+
+    m_firstCsc = false;
+    if (speed > 0.0) emit signal_speed(0, speed);
+    if (cadence > 0)  emit signal_cadence(0, cadence);
+}
+
+void BtleHubWasm::parsePowerMeasurement(const QByteArray &data)
+{
+    if (data.size() < 4) return;
+    quint16 power;
+    std::memcpy(&power, data.constData() + 2, 2);
+    emit signal_power(0, static_cast<int>(power));
+}
+
+void BtleHubWasm::parseFtmsIndoorBikeData(const QByteArray &data)
+{
+    if (data.size() < 3) return;
+    quint16 flags;
+    std::memcpy(&flags, data.constData(), 2);
+    int offset = 2;
+
+    // Instantaneous Speed (0.01 km/h resolution) – present when bit 0 is 0
+    if (!(flags & 0x0001) && data.size() >= offset + 2) {
+        quint16 speedRaw;
+        std::memcpy(&speedRaw, data.constData() + offset, 2);
+        emit signal_speed(0, speedRaw * 0.01);
+        offset += 2;
+    }
+
+    // Average Speed – bit 1
+    if (flags & 0x0002) offset += 2;
+
+    // Instantaneous Cadence (0.5 rpm) – bit 2
+    if (!(flags & 0x0004) && data.size() >= offset + 2) {
+        quint16 cadenceRaw;
+        std::memcpy(&cadenceRaw, data.constData() + offset, 2);
+        emit signal_cadence(0, static_cast<int>(cadenceRaw * 0.5));
+        offset += 2;
+    }
+
+    // Average Cadence – bit 3
+    if (flags & 0x0008) offset += 2;
+
+    // Total Distance – bit 4
+    if (flags & 0x0010) offset += 3;
+
+    // Resistance Level – bit 5
+    if (flags & 0x0020) offset += 2;
+
+    // Instantaneous Power – bit 6
+    if (!(flags & 0x0040) && data.size() >= offset + 2) {
+        qint16 powerRaw;
+        std::memcpy(&powerRaw, data.constData() + offset, 2);
+        emit signal_power(0, static_cast<int>(powerRaw));
+    }
+}

@@ -35,7 +35,9 @@ GlobalVars::GlobalVars(QObject *parent) :
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
+#ifndef Q_OS_WASM
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+#endif // !Q_OS_WASM
 
 
     // Used in Signal/Slots connection

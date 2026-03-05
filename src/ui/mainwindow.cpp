@@ -193,6 +193,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->webView_settings, SIGNAL(loadFinished(bool)), this, SLOT(fillSettingPage()));
     connect(ui->webView_studio, SIGNAL(loadFinished(bool)), this, SLOT(fillStudioPage()));
 
+#ifndef Q_OS_WASM
 #if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
     connect(ui->webView_ergDb->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadRequest*)),
                     this, SLOT(downloadRequested(QWebEngineDownloadRequest*)));
@@ -200,6 +201,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->webView_ergDb->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadItem*)),
                     this, SLOT(downloadRequested(QWebEngineDownloadItem*)));
 #endif
+#endif // !Q_OS_WASM
 
 }
 

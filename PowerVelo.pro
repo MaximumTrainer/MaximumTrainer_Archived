@@ -27,6 +27,22 @@ QT       += bluetooth
 #QT += webenginecore
 QT += webenginewidgets
 
+# ─── WebAssembly (wasm-emscripten) overrides ────────────────────────────────
+wasm_emscripten {
+    # Qt modules not available in the Wasm sandbox
+    QT -= bluetooth webenginewidgets printsupport concurrent
+
+    # Stubs make #include <QWebEngineView> etc. resolve to no-op classes
+    INCLUDEPATH = $$PWD/src/ui/wasm_stubs $$INCLUDEPATH
+    INCLUDEPATH += $$PWD/src/ui/wasm_stubs/QtWebEngineWidgets
+
+    # Asyncify is required for the async WebBluetooth JS bridge
+    QMAKE_LFLAGS += -s ASYNCIFY=1
+    QMAKE_LFLAGS += "SHELL:-s ASYNCIFY_IMPORTS=['qt_asyncify_resume_js']"
+
+    DEFINES += GC_WASM_BUILD
+}
+# ────────────────────────────────────────────────────────────────────────────
 
 # For Release, disable QDebug for performance
 DEFINES += QT_NO_DEBUG_OUTPUT
@@ -122,7 +138,7 @@ win32-msvc* {
     # gnu toolchain wants math libs
     LIBS += -lm
 
-    unix:!macx {
+    unix:!macx:!wasm_emscripten {
         # Linux gcc 5 grumbles about unused static globals and leads
         # to a gazillion warnings that are harmless so lets remove them
         QMAKE_CXXFLAGS += -Wno-unused-variable
@@ -135,7 +151,7 @@ win32-msvc* {
     }
 }
 
-win32 {
+win32:!wasm_emscripten {
     # Windows: VLC-Qt and SFML paths (configure via qmake variables)
     !isEmpty(VLCQT_INSTALL) {
         INCLUDEPATH += $${VLCQT_INSTALL}/include
@@ -150,7 +166,7 @@ win32 {
 
 #////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-macx {
+macx:!wasm_emscripten {
 
     # VLC-Qt (optional; enable by passing VLCQT_INSTALL=... to qmake)
     !isEmpty(VLCQT_INSTALL) {
@@ -170,10 +186,6 @@ macx {
     LIBS    += -lobjc -framework IOKit -framework AppKit
 
     # QWT: configure directly against the flat (non-framework) install.
-    # This bypasses qwt.prf, which on Qt6/macOS detects qt_framework in CONFIG
-    # and sets INCLUDEPATH to qwt.framework/Headers — creating two QwtPlot type
-    # identities (flat + framework headers) and causing Clang ODR errors like
-    # "WorkoutPlotZoomer* cannot convert to QwtPlot*".
     !isEmpty(QWT_INSTALL) {
         INCLUDEPATH += $${QWT_INSTALL}/include
         LIBS += -L$${QWT_INSTALL}/lib -lqwt

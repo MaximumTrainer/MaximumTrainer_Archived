@@ -3,11 +3,16 @@ DEPENDPATH += $$PWD
 
 SOURCES += $$PWD/main.cpp\
     $$PWD/util.cpp \
-    $$PWD/soundplayer.cpp \
     $$PWD/globalvars.cpp \
     $$PWD/simplecrypt.cpp \
     $$PWD/reportutil.cpp \
 
+# SoundPlayer: full SFML implementation on native, no-op stub on Wasm
+wasm_emscripten {
+    SOURCES += $$PWD/soundplayer_wasm.cpp
+} else {
+    SOURCES += $$PWD/soundplayer.cpp
+}
 contains(DEFINES, GC_HAVE_VLCQT) {
     SOURCES += $$PWD/myvlcplayer.cpp
 }

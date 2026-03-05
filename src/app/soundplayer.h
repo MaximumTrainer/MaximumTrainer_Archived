@@ -5,10 +5,9 @@
 #include <QResource>
 #include <QtCore>
 
+#ifndef Q_OS_WASM
 #include "SFML/Audio.hpp"
-//#include <iomanip>
-//#include <iostream>
-
+#endif
 
 
 
@@ -42,52 +41,34 @@ public:
 
 
 private :
-    //    QResource *qrcAchievement;
-    //    QResource *qrcLastBeepInterval;
-    //    QResource *qrcFirstBeepInterval;
-    //    QResource *qrcEndWorkout;
-    //    QResource *qrcStartWorkout;
-    //    QResource *qrcCadenceTooLow;
-    //    QResource *qrcCadenceTooHigh;
-    //    QResource *qrcPowerTooLow;
-    //    QResource *qrcPowerTooHigh;
-
-
-    /// Achievement
+#ifndef Q_OS_WASM
     sf::SoundBuffer bufferSoundAchievement;
     std::optional<sf::Sound> soundAchievement;
 
-    /// LastBeepInterval
     sf::SoundBuffer bufferSoundLastBeepInterval;
     std::optional<sf::Sound> soundLastBeepInterval;
 
-    //    /// FirstBeepInterval
     sf::SoundBuffer bufferSoundFirstBeepInterval;
     std::optional<sf::Sound> soundFirstBeepInterval;
 
-    //    /// EndWorkout
     sf::SoundBuffer bufferSoundEndWorkout;
     std::optional<sf::Sound> soundEndWorkout;
 
-    //    /// StartWorkout = PauseWorkout
     sf::SoundBuffer bufferSoundStartWorkout;
     std::optional<sf::Sound> soundStartWorkout;
 
-    //    /// CadenceTooLow
     sf::SoundBuffer bufferSoundCadenceTooLow;
     std::optional<sf::Sound> soundCadenceTooLow;
 
-    //    /// CadenceTooHigh
     sf::SoundBuffer bufferSoundCadenceTooHigh;
     std::optional<sf::Sound> soundCadenceTooHigh;
 
-    //    /// PowerTooLow
     sf::SoundBuffer bufferSoundPowerTooLow;
     std::optional<sf::Sound> soundPowerTooLow;
 
-    //    /// PowerTooHigh
     sf::SoundBuffer bufferSoundPowerTooHigh;
     std::optional<sf::Sound> soundPowerTooHigh;
+#endif // Q_OS_WASM
 
 };
 Q_DECLARE_METATYPE(SoundPlayer*)

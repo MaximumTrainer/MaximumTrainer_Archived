@@ -264,9 +264,83 @@ jobs:
         name: macos-dmg
         path: MaximumTrainer-macos.dmg
 
+  # ────────────────────────────────────── WASM ──────────────────────────────────────
+  build_wasm:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Emscripten
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: '3.1.50'
+
+    - name: Install Qt (Wasm singlethread)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'wasm_singlethread'
+        modules: 'qtwebchannel qtconnectivity'
+
+    - name: Install Qt (linux host tools)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'gcc_64'
+        set-env: false
+        dir: ${{ github.workspace }}/qt-host
+
+    - name: Build QWT (Wasm)
+      run: |
+        cd /tmp
+        curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.3.0/qwt-6.3.0.tar.bz2/download"
+        tar -xjf qwt.tar.bz2
+        cd qwt-6.3.0
+        source "$EMSDK/emsdk_env.sh"
+        qmake qwt.pro \
+          "QWT_CONFIG -= QwtFramework" \
+          "QWT_CONFIG -= QwtSvg" \
+          "QWT_CONFIG -= QwtOpenGL" \
+          "QWT_CONFIG -= QwtDesigner" \
+          "QWT_CONFIG -= QwtExamples" \
+          "INSTALL_PREFIX=$HOME/qwt-wasm"
+        emmake make -j$(nproc)
+        make install INSTALL_ROOT=""
+
+    - name: Build MaximumTrainer (Wasm)
+      run: |
+        source "$EMSDK/emsdk_env.sh"
+        mkdir -p build-wasm && cd build-wasm
+        qmake ../PowerVelo.pro \
+          "QWT_INSTALL=$HOME/qwt-wasm"
+        emmake make -j$(nproc)
+
+    - name: Package Wasm artifacts
+      run: |
+        mkdir -p wasm-out
+        cp build-wasm/MaximumTrainer.wasm wasm-out/
+        cp build-wasm/MaximumTrainer.js   wasm-out/
+        cp build-wasm/qtloader.js         wasm-out/ 2>/dev/null || true
+        cp build-wasm/qtlogo.svg          wasm-out/ 2>/dev/null || true
+        cp docs/app/index.html            wasm-out/
+        cd wasm-out
+        zip -r ../MaximumTrainer-wasm.zip .
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: wasm-zip
+        path: MaximumTrainer-wasm.zip
+
   # ────────────────────────────────────── PUBLISH ────────────────────────────────────
   publish:
-    needs: [build_linux, build_windows, build_mac]
+    needs: [build_linux, build_windows, build_mac, build_wasm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -287,6 +361,11 @@ jobs:
       with:
         name: macos-dmg
 
+    - name: Download Wasm zip
+      uses: actions/download-artifact@v4
+      with:
+        name: wasm-zip
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
@@ -295,3 +374,4 @@ jobs:
           MaximumTrainer-linux-x86_64.AppImage
           MaximumTrainer-windows-x64.zip
           MaximumTrainer-macos.dmg
+          MaximumTrainer-wasm.zip
