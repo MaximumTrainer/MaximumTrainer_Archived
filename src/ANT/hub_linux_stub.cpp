@@ -22,7 +22,7 @@ Hub::Hub(int stickNumber, QObject *parent)
     , bDisplay(FALSE)
     , pclSerialObject(nullptr)
     , pclMessageObject(nullptr)
-    , uiDSIThread(nullptr)
+    , uiDSIThread(0)
 {
     memset(aucTransmitBuffer, 0, sizeof(aucTransmitBuffer));
     memset(aucDeviceDescription, 0, sizeof(aucDeviceDescription));
