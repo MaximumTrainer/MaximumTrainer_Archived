@@ -1,6 +1,10 @@
 #include "workoutdialog.h"
 #include "ui_workoutdialog.h"
 
+#ifdef Q_OS_WIN32
+#   include <windows.h>
+#endif
+
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QKeyEvent>
