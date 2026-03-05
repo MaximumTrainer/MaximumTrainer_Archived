@@ -63,6 +63,11 @@ jobs:
 
   build_windows:
     runs-on: windows-latest
+    env:
+      # Qt installation root - install-qt-action places Qt under $QT_HOME\Qt\$version\$arch.
+      # For local Windows builds, set QT_HOME to the parent of your Qt installation
+      # (e.g. C:\ if Qt is at C:\Qt\5.15.2\msvc2019_64).
+      QT_HOME: C:\Qt
 
     steps:
     - name: MSVC Environment Setup
@@ -76,6 +81,11 @@ jobs:
       with:
         version: '5.15.2'
         modules: 'qtwebengine'
+        dir: ${{ env.QT_HOME }}
+
+    - name: Set QTDIR
+      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
+      shell: powershell
 
     - name: Write PowerShell helpers
       run: |
@@ -102,20 +112,26 @@ jobs:
       run: |
         . C:\helpers.ps1
         Invoke-WebRequestWithRetry -Uri "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_win64_msvc2015.7z" -OutFile "$env:TEMP\vlcqt.7z"
-        7z x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt_temp"
-        $vlcqtDir = (Get-ChildItem "C:\vlcqt_temp" -Directory | Select-Object -First 1).FullName
-        Move-Item $vlcqtDir "C:\vlcqt"
+        # Archive extracts directly to bin/, include/, lib/ with no wrapper dir
+        & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt"
+        $vlcqtInstall = "C:/vlcqt"
+        echo "VLCQT_DIR=$vlcqtInstall" >> $env:GITHUB_ENV
+        Write-Host "=== VLC-Qt lib files ==="
+        Get-ChildItem "C:\vlcqt\include" -Filter "*.lib"
       shell: powershell
 
     - name: Download and install SFML
       run: |
-        . C:\helpers.ps1
-        Invoke-WebRequestWithRetry -Uri "https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip" -OutFile "$env:TEMP\sfml.zip"
+        curl.exe -L -o "$env:TEMP\sfml.zip" "https://github.com/SFML/SFML/releases/download/2.6.1/SFML-2.6.1-windows-vc17-64-bit.zip"
         Expand-Archive -Path "$env:TEMP\sfml.zip" -DestinationPath "C:\sfml"
       shell: powershell
 
     - name: Build QWT
       run: |
+        # Install QWT to a stable user-profile directory that works both locally
+        # and in CI - avoids path issues with workspace-relative paths
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtInstallDirFwd = $qwtInstallDir -replace '\\', '/'
         Set-Location ..
         # Use curl.exe -L to follow SourceForge redirects reliably
         curl.exe -L -o "$env:TEMP\qwt.tar.bz2" "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
@@ -123,26 +139,32 @@ jobs:
         7z x "$env:TEMP\qwt.tar" -o"." -y
         Rename-Item "qwt-6.2.0" "qwt-src"
         Set-Location "qwt-src"
-        qmake qwt.pro "QWT_INSTALL_PREFIX=..\qwt"
+        # Patch every QWT_INSTALL_PREFIX assignment to use the new path
+        (Get-Content "qwtconfig.pri") | ForEach-Object {
+            if ($_ -match 'QWT_INSTALL_PREFIX\s*=') {
+                $_ -replace '(QWT_INSTALL_PREFIX\s*=\s*).*', "`$1$qwtInstallDirFwd"
+            } else { $_ }
+        } | Set-Content "qwtconfig.pri"
+        qmake qwt.pro
         nmake
         nmake install
       shell: powershell
 
     - name: Create Makefile
       run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtInstallDirFwd = $qwtInstallDir -replace '\\','/'
         $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
         $sfmlDirFwd = $sfmlDir -replace '\\','/'
-        $kitRoot = "${env:ProgramFiles(x86)}\Windows Kits\10\Lib"
-        $kitVersion = (Get-ChildItem $kitRoot | Sort-Object Name -Descending | Select-Object -First 1).Name
-        $winkitInstall = "$kitRoot\$kitVersion\um\x64" -replace '\\','/'
+        $env:QMAKEFEATURES = "$qwtInstallDir\features"
         qmake PowerVelo.pro `
-          "VLCQT_INSTALL=C:/vlcqt" `
-          "SFML_INSTALL=$sfmlDirFwd" `
-          "INCLUDEPATH+=..\qwt\include" `
-          "WINKIT_INSTALL=$winkitInstall"
+          "VLCQT_INSTALL=$($env:VLCQT_DIR -replace '\\','/')" `
+          "SFML_INSTALL=$sfmlDirFwd"
+        Write-Host "=== VLCQt lines in Makefile.Release ==="
+        if (Test-Path Makefile.Release) {
+          Select-String -Path Makefile.Release -Pattern "VLCQt|vlcqt" | Select-Object -First 10
+        }
       shell: powershell
-      env:
-        QMAKEFEATURES: ..\qwt\features
 
     - name: Build
       run: nmake
@@ -161,54 +183,42 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install Qt
-      # brew install qt@5 on macOS ARM64 does not include QtWebEngine; use
-      # install-qt-action (same as Windows) to get 5.15.2 with webenginewidgets.
       uses: jurplel/install-qt-action@v3
       with:
-        version: '5.15.2'
+        version: '6.7.3'
         host: 'mac'
         target: 'desktop'
         arch: 'clang_64'
-        modules: 'qtwebengine'
+        modules: 'qtwebengine qtconnectivity qtwebchannel qtpositioning'
 
     - name: Install SFML
       run: brew install sfml
 
     - name: Build and install QWT
       run: |
+        # Remove any pre-installed Homebrew qwt that could shadow our headers
+        brew uninstall qwt --force --ignore-dependencies 2>/dev/null || true
         cd /tmp
         curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
         tar -xjf qwt.tar.bz2
         cd qwt-6.2.0
+        sed -i.bak 's/QwtFramework//' qwtconfig.pri
         qmake qwt.pro
         make -j$(sysctl -n hw.logicalcpu)
         sudo make install
 
-    - name: Install VLC-Qt
-      run: |
-        curl -L -o /tmp/VLC-Qt_1.1.0_macos.7z "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_macos.7z"
-        mkdir -p /tmp/vlcqt_temp
-        7z x -o/tmp/vlcqt_temp /tmp/VLC-Qt_1.1.0_macos.7z
-        # Handle both flat archives and archives with a single root directory
-        VLCQT_SRC=$(find /tmp/vlcqt_temp -maxdepth 1 -mindepth 1 -type d | head -n 1)
-        mkdir -p $HOME/vlc-qt
-        if [ -n "$VLCQT_SRC" ] && [ -d "$VLCQT_SRC/lib" ]; then
-          cp -r "$VLCQT_SRC"/* $HOME/vlc-qt/
-        else
-          cp -r /tmp/vlcqt_temp/* $HOME/vlc-qt/
-        fi
-        test -d $HOME/vlc-qt/lib || { echo "VLC-Qt lib directory not found after extraction"; exit 1; }
-        mkdir -p $HOME/vlc-qt/include
-        ln -sf $HOME/vlc-qt/lib/VLCQtCore.framework/Headers $HOME/vlc-qt/include/VLCQtCore
-        ln -sf $HOME/vlc-qt/lib/VLCQtWidgets.framework/Headers $HOME/vlc-qt/include/VLCQtWidgets
-
     - name: Create Makefile
       run: |
         qmake PowerVelo.pro \
-          "VLCQT_INSTALL=$HOME/vlc-qt" \
-          "SFML_INSTALL=$(brew --prefix sfml)"
-      env:
-        QMAKEFEATURES: /usr/local/qwt-6.2.0/features
+          "SFML_INSTALL=$(brew --prefix sfml)" \
+          "QWT_INSTALL=/usr/local/qwt-6.2.0"
+
+    - name: Diagnose QWT installation
+      run: |
+        echo "=== All qwt_plot.h on system ==="
+        find /opt/homebrew /usr/local -name "qwt_plot.h" 2>/dev/null || true
+        echo "=== Installed qwtconfig.pri ==="
+        cat /usr/local/qwt-6.2.0/features/qwtconfig.pri 2>/dev/null || true
 
     - name: Run MakeFile
       run: make
@@ -216,7 +226,6 @@ jobs:
     - name: Bind rpath for Qt frameworks
       run: |
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
-        install_name_tool -add_rpath $HOME/vlc-qt/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
 
     - name: upload artifact
       uses: actions/upload-artifact@v4

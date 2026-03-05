@@ -18,12 +18,12 @@ using namespace std;
 #define LIBRARY_NAME    "DSI_CP210xManufacturing_3_1.dll"
 
 //Static variable initializations
-std::auto_ptr<CMLibrary> CMLibrary::clAutoInstance(NULL);
+std::unique_ptr<CMLibrary> CMLibrary::clAutoInstance;
 BOOL CMLibrary::bStaticSet = FALSE;
 
 
                                                                      //return an auto_ptr?
-BOOL CMLibrary::Load(auto_ptr<const CMLibrary>& clAutoLibrary_)  //!!Should we lose the dependency on auto_ptr and just return the pointer (and let the user make their own auto_ptr)?
+BOOL CMLibrary::Load(std::unique_ptr<const CMLibrary>& clAutoLibrary_)  //!!Should we lose the dependency on auto_ptr and just return the pointer (and let the user make their own auto_ptr)?
 {
    try
    {
@@ -31,7 +31,7 @@ BOOL CMLibrary::Load(auto_ptr<const CMLibrary>& clAutoLibrary_)  //!!Should we l
    }
    catch(...)
    {
-      clAutoLibrary_.reset(NULL);
+      clAutoLibrary_.reset();
       return FALSE;
    }
 
@@ -82,7 +82,7 @@ CMLibrary::~CMLibrary() throw()
 ///////////////////////////////////////////////////////////////////////
 CMError::Enum CMLibrary::LoadFunctions()
 {
-   hLibHandle = LoadLibrary(LIBRARY_NAME);
+   hLibHandle = LoadLibraryA(LIBRARY_NAME);
    if(hLibHandle == NULL)
       return CMError::NO_LIBRARY;
 

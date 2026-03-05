@@ -7,7 +7,9 @@
 #include "dialoglogin.h"
 #include "globalvars.h"
 
+#ifdef GC_HAVE_VLCQT
 #include "myvlcplayer.h"
+#endif
 #include "webbrowserv2.h"
 
 #include "googlemapwidget.h"

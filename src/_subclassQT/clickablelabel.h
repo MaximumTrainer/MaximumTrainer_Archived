@@ -12,7 +12,7 @@ class ClickableLabel : public QLabel
 
 public:
 
-    explicit ClickableLabel(QWidget *parent = 0, Qt::WindowFlags f = 0);
+    explicit ClickableLabel(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 
     void setVolumeLabel(bool isVolumeLabel) {

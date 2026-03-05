@@ -9,7 +9,7 @@
 #include <QEvent>
 #include <QHostInfo>
 
-
+#ifdef GC_HAVE_VLCQT
 
 #include <VLCQtCore/Common.h>
 #include <VLCQtCore/Instance.h>
@@ -22,9 +22,6 @@
 #include <VLCQtWidgets/ControlAudio.h>
 #include <VLCQtWidgets/WidgetSeek.h>
 #include <VLCQtWidgets/WidgetVideo.h>
-
-
-
 
 
 
@@ -166,5 +163,42 @@ private :
     VlcWidgetVideo *video;
     VlcWidgetSeek *seek;
 };
+
+#else // GC_HAVE_VLCQT — stub for platforms without VLC-Qt
+
+class MyVlcPlayer : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit MyVlcPlayer(QWidget *parent = nullptr) : QWidget(parent) {}
+    ~MyVlcPlayer() {}
+    void setMovieTime(int) {}
+    void setRadio(bool) {}
+signals:
+    void playing();
+    void stopped();
+    void paused();
+public slots:
+    void openUrlRadio(QString) {}
+    void openUrlRadioFromIp(QHostInfo) {}
+    void stop() {}
+    void videoRightClick() {}
+    void openLocal() {}
+    void openUrl() {}
+    void playOrPause() {}
+    void pause() {}
+    void resume() {}
+    void resetActionMenu() {}
+    void updateSubtitle() {}
+    void subtitleChanged() {}
+    void changeVolume(int) {}
+    void muteVolume(bool) {}
+    void hideWidgets() {}
+    void pushTimerHideWidgets() {}
+    void audioTracksChanged(QList<QAction*>) {}
+    void checkForSubtitle(QList<QAction*>) {}
+};
+
+#endif // GC_HAVE_VLCQT
 
 #endif // MYVLCPLAYER_H

@@ -13,9 +13,10 @@
 #include "userstudio.h"
 
 #include <QWebEngineSettings>
+#include <QWebEngineProfile>
+#ifdef GC_HAVE_VLCQT
 #include <VLCQtCore/Common.h>
-
-
+#endif
 
 
 
@@ -32,9 +33,11 @@ GlobalVars::GlobalVars(QObject *parent) :
     QCoreApplication::setOrganizationDomain("maximumtrainer.com");
     QCoreApplication::setApplicationName("MaximumTrainer");
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
-    QWebEngineSettings::globalSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
 
 
     // Used in Signal/Slots connection
@@ -54,7 +57,9 @@ GlobalVars::GlobalVars(QObject *parent) :
 
 
     //plugin path using by libvlc
+#ifdef GC_HAVE_VLCQT
     VlcCommon::setPluginPath(qApp->applicationDirPath() + "/plugins");
+#endif
 
 
     ///-------- INIT GLOBAL VAR ---------------------------

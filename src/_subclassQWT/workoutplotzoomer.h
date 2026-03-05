@@ -10,9 +10,13 @@
 #include "qwt_plot_marker.h"
 #include "qwt_plot_textlabel.h"
 #include "qwt_plot_shapeitem.h"
-#include "markeritem.h"
+#include "qwt_text.h"
 #include "zoneitem.h"
-#include "iconitem.h"
+
+// Forward declarations avoid pulling "qwt_plot_item.h" via double-quote
+// includes, which confuses Clang on macOS and breaks the QwtPlot type identity.
+class MarkerItem;
+class IconItem;
 
 #include <QGridLayout>
 #include "account.h"

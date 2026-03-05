@@ -11,7 +11,7 @@ else: DEFINES += QT_NO_UITOOLS
 
 CONFIG += qwt qt thread
 CONFIG += release
-CONFIG += c++11
+CONFIG += c++17
 
 #INCLUDEPATH	+= /usr/lib/x86_64-linux-gnu/qt5
 
@@ -112,9 +112,9 @@ LIBS += $${GSL_LIBS}
 # Microsoft Visual Studion toolchain dependencies
 win32-msvc* {
 
-    # we need windows kit 8.2 or higher with MSVC, offer default location
-    isEmpty(WINKIT_INSTALL) WINKIT_INSTALL= "C:/Program Files (x86)/Windows Kits/8.1/Lib/winv6.3/um/x64"
-    LIBS += -L$${WINKIT_INSTALL} -lGdi32 -lUser32
+    # Gdi32 and User32 are standard system libs resolved automatically by the
+    # MSVC linker via the LIB environment variable.  No explicit -L path needed.
+    LIBS += -lGdi32 -lUser32
     CONFIG += force_debug_info
 
 
@@ -132,6 +132,7 @@ win32-msvc* {
         QMAKE_CXXFLAGS += -Wno-sign-compare
 
         LIBS += -lsfml-audio -lsfml-system -lVLCQtCore -lVLCQtWidgets
+        DEFINES += GC_HAVE_VLCQT
     }
 }
 
@@ -151,14 +152,14 @@ win32 {
 #////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 macx {
-    # Mac native widget support
-    QT += macextras
 
-    # VLC-Qt (default install path; override with VLCQT_INSTALL=...)
-    isEmpty(VLCQT_INSTALL) { VLCQT_INSTALL = $$(HOME)/vlc-qt }
-    INCLUDEPATH += $${VLCQT_INSTALL}/include
-    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
-    LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
+    # VLC-Qt (optional; enable by passing VLCQT_INSTALL=... to qmake)
+    !isEmpty(VLCQT_INSTALL) {
+        DEFINES += GC_HAVE_VLCQT
+        INCLUDEPATH += $${VLCQT_INSTALL}/include
+        LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtCore
+        LIBS += -F$${VLCQT_INSTALL}/lib -framework VLCQtWidgets
+    }
 
     # SFML (configure via SFML_INSTALL=...)
     !isEmpty(SFML_INSTALL) {
@@ -168,6 +169,17 @@ macx {
 
     # on mac we use native buttons and video, but have native fullscreen support
     LIBS    += -lobjc -framework IOKit -framework AppKit
+
+    # QWT: configure directly against the flat (non-framework) install.
+    # This bypasses qwt.prf, which on Qt6/macOS detects qt_framework in CONFIG
+    # and sets INCLUDEPATH to qwt.framework/Headers — creating two QwtPlot type
+    # identities (flat + framework headers) and causing Clang ODR errors like
+    # "WorkoutPlotZoomer* cannot convert to QwtPlot*".
+    !isEmpty(QWT_INSTALL) {
+        INCLUDEPATH += $${QWT_INSTALL}/include
+        LIBS += -L$${QWT_INSTALL}/lib -lqwt
+        DEFINES += QWT_DLL
+    }
 
 }
 

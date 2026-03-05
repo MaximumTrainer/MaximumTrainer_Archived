@@ -18,17 +18,9 @@
 
 #include <QtGlobal>
 
-#if QT_VERSION >= 0x050000
-    #include <QtWidgets/QApplication>
-    #include <QtWidgets/QDesktopWidget>
-    #include <QtWidgets/QHBoxLayout>
-    #include <QtWidgets/QToolBar>
-#else
-    #include <QtGui/QApplication>
-    #include <QtGui/QDesktopWidget>
-    #include <QtGui/QHBoxLayout>
-    #include <QtGui/QToolBar>
-#endif
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QToolBar>
 
 #if defined(Q_WS_X11)
     #include <X11/Xlib.h>

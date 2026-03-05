@@ -5,24 +5,42 @@
 #include <QLowEnergyDescriptor>
 
 // Standard BLE service and characteristic UUIDs (defined locally in the TU)
+// Qt6 moved the enum values into nested enums inside QBluetoothUuid.
 namespace BtleUuid {
 // Services
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+static const QBluetoothUuid HeartRate             (QBluetoothUuid::ServiceClassUuid::HeartRate);
+static const QBluetoothUuid CyclingSpeedCadence   (QBluetoothUuid::ServiceClassUuid::CyclingSpeedAndCadence);
+static const QBluetoothUuid CyclingPower          (QBluetoothUuid::ServiceClassUuid::CyclingPower);
+#else
 static const QBluetoothUuid HeartRate             (QBluetoothUuid::HeartRate);
 static const QBluetoothUuid CyclingSpeedCadence   (QBluetoothUuid::CyclingSpeedAndCadence);
 static const QBluetoothUuid CyclingPower          (QBluetoothUuid::CyclingPower);
-// Fitness Machine Service (FTMS) – not in Qt5 enum, use raw 16-bit UUID
+#endif
+// Fitness Machine Service (FTMS) – not in Qt enum, use raw 16-bit UUID
 static const QBluetoothUuid FitnessMachine        (quint16(0x1826));
 
 // Characteristics
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+static const QBluetoothUuid HeartRateMeasurement    (QBluetoothUuid::CharacteristicType::HeartRateMeasurement);
+static const QBluetoothUuid CSCMeasurement          (QBluetoothUuid::CharacteristicType::CSCMeasurement);
+static const QBluetoothUuid CyclingPowerMeasurement (QBluetoothUuid::CharacteristicType::CyclingPowerMeasurement);
+#else
 static const QBluetoothUuid HeartRateMeasurement    (QBluetoothUuid::HeartRateMeasurement);
 static const QBluetoothUuid CSCMeasurement          (QBluetoothUuid::CSCMeasurement);
 static const QBluetoothUuid CyclingPowerMeasurement (QBluetoothUuid::CyclingPowerMeasurement);
+#endif
 static const QBluetoothUuid FtmsIndoorBikeData      (quint16(0x2AD2));
 static const QBluetoothUuid FtmsControlPoint        (quint16(0x2AD9));
 
 // Descriptors
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+static const QBluetoothUuid ClientCharacteristicConfig
+    (QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+#else
 static const QBluetoothUuid ClientCharacteristicConfig
     (QBluetoothUuid::ClientCharacteristicConfiguration);
+#endif
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,10 +91,15 @@ void BtleHub::connectToDevice(const QBluetoothDeviceInfo &device)
             this, &BtleHub::onControllerConnected);
     connect(m_controller, &QLowEnergyController::disconnected,
             this, &BtleHub::onControllerDisconnected);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(m_controller, &QLowEnergyController::errorOccurred,
+            this, &BtleHub::onControllerError);
+#else
     connect(m_controller,
             static_cast<void(QLowEnergyController::*)(QLowEnergyController::Error)>(
                 &QLowEnergyController::error),
             this, &BtleHub::onControllerError);
+#endif
     connect(m_controller, &QLowEnergyController::serviceDiscovered,
             this, &BtleHub::onServiceDiscovered);
     connect(m_controller, &QLowEnergyController::discoveryFinished,
@@ -228,7 +251,11 @@ void BtleHub::setupService(QLowEnergyService *service)
     connect(service, &QLowEnergyService::characteristicChanged,
             this, &BtleHub::onCharacteristicChanged);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    if (service->state() == QLowEnergyService::RemoteService)
+#else
     if (service->state() == QLowEnergyService::DiscoveryRequired)
+#endif
         service->discoverDetails();
 }
 
@@ -266,7 +293,11 @@ void BtleHub::onServiceStateChanged(QLowEnergyService::ServiceState state)
     if (!service)
         return;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    if (state != QLowEnergyService::RemoteServiceDiscovered)
+#else
     if (state != QLowEnergyService::ServiceDiscovered)
+#endif
         return;
 
     // Enable notifications for every measurement characteristic we care about

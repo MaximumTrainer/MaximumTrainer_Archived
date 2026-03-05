@@ -662,7 +662,7 @@ void Main_WorkoutPage::refreshMapWorkout() {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Main_WorkoutPage::paintEvent(QPaintEvent *) {
     QStyleOption opt;
-    opt.init(this);
+    opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }

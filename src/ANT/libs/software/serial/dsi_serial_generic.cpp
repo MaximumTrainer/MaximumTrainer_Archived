@@ -20,6 +20,7 @@ All rights reserved.
 #include <time.h>
 
 #if defined(DSI_TYPES_WINDOWS)
+   #include <tchar.h>
    #include "WinDevice.h"
 #endif
 
@@ -425,7 +426,7 @@ void DSISerialGeneric::USBReset(void)
             //Only do the soft reset if we fail to open a device or it seems like theres no deivces to open (device in a "hosed" state)
             //The soft reset will have no effect on devices currently opened by other applications.
             argv_[0] = line1;
-            SNPRINTF(&(line1[0]),sizeof(line1), "@USB\\VID_0FCF&PID_10*");   //The string for all ANT USB Devices
+            _sntprintf_s(line1, ARRAYSIZE(line1), _TRUNCATE, _T("@USB\\VID_0FCF&PID_10*"));   //The string for all ANT USB Devices
             WinDevice_Disable(1,argv_);
             WinDevice_Enable(1,argv_);
 

@@ -4,7 +4,8 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QKeyEvent>
-#include <QDesktopWidget>
+#include <QScreen>
+#include <QGuiApplication>
 
 #include "interval.h"
 #include "workout.h"
@@ -223,7 +224,7 @@ WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, 
     widgetLoading->setAttribute(Qt::WA_TransparentForMouseEvents,true);
     widgetLoading->setFocusPolicy(Qt::NoFocus);
     QVBoxLayout *vLayout = new QVBoxLayout(widgetLoading);
-    vLayout->setMargin(0);
+    vLayout->setContentsMargins(0, 0, 0, 0);
     vLayout->setSpacing(0);
 
     QSpacerItem *spacer = new QSpacerItem(200, 200, QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -363,9 +364,9 @@ WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, 
     widgetBattery->setFocusPolicy(Qt::NoFocus);
     QHBoxLayout *hLayout = new QHBoxLayout(widgetBattery);
     QVBoxLayout *vLayoutSub = new QVBoxLayout(widgetBattery);
-    hLayout->setMargin(0);
+    hLayout->setContentsMargins(0, 0, 0, 0);
     hLayout->setSpacing(0);
-    vLayoutSub->setMargin(0);
+    vLayoutSub->setContentsMargins(0, 0, 0, 0);
     vLayoutSub->setSpacing(0);
 
     QSpacerItem *spacer2 = new QSpacerItem(200, 200, QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -590,6 +591,7 @@ WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, 
     dconfig->setModal(true);
 
     //Internet Radio Player
+#ifdef GC_HAVE_VLCQT
     radioPlayer = new MyVlcPlayer(this);
     radioPlayer->setVisible(false);
     radioPlayer->setRadio(true);
@@ -604,6 +606,7 @@ WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, 
     connect(radioPlayer, SIGNAL(playing()), ui->widget_topMenu, SLOT(radioStartedPlaying()) );
     connect(radioPlayer, SIGNAL(paused()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
     connect(radioPlayer, SIGNAL(stopped()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
+#endif
 
     connect(dconfig, SIGNAL(radioStatus(QString)), ui->widget_topMenu, SLOT(updateRadioStatus(QString)) );
 
@@ -3327,8 +3330,7 @@ void WorkoutDialog::createUserStudioWidget() {
 
 
     // Get Main Screen Resolution
-    QDesktopWidget widget;
-    int widthCurrentComputer = widget.availableGeometry(widget.primaryScreen()).width();
+    int widthCurrentComputer = QGuiApplication::primaryScreen()->availableGeometry().width();
     qDebug() << "WHAT IS THE WIDTH??" << widthCurrentComputer;
 
 

@@ -1,5 +1,6 @@
 #include "myqwtdial.h"
 #include "qwt_round_scale_draw.h"
+#include "qwt_global.h"
 #include "util.h"
 #include <QPainter>
 
@@ -11,7 +12,11 @@ myQwtDial::myQwtDial( QWidget* parent ): QwtDial( parent ) {
 
 
     scaleDraw()->enableComponent( QwtAbstractScaleDraw::Backbone, false );
+#if QWT_VERSION >= 0x060200
     scaleDraw()->setPenWidthF( 2.0 );
+#else
+    scaleDraw()->setPenWidth( 2 );
+#endif
 
     setReadOnly(true);
     setTracking( false );

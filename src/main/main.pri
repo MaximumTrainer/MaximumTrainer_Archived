@@ -7,7 +7,12 @@ SOURCES += src/main/main.cpp\
     src/main/globalvars.cpp \
     $$PWD/simplecrypt.cpp \
     $$PWD/reportutil.cpp \
-    $$PWD/myvlcplayer.cpp \
+
+contains(DEFINES, GC_HAVE_VLCQT) {
+    SOURCES += $$PWD/myvlcplayer.cpp
+}
+# Always include header so MOC generates the meta-object / vtable for the stub class
+HEADERS += $$PWD/myvlcplayer.h
 
 
 
@@ -17,7 +22,6 @@ HEADERS += src/main/util.h \
     src/main/globalvars.h \
     $$PWD/simplecrypt.h \
     $$PWD/reportutil.h \
-    $$PWD/myvlcplayer.h \
     $$PWD/myconstants.h
 
 

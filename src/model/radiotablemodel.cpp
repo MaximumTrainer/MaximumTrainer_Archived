@@ -152,7 +152,7 @@ QVariant RadioTableModel::data(const QModelIndex &index, int role) const {
 
 
     ///Background
-    if (role == Qt::BackgroundColorRole && index.row() == activeIndex.row()) {
+    if (role == Qt::BackgroundRole && index.row() == activeIndex.row()) {
         QColor colorCadenceShapeTarget(150,150,150);
         return colorCadenceShapeTarget;
     }

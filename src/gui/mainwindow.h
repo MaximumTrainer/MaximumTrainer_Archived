@@ -5,6 +5,11 @@
 #include <QTranslator>
 #include <QNetworkReply>
 #include <QWebEngineView>
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+#include <QWebEngineDownloadRequest>
+#else
+#include <QWebEngineDownloadItem>
+#endif
 #include <QThread>
 
 #include "zoneobject.h"
@@ -57,7 +62,11 @@ signals :
 
 public slots:
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+    void downloadRequested(QWebEngineDownloadRequest*);
+#else
     void downloadRequested(QWebEngineDownloadItem*);
+#endif
 
     void executeWorkout(Workout workout);
 

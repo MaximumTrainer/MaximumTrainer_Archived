@@ -35,7 +35,7 @@ USBDeviceSI::USBDeviceSI(UCHAR ucDeviceNumber_)
    szProductDescription[0] = '\0';
    szSerialString[0] = '\0';
 
-   auto_ptr<const SiLabsLibrary> pclAutoSiLibrary(NULL);
+   std::unique_ptr<const SiLabsLibrary> pclAutoSiLibrary;
    if(SiLabsLibrary::Load(pclAutoSiLibrary) == FALSE)
       return;
    const SiLabsLibrary& clSiLibrary = *pclAutoSiLibrary;

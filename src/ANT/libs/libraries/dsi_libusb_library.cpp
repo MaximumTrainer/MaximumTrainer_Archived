@@ -18,11 +18,11 @@ using namespace std;
 #define LIBRARY_NAME    "libusb0.dll"
 
 //Static variable initializations
-std::auto_ptr<LibusbLibrary> LibusbLibrary::clAutoInstance(NULL);
+std::unique_ptr<LibusbLibrary> LibusbLibrary::clAutoInstance;
 BOOL LibusbLibrary::bStaticSet = FALSE;
 
                                                                      //return an auto_ptr?
-BOOL LibusbLibrary::Load(auto_ptr<const LibusbLibrary>& clAutoLibrary_)  //!!Should we lose the dependency on auto_ptr and just return the pointer (and let the user make their own auto_ptr)?
+BOOL LibusbLibrary::Load(std::unique_ptr<const LibusbLibrary>& clAutoLibrary_)  //!!Should we lose the dependency on auto_ptr and just return the pointer (and let the user make their own auto_ptr)?
 {
    try
    {
@@ -30,7 +30,7 @@ BOOL LibusbLibrary::Load(auto_ptr<const LibusbLibrary>& clAutoLibrary_)  //!!Sho
    }
    catch(...)
    {
-      clAutoLibrary_.reset(NULL);
+      clAutoLibrary_.reset();
       return FALSE;
    }
 
@@ -99,7 +99,7 @@ LibusbLibrary::~LibusbLibrary() throw()
 ///////////////////////////////////////////////////////////////////////
 LibusbError::Enum LibusbLibrary::LoadFunctions()
 {
-   hLibHandle = LoadLibrary(LIBRARY_NAME);
+   hLibHandle = LoadLibraryA(LIBRARY_NAME);
    if(hLibHandle == NULL)
       return LibusbError::NO_LIBRARY;
 

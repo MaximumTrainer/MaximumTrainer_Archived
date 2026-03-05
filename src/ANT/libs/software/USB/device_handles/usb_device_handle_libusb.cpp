@@ -52,7 +52,7 @@ const USBDeviceListLibusb USBDeviceHandleLibusb::GetAllDevices()  //!!List needs
    clDeviceList = USBDeviceList<const USBDeviceLibusb>();  //clear device list
 
    //Get a reference to library
-   auto_ptr<const LibusbLibrary> pclAutoLibusbLibrary(NULL);
+   std::unique_ptr<const LibusbLibrary> pclAutoLibusbLibrary;
    if(LibusbLibrary::Load(pclAutoLibusbLibrary) == FALSE)
       return clList;
    const LibusbLibrary& clLibusbLibrary = *pclAutoLibusbLibrary;
@@ -153,7 +153,7 @@ BOOL USBDeviceHandleLibusb::Close(USBDeviceHandleLibusb*& pclDeviceHandle_, BOOL
 BOOL USBDeviceHandleLibusb::TryOpen(const USBDeviceLibusb& clDevice_)
 {
    //Get a reference to library
-   auto_ptr<const LibusbLibrary> pclAutoLibusbLibrary(NULL);
+   std::unique_ptr<const LibusbLibrary> pclAutoLibusbLibrary;
    if(LibusbLibrary::Load(pclAutoLibusbLibrary) == FALSE)
       return FALSE;
    const LibusbLibrary& clLibusbLibrary = *pclAutoLibusbLibrary;

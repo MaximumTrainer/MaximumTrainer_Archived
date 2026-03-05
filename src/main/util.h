@@ -4,7 +4,7 @@
 #include <QtCore>
 #include <QApplication>
 
-#include <qwt_plot.h>
+#include "qwt_plot.h"
 #include "qwt_plot_grid.h"
 #include "qwt_plot_histogram.h"
 #include "workout.h"

@@ -6,6 +6,8 @@
 #include <QMessageBox>
 #include <QTableWidgetItem>
 #include <QDebug>
+#include <QPainter>
+#include <algorithm>
 
 
 
@@ -495,7 +497,7 @@ void WorkoutCreator::on_pushButton_repeat_clicked()
     /// Add widget to QList, order first Repeat = first in QList
     idRepeatWidget ++;
     lstRepeatWidget.append(repeatWidget);
-    qSort(lstRepeatWidget.begin(), lstRepeatWidget.end(), RepeatWidget::myLessThan );
+    std::sort(lstRepeatWidget.begin(), lstRepeatWidget.end(), RepeatWidget::myLessThan );
 
 
     tableViewSelectionChanged(QItemSelection(), QItemSelection());
@@ -623,7 +625,7 @@ void WorkoutCreator::on_pushButton_delete_clicked()
     }
 
     /// Sort list in ascending order to remove from end to start (indexes stay valid)
-    qSort(lstIndex.begin(), lstIndex.end(), qLess<QModelIndex>());
+    std::sort(lstIndex.begin(), lstIndex.end(), std::less<QModelIndex>());
 
     ////////////////////---------------------------------------------------------------
 
@@ -840,7 +842,7 @@ void WorkoutCreator::createWorkout(const QString& name, const QString& plan, con
 /////////////////////////////////////////////////////////////////////////////////////////
 void WorkoutCreator::paintEvent(QPaintEvent *) {
     QStyleOption opt;
-    opt.init(this);
+    opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }

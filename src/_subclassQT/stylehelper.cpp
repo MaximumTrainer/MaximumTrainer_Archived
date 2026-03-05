@@ -104,7 +104,7 @@ void StyleHelper::drawIconWithShadow(const QIcon &icon, const QRect &rect,
     QPixmap cache;
     QString pixmapName = QString::fromLatin1("icon %0 %1 %2").arg(icon.cacheKey()).arg(iconMode).arg(rect.height());
 
-    if (!QPixmapCache::find(pixmapName, cache)) {
+    if (!QPixmapCache::find(pixmapName, &cache)) {
         QPixmap px = icon.pixmap(rect.size());
         cache = QPixmap(px.size() + QSize(radius * 2, radius * 2));
         cache.fill(Qt::transparent);

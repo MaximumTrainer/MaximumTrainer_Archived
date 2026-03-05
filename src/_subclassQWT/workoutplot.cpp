@@ -1,7 +1,7 @@
 #include "workoutplot.h"
 
 #include <QPen>
-#include <qwt_text.h>
+#include "qwt_text.h"
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QSplitter>
@@ -9,9 +9,9 @@
 #include <QSpinBox>
 #include <QKeyEvent>
 
-#include <qwt_date_scale_draw.h>
-#include <qwt_plot_zoneitem.h>
-#include <qwt_plot_layout.h>
+#include "qwt_date_scale_draw.h"
+#include "qwt_plot_zoneitem.h"
+#include "qwt_plot_layout.h"
 
 #include "util.h"
 #include "curvedatacadence.h"
@@ -365,7 +365,7 @@ void WorkoutPlot::init(bool firstInit) {
         //------------------------------
         widgetCanvas = this->canvas();
         QGridLayout *gridLayout = new QGridLayout(this);
-        gridLayout->setMargin(0);
+        gridLayout->setContentsMargins(0, 0, 0, 0);
         gridLayout->setSpacing(0);
         gridLayout->setContentsMargins(0,0,0,0);
         gridLayout->addWidget(spinBoxDifficulty, 0, 1, 1, 1, Qt::AlignRight | Qt::AlignTop);

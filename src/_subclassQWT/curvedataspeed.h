@@ -1,7 +1,7 @@
 #ifndef CURVEDATASPEED_H
 #define CURVEDATASPEED_H
 
-#include <qwt_series_data.h>
+#include "qwt_series_data.h"
 #include <qpointer.h>
 
 class DataSpeed;

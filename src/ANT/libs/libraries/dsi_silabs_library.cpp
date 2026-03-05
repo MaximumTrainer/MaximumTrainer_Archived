@@ -18,11 +18,11 @@ using namespace std;
 #define LIBRARY_NAME    "DSI_SiUSBXp_3_1.DLL"
 
 //Static variable initializations
-std::auto_ptr<SiLabsLibrary> SiLabsLibrary::clAutoInstance(NULL);
+std::unique_ptr<SiLabsLibrary> SiLabsLibrary::clAutoInstance;
 BOOL SiLabsLibrary::bStaticSet = FALSE;
 
                                                                      //return an auto_ptr?
-BOOL SiLabsLibrary::Load(auto_ptr<const SiLabsLibrary>& clAutoLibrary_)  //!!Should we lose the dependency on auto_ptr and just return the pointer (and let the user make their own auto_ptr)?
+BOOL SiLabsLibrary::Load(std::unique_ptr<const SiLabsLibrary>& clAutoLibrary_)  //!!Should we lose the dependency on auto_ptr and just return the pointer (and let the user make their own auto_ptr)?
 {
    try
    {
@@ -30,7 +30,7 @@ BOOL SiLabsLibrary::Load(auto_ptr<const SiLabsLibrary>& clAutoLibrary_)  //!!Sho
    }
    catch(...)
    {
-      clAutoLibrary_.reset(NULL);
+      clAutoLibrary_.reset();
       return FALSE;
    }
 
@@ -90,7 +90,7 @@ SiLabsLibrary::~SiLabsLibrary() throw()
 ///////////////////////////////////////////////////////////////////////
 SiLabsError::Enum SiLabsLibrary::LoadFunctions()
 {
-   hLibHandle = LoadLibrary(LIBRARY_NAME);
+   hLibHandle = LoadLibraryA(LIBRARY_NAME);
    if(hLibHandle == NULL)
       return SiLabsError::NO_LIBRARY;
 

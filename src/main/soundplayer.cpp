@@ -42,15 +42,15 @@ SoundPlayer::SoundPlayer(QObject *parent) : QObject(parent)  {
     bufferSoundPowerTooHigh.loadFromMemory(qrcPowerTooHigh.data(), qrcPowerTooHigh.size());
 
 
-    soundAchievement =   sf::Sound(bufferSoundAchievement);
-    soundLastBeepInterval =  sf::Sound(bufferSoundLastBeepInterval);
-    soundFirstBeepInterval =  sf::Sound(bufferSoundFirstBeepInterval);
-    soundEndWorkout =  sf::Sound(bufferSoundEndWorkout);
-    soundStartWorkout =  sf::Sound(bufferSoundStartWorkout);
-    soundCadenceTooLow =  sf::Sound(bufferSoundCadenceTooLow);
-    soundCadenceTooHigh =  sf::Sound(bufferSoundCadenceTooHigh);
-    soundPowerTooLow =  sf::Sound(bufferSoundPowerTooLow);
-    soundPowerTooHigh =  sf::Sound(bufferSoundPowerTooHigh);
+    soundAchievement.emplace(bufferSoundAchievement);
+    soundLastBeepInterval.emplace(bufferSoundLastBeepInterval);
+    soundFirstBeepInterval.emplace(bufferSoundFirstBeepInterval);
+    soundEndWorkout.emplace(bufferSoundEndWorkout);
+    soundStartWorkout.emplace(bufferSoundStartWorkout);
+    soundCadenceTooLow.emplace(bufferSoundCadenceTooLow);
+    soundCadenceTooHigh.emplace(bufferSoundCadenceTooHigh);
+    soundPowerTooLow.emplace(bufferSoundPowerTooLow);
+    soundPowerTooHigh.emplace(bufferSoundPowerTooHigh);
 
 
 
@@ -63,50 +63,50 @@ void SoundPlayer::setVolume(double volume) {
 
     qDebug() << "setVolume soundPlayer";
 
-    soundAchievement.setVolume(volume);
-    soundLastBeepInterval.setVolume(volume);
-    soundFirstBeepInterval.setVolume(volume);
-    soundEndWorkout.setVolume(volume);
-    soundStartWorkout.setVolume(volume);
-    soundCadenceTooLow.setVolume(volume);
-    soundCadenceTooHigh.setVolume(volume);
-    soundPowerTooLow.setVolume(volume);
-    soundPowerTooHigh.setVolume(volume);
+    soundAchievement->setVolume(volume);
+    soundLastBeepInterval->setVolume(volume);
+    soundFirstBeepInterval->setVolume(volume);
+    soundEndWorkout->setVolume(volume);
+    soundStartWorkout->setVolume(volume);
+    soundCadenceTooLow->setVolume(volume);
+    soundCadenceTooHigh->setVolume(volume);
+    soundPowerTooLow->setVolume(volume);
+    soundPowerTooHigh->setVolume(volume);
 }
 
 
 void SoundPlayer::playSoundEffectTest() {
-        soundFirstBeepInterval.play();
+        soundFirstBeepInterval->play();
 }
 void SoundPlayer::playSoundAchievement() {
-        soundAchievement.play();
+        soundAchievement->play();
 }
 
 
 void SoundPlayer::playSoundLastBeepInterval() {
-        soundLastBeepInterval.play();
+        soundLastBeepInterval->play();
 }
 void SoundPlayer::playSoundFirstBeepInterval() {
-        soundFirstBeepInterval.play();
+        soundFirstBeepInterval->play();
 }
 void SoundPlayer::playSoundEndWorkout() {
-        soundEndWorkout.play();
+        soundEndWorkout->play();
 }
 void SoundPlayer::playSoundStartWorkout() {
-        soundStartWorkout.play();
+        soundStartWorkout->play();
 }
 void SoundPlayer::playSoundPauseWorkout() {
-        soundStartWorkout.play();
+        soundStartWorkout->play();
 }
 void SoundPlayer::playSoundCadenceTooLow() {
-        soundCadenceTooLow.play();
+        soundCadenceTooLow->play();
 }
 void SoundPlayer::playSoundCadenceTooHigh() {
-        soundCadenceTooHigh.play();
+        soundCadenceTooHigh->play();
 }
 void SoundPlayer::playSoundPowerTooLow() {
-        soundPowerTooLow.play();
+        soundPowerTooLow->play();
 }
 void SoundPlayer::playSoundPowerTooHigh() {
-        soundPowerTooHigh.play();
+        soundPowerTooHigh->play();
 }

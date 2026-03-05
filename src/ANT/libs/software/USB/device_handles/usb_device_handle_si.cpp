@@ -71,7 +71,7 @@ const USBDeviceListSI USBDeviceHandleSI::GetAllDevices()
    clDeviceList = USBDeviceList<const USBDeviceSI>();  //clear device list
 
    //Get a reference to library
-   auto_ptr<const SiLabsLibrary> pclAutoSiLibrary(NULL);
+   std::unique_ptr<const SiLabsLibrary> pclAutoSiLibrary;
    if(SiLabsLibrary::Load(pclAutoSiLibrary) == FALSE)
       return clList;
    const SiLabsLibrary& clSiLibrary = *pclAutoSiLibrary;
@@ -211,7 +211,7 @@ UCHAR USBDeviceHandleSI::GetNumberOfDevices()  //!!Should this be in USBDeviceSI
 {
 
    //Get a reference to library
-   auto_ptr<const SiLabsLibrary> pclAutoSiLibrary(NULL);
+   std::unique_ptr<const SiLabsLibrary> pclAutoSiLibrary;
    if(SiLabsLibrary::Load(pclAutoSiLibrary) == FALSE)
       return 0;
 
@@ -263,7 +263,7 @@ USBError::Enum USBDeviceHandleSI::GetDevicePID(USHORT& usPID_)  //!!Don't need t
 BOOL USBDeviceHandleSI::TryOpen(const USBDeviceSI& clDevice_)
 {
    //Get a reference to library
-   auto_ptr<const SiLabsLibrary> pclAutoSiLibrary(NULL);
+   std::unique_ptr<const SiLabsLibrary> pclAutoSiLibrary;
    if(SiLabsLibrary::Load(pclAutoSiLibrary) == FALSE)
       return 0;
    const SiLabsLibrary& clSiLibrary = *pclAutoSiLibrary;
