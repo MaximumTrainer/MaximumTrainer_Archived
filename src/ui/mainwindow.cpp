@@ -75,7 +75,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->webView_settings->setUrl(QUrl(Environnement::getUrlSettings()));
     ui->webView_plan->setUrl(QUrl(Environnement::getUrlPlans()));
     ui->webView_studio->setUrl(QUrl(Environnement::getUrlStudio()));
-    ui->webView_ergDb->setUrl(QUrl("https://www.ergdb.org/maximum-trainer/"));
+    ui->webView_ergDb->setUrl(QUrl("https://www.trainerday.com/"));
 
 
 
@@ -209,7 +209,7 @@ void MainWindow::downloadRequested(QWebEngineDownloadRequest* download) {
     QString filename = download->downloadFileName();
     qDebug() << "Path: " << download->downloadDirectory() + QDir::separator() + filename;
 
-    download->setDownloadDirectory(Util::getSystemPathWorkout() + QDir::separator() + "ergdb");
+    download->setDownloadDirectory(Util::getSystemPathWorkout() + QDir::separator() + "trainerday");
     download->setDownloadFileName(filename);
     download->accept();
 
@@ -224,7 +224,7 @@ void MainWindow::downloadRequested(QWebEngineDownloadItem* download) {
     QFileInfo fileInfo(download->path());
     QString filename(fileInfo.fileName());
 
-    download->setPath(Util::getSystemPathWorkout() + QDir::separator() + "ergdb" + QDir::separator() + filename);
+    download->setPath(Util::getSystemPathWorkout() + QDir::separator() + "trainerday" + QDir::separator() + filename);
     qDebug() << "Path: " << download->path();
     download->accept();
 
@@ -315,7 +315,7 @@ void MainWindow::goToWorkoutPlanFilter(const QString& plan) {
 
 }
 
-// trigger after a download is finish on ergDb tab
+// trigger after a download is finish on TrainerDay tab
 //---------------------------------------------------------------------------------
 void MainWindow::goToWorkoutNameFilter() {
 

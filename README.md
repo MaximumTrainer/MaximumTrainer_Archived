@@ -1,31 +1,52 @@
 # MaximumTrainer
-Qt software for indoor cycling, similar to trainerroad, with the ability to get plans from trainerday.com.
-Old Qt App under renovation for fun with Github Copilot.
-Connects to cycle trainers and sensors exclusively via **Bluetooth Low Energy (BTLE)**.
 
-## Sensor Connection
+An open-source, high-performance indoor cycling training application built with the **Qt framework (C++17)**. MaximumTrainer delivers structured interval workouts with real-time power, cadence, heart rate, and speed feedback, and controls smart trainers automatically via FTMS ERG mode. Browse and sync workouts from [TrainerDay.com](https://www.trainerday.com/), or import your own `.erg` / `.mrc` files.
 
-MaximumTrainer uses **Bluetooth Low Energy (BTLE) only** to connect to cycle trainers and sensors on all platforms (Windows, Linux, macOS).
+## Technical Overview
 
-When starting a workout, a **connection method dialog** appears first:
+| Item | Details |
+|------|---------|
+| **Language** | C++17 (≈ 95 % C++) |
+| **Framework** | Qt 5.15.2 (Windows / Linux) · Qt 6.7.3 (macOS) |
+| **Build file** | `PowerVelo.pro` (qmake) |
+| **Qt modules** | core · gui · widgets · network · bluetooth · webenginewidgets · printsupport · concurrent |
+| **Trainer protocol** | Bluetooth LE Fitness Machine Service (FTMS / 0x1826) for ERG resistance control |
+| **Sensor profiles** | Heart Rate (0x180D) · Cycling Speed & Cadence (0x1816) · Cycling Power (0x1818) |
+| **Workout formats** | `.erg`, `.mrc` (imported and converted to the native `.workout` XML format) |
+| **Workout source** | Integrated TrainerDay.com browser for online workout plans |
 
-- **BTLE Device** — scan for and connect to a real Bluetooth LE sensor/trainer
-- **Simulation** — generate synthetic sensor data locally (no hardware required)
+## Hardware Setup
 
-### BTLE Device mode
+### 1 — Wake up your sensors
 
-Select your trainer or sensor from the Bluetooth scanner list. Supported sensor profiles:
+| Device | How to wake it |
+|--------|---------------|
+| Smart trainer | Start pedalling for a few seconds |
+| Power meter | Start pedalling |
+| Heart rate strap | Moisten the electrode contacts and put it on |
+| Speed / cadence sensor | Spin the crank or wheel |
 
-| Profile | UUID | Data |
-|---------|------|------|
-| Heart Rate Monitor | 0x180D | Heart rate (bpm) |
-| Cycling Speed & Cadence | 0x1816 | Speed (km/h), cadence (RPM) |
-| Cycling Power | 0x1818 | Power (W) |
-| Fitness Machine (FTMS) | 0x1826 | Speed, cadence, power + trainer control |
+### 2 — Connect in the app
+
+1. Launch MaximumTrainer and log in.
+2. From the main window open **Preferences → Device Connections** (or press the gear icon).
+3. Click **Scan / Add Devices**. The BTLE scanner lists every nearby Bluetooth LE device.
+4. Select the correct profile for each sensor:
+
+| Profile | UUID | Data provided | Smart-trainer ERG control |
+|---------|------|--------------|--------------------------|
+| Heart Rate Monitor | 0x180D | Heart rate (bpm) | No |
+| Cycling Speed & Cadence | 0x1816 | Speed (km/h) · Cadence (RPM) | No |
+| Cycling Power | 0x1818 | Power (W) | No |
+| **Fitness Machine (FTMS)** | **0x1826** | Speed · Cadence · Power | **Yes — enables ERG mode** |
+
+> **Important:** Select the **Fitness Machine (FTMS / 0x1826)** profile for your smart trainer if you want the app to set resistance automatically. Choosing a plain Power or Speed profile disables ERG control.
+
+5. Paired sensors appear with a green indicator. You can pair multiple sensors simultaneously (e.g. FTMS trainer + HR strap).
 
 ### Simulation mode
 
-Simulation mode generates realistic sensor data using a software simulator — no Bluetooth hardware is needed. Values drift gradually within realistic ranges:
+If you have no hardware — or want to test a new workout — choose **Simulation** in the connection dialog. The software hub emits realistic drifting values:
 
 | Channel | Base value | Range |
 |---------|-----------|-------|
@@ -34,25 +55,78 @@ Simulation mode generates realistic sensor data using a software simulator — n
 | Speed | 28 km/h | 23–33 km/h |
 | Power | 200 W | 170–260 W |
 
-The simulator also responds to trainer load/slope commands from the workout profile, adjusting simulated power accordingly. This makes simulation mode useful for testing workouts, developing new features, and demonstrating the app without hardware.
+The simulator responds to ERG load commands from the workout player, making it a full end-to-end test of the training logic without any Bluetooth hardware.
+
+## User Guide
+
+### Selecting a workout
+
+**Option A — TrainerDay.com library (integrated)**
+
+1. Click the **Find Workouts** tab in the left sidebar.
+2. Browse or search the TrainerDay.com catalogue directly inside the app.
+3. Double-click a workout to download it to your local library.
+
+**Option B — Import a custom file**
+
+1. Go to **File → Import Workout** (or **File → Import Course Folder** for batch import).
+2. Select one or more `.erg` or `.mrc` files.
+3. MaximumTrainer converts them to its native format and adds them to your library.
+
+**Option C — Create your own**
+
+Use the built-in **Workout Creator** (toolbar → pencil icon) to build structured intervals with configurable power, cadence, or HR targets.
+
+### Workout modes
+
+| Mode | How it works | Best for |
+|------|-------------|---------|
+| **ERG** | App automatically adjusts trainer resistance so your actual power matches the target wattage. You control only cadence. | Structured interval workouts |
+| **Slope / Manual** | App sends a constant incline grade to the trainer. Resistance changes naturally with speed, just like riding outdoors. | Free-riding, ramp tests, courses |
+
+The workout dialog switches to Slope mode automatically when the current interval has no power target, or when you press **Increase / Decrease Difficulty** to override ERG.
+
+### The Workout Player
+
+Once a workout starts you will see:
+
+- **Interval countdown** — time remaining in the current interval, and total workout time elapsed / remaining.
+- **Target vs. Actual Power graph** — a QWT-based real-time plot showing the structured intervals as coloured zones and your live power overlaid on top.
+- **Metrics widgets** — live Heart Rate · Cadence · Speed · Power · Left/Right Power Balance (if a dual-sided power meter is connected) · SpO₂ (if an oxygen sensor is connected).
+- **Controls** — Start/Pause, Skip Interval, Adjust Difficulty (±5 % FTP increments), and Lap.
+
+Completed workout data is saved as a FIT activity file and can be uploaded to **Strava**, **TrainingPeaks**, or **SelfLoops** from the post-workout screen.
+
+## Screenshots
+
+> **Note:** Screenshots showing the cross-platform UI will be added here. Contributions of high-quality screenshots on each platform are welcome — please open a pull request.
+
+| Platform | Description |
+|----------|-------------|
+| Windows | Main workout player with power graph and metrics |
+| macOS | Dashboard showing the TrainerDay.com workout browser |
+| Linux | App running on Ubuntu — proof of cross-platform build |
+| Device Manager | BTLE scanner with multiple sensors connected |
 
 ## Building
-Build with the `.pro` file inside the project & GitHub Actions CI.
+
+All three platforms are built and tested automatically via GitHub Actions CI (see `.github/workflows/build.yml`). Use `PowerVelo.pro` with `qmake` and a standard C++ compiler.
 
 ### Dependencies
 
-| Dependency | Version | Notes |
-|------------|---------|-------|
-| Qt | 5.15.2 (Win/Linux) / 6.7.3 (macOS) | Core framework |
-| QWT | 6.2.0 (Win/Linux) / 6.3.0 (macOS) | Plotting widgets |
-| VLC-Qt | 1.1.0 (Win) / built from source (Linux/macOS) | Video playback |
-| SFML | 2.6.1 (Win) / system (Linux/macOS) | Audio |
+| Dependency | Version | Platform | Notes |
+|------------|---------|----------|-------|
+| Qt | 5.15.2 | Windows · Linux | Core framework |
+| Qt | 6.7.3 | macOS | Core framework |
+| QWT | 6.2.0 | all | Plotting widgets (built from source) |
+| VLC-Qt | 1.1.0 (Win) · 1.1.1 from source (Linux) | Windows · Linux | Internet radio / video player |
+| SFML | 2.6.1 (Win) · system package (Linux/macOS) | all | Audio feedback |
 
 ### Windows
 
 **Required tools:** Qt 5.15.2 (msvc2019_64), Visual Studio 2019+ (MSVC), 7-Zip
 
-**Environment variables** — set these before running `qmake`:
+**Environment variables** — set before running `qmake`:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
@@ -68,9 +142,9 @@ qmake PowerVelo.pro `
   "SFML_INSTALL=C:/sfml/SFML-2.6.1"
 ```
 
-> `VLCQT_INSTALL` must point to the VLC-Qt package root (containing `bin/`, `include/`, `lib/`). The pre-built 1.1.0 win64 MSVC package places import `.lib` files in `lib/` and headers in `include/VLCQtCore/` etc.  
+> `VLCQT_INSTALL` must point to the VLC-Qt package root (containing `bin/`, `include/`, `lib/`). The pre-built 1.1.0 win64 MSVC package places import `.lib` files directly in `lib/`.  
 > `SFML_INSTALL` must point to the SFML root (the directory containing `include/` and `lib/`).  
-> The Windows Kit libraries (`Gdi32`, `User32`) are resolved automatically by the MSVC linker — no `WINKIT_INSTALL` is needed when building with a proper MSVC developer command prompt.
+> The Windows Kit libraries (`Gdi32`, `User32`) are resolved automatically by the MSVC linker — no `WINKIT_INSTALL` is needed when building inside an MSVC developer command prompt.
 
 **Download links:**
 - Qt 5.15.2: https://www.qt.io/download
@@ -80,21 +154,52 @@ qmake PowerVelo.pro `
 
 ### Linux (Ubuntu 22.04)
 
-Install system packages then build:
+Install system packages and build VLC-Qt from source, then build the app:
+
 ```bash
-sudo apt-get install -y qtbase5-dev qtwebengine5-dev libqt5bluetooth5-dev \
-  libsfml-dev libqwt-qt5-dev
-qmake PowerVelo.pro
+sudo apt-get install -y \
+  qtbase5-dev qtwebengine5-dev qtconnectivity5-dev \
+  libqwt-qt5-dev libsfml-dev libvlc-dev libvlccore-dev \
+  cmake build-essential
+
+# Build VLC-Qt 1.1.1 from source
+cd /tmp && git clone --branch 1.1.1 --depth 1 https://github.com/vlc-qt/vlc-qt
+cd vlc-qt && mkdir build && cd build
+cmake .. -DQT_VERSION=5 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+make -j$(nproc) && sudo make install && sudo ldconfig
+
+# Build MaximumTrainer
+cd /path/to/MaximumTrainer_Redux
+export PATH=/usr/lib/qt5/bin:$PATH
+qmake PowerVelo.pro "INCLUDEPATH+=/usr/local/include" "LIBS+=-L/usr/local/lib"
 make -j$(nproc)
 ```
 
 ### macOS
 
-Uses Qt 6.7.3 (install via `brew install qt@6` or `install-qt-action`). QWT must be built from source against Qt6 (brew's QWT uses Qt6). VLC-Qt is built from source with `-DQT_VERSION=6`.
+Uses Qt 6.7.3 with Clang. QWT is built from source (non-framework) against Qt 6. VLC-Qt is optional on macOS.
+
+```bash
+# Install Qt 6.7.3 via install-qt-action or the Qt Installer, then:
+brew install sfml
+
+# Build QWT 6.2.0 from source (non-framework, required for Qt 6)
+curl -L -o /tmp/qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
+tar -xjf /tmp/qwt.tar.bz2 -C /tmp && cd /tmp/qwt-6.2.0
+sed -i.bak 's/QwtFramework//' qwtconfig.pri
+qmake qwt.pro && make -j$(sysctl -n hw.logicalcpu) && sudo make install
+
+# Build MaximumTrainer
+cd /path/to/MaximumTrainer_Redux
+qmake PowerVelo.pro \
+  "SFML_INSTALL=$(brew --prefix sfml)" \
+  "QWT_INSTALL=/usr/local/qwt-6.2.0"
+make
+```
 
 ## Testing
 
-BTLE sensor parsing is validated by a headless Qt Test suite in `tests/btle/` — no real hardware required. Tests run on Ubuntu, Windows and macOS in CI.
+BTLE sensor-data parsing is validated by a headless Qt Test suite in `tests/btle/` — no real hardware required. Tests run on Ubuntu, Windows, and macOS in CI.
 
 ### Running the tests
 
@@ -105,13 +210,15 @@ make -j$(nproc)
 ../../build/tests/btle_tests -v2
 ```
 
-### Test output (Ubuntu 24.04, Qt 5.15.13)
+### Test output (Ubuntu 22.04, Qt 5.15.2)
 
 ![BTLE tests — 28 passed, 0 failed](https://github.com/user-attachments/assets/62d82bce-1dd0-40c4-91fe-159ee6aeb8b9)
 
 ## Language
-Language files are used at runtime in the `/language` folder.
+
+Language files are used at runtime from the `/language` folder.
 You need Qt Linguist to open and generate a new language file (`.qm` file).
 
 ## TODO
-Project now going through new revisions, with plans to enhance as open source interval trainer for indoor cycling & indoor rowing.
+
+Project now going through new revisions, with plans to enhance as an open-source interval trainer for indoor cycling & indoor rowing.
