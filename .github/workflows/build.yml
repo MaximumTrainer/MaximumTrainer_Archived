@@ -3,6 +3,7 @@ name: Build Workflow
 on:
   push:
     branches: ["**"]
+    tags-ignore: ["**"]  # tag pushes are handled by release.yml, not build.yml
 
 jobs:
 
@@ -282,3 +283,50 @@ jobs:
       with:
         name: macos
         path: build/
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Auto-tag a new semantic version on master so that release.yml fires.
+  # Only runs when all build and test jobs succeed on the master branch.
+  # ──────────────────────────────────────────────────────────────────────────
+  tag_release:
+    needs: [build_linux, test_btle_integration, build_windows, build_mac]
+    runs-on: ubuntu-latest
+    # Only auto-release from the master branch
+    if: github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+    # Serialize tag creation so concurrent master builds don't race on the same version
+    concurrency:
+      group: tag_release
+      cancel-in-progress: false
+
+    steps:
+    - name: Checkout with full tag history
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Compute next semantic version
+      id: semver
+      run: |
+        # Find the latest tag that looks like vMAJOR.MINOR.PATCH; default to v0.0.0
+        latest=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | head -n1)
+        if [ -z "$latest" ]; then
+          latest="v0.0.0"
+        fi
+        echo "Latest tag: $latest"
+        version="${latest#v}"
+        major=$(echo "$version" | cut -d. -f1)
+        minor=$(echo "$version" | cut -d. -f2)
+        patch=$(echo "$version" | cut -d. -f3)
+        patch=$((patch + 1))
+        new_tag="v${major}.${minor}.${patch}"
+        echo "New tag: $new_tag"
+        echo "new_tag=$new_tag" >> "$GITHUB_OUTPUT"
+
+    - name: Push tag
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag "${{ steps.semver.outputs.new_tag }}"
+        git push origin "${{ steps.semver.outputs.new_tag }}"
