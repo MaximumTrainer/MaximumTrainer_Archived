@@ -1,0 +1,297 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+
+  # ────────────────────────────────────── LINUX ──────────────────────────────────────
+  build_linux:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and system dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          qtwebengine5-dev \
+          qtconnectivity5-dev \
+          libqwt-qt5-dev \
+          libsfml-dev \
+          libvlc-dev \
+          libvlccore-dev \
+          libusb-1.0-0-dev \
+          cmake \
+          build-essential \
+          libfuse2 \
+          file
+
+    - name: Build and install VLC-Qt
+      run: |
+        cd /tmp
+        git clone --branch 1.1.1 --depth 1 https://github.com/vlc-qt/vlc-qt
+        cd vlc-qt
+        mkdir build && cd build
+        cmake .. \
+          -DQT_VERSION=5 \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig
+
+    - name: Build
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        qmake PowerVelo.pro "INCLUDEPATH+=/usr/local/include" "LIBS+=-L/usr/local/lib"
+        make -j$(nproc)
+      env:
+        QMAKEFEATURES: /usr/share/qt5/mkspecs/features
+
+    - name: Download linuxdeployqt
+      run: |
+        curl -Lo /usr/local/bin/linuxdeployqt \
+          "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+        chmod +x /usr/local/bin/linuxdeployqt
+
+    - name: Package AppImage
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin AppDir/usr/lib AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
+        cp build/release/MaximumTrainer AppDir/usr/bin/
+        # Desktop entry required by linuxdeployqt
+        cat > AppDir/usr/share/applications/maximumtrainer.desktop << 'EOF'
+        [Desktop Entry]
+        Name=Maximum Trainer
+        Exec=MaximumTrainer
+        Icon=maximumtrainer
+        Type=Application
+        Categories=Sports;
+        EOF
+        # Copy icon
+        if [ -f resources/images/main_icon.png ]; then
+          cp resources/images/main_icon.png AppDir/usr/share/icons/hicolor/256x256/apps/maximumtrainer.png
+        else
+          # Fallback: create a placeholder icon
+          touch AppDir/usr/share/icons/hicolor/256x256/apps/maximumtrainer.png
+        fi
+        linuxdeployqt AppDir/usr/share/applications/maximumtrainer.desktop \
+          -qmake=/usr/lib/qt5/bin/qmake \
+          -appimage \
+          -no-strip \
+          -extra-plugins=iconengines,imageformats
+        # linuxdeployqt outputs AppImage in the current directory
+        mv MaximumTrainer*.AppImage MaximumTrainer-linux-x86_64.AppImage
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-appimage
+        path: MaximumTrainer-linux-x86_64.AppImage
+
+  # ────────────────────────────────────── WINDOWS ────────────────────────────────────
+  build_windows:
+    runs-on: windows-latest
+    env:
+      QT_HOME: C:\Qt
+
+    steps:
+    - name: MSVC Environment Setup
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        modules: 'qtwebengine'
+        dir: ${{ env.QT_HOME }}
+
+    - name: Set QTDIR
+      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Write PowerShell helpers
+      run: |
+        @'
+        function Invoke-WebRequestWithRetry {
+          param([string]$Uri, [string]$OutFile, [int]$MaxAttempts = 5, [int]$BackoffSeconds = 5)
+          for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+            try {
+              Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+              return
+            } catch {
+              if ($attempt -eq $MaxAttempts) { throw }
+              Write-Host "Attempt $attempt failed: $_. Retrying in $BackoffSeconds seconds..."
+              Start-Sleep -Seconds $BackoffSeconds
+              $BackoffSeconds *= 2
+            }
+          }
+        }
+        '@ | Set-Content C:\helpers.ps1
+      shell: powershell
+
+    - name: Download and install VLC-Qt
+      run: |
+        . C:\helpers.ps1
+        Invoke-WebRequestWithRetry -Uri "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_win64_msvc2015.7z" -OutFile "$env:TEMP\vlcqt.7z"
+        & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt"
+        echo "VLCQT_DIR=C:/vlcqt" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Download and install SFML
+      run: |
+        curl.exe -L -o "$env:TEMP\sfml.zip" "https://github.com/SFML/SFML/releases/download/2.6.1/SFML-2.6.1-windows-vc17-64-bit.zip"
+        Expand-Archive -Path "$env:TEMP\sfml.zip" -DestinationPath "C:\sfml"
+      shell: powershell
+
+    - name: Build QWT
+      run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtInstallDirFwd = $qwtInstallDir -replace '\\', '/'
+        Set-Location ..
+        curl.exe -L -o "$env:TEMP\qwt.tar.bz2" "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
+        7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
+        7z x "$env:TEMP\qwt.tar" -o"." -y
+        Rename-Item "qwt-6.2.0" "qwt-src"
+        Set-Location "qwt-src"
+        (Get-Content "qwtconfig.pri") | ForEach-Object {
+            if ($_ -match 'QWT_INSTALL_PREFIX\s*=') {
+                $_ -replace '(QWT_INSTALL_PREFIX\s*=\s*).*', "`$1$qwtInstallDirFwd"
+            } else { $_ }
+        } | Set-Content "qwtconfig.pri"
+        qmake qwt.pro
+        nmake
+        nmake install
+      shell: powershell
+
+    - name: Build MaximumTrainer
+      run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtInstallDirFwd = $qwtInstallDir -replace '\\','/'
+        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
+        $sfmlDirFwd = $sfmlDir -replace '\\','/'
+        $env:QMAKEFEATURES = "$qwtInstallDir\features"
+        qmake PowerVelo.pro `
+          "VLCQT_INSTALL=$($env:VLCQT_DIR -replace '\\','/')" `
+          "SFML_INSTALL=$sfmlDirFwd"
+        nmake
+      shell: powershell
+
+    - name: Package with windeployqt
+      run: |
+        $qtBin = "$env:QTDIR\bin"
+        $buildRelease = "build\release"
+
+        # Run windeployqt to bundle Qt DLLs
+        & "$qtBin\windeployqt.exe" --release --no-translations "$buildRelease\MaximumTrainer.exe"
+
+        # Copy VLC-Qt runtime DLLs
+        Copy-Item "C:\vlcqt\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
+
+        # Copy SFML runtime DLLs
+        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
+        Copy-Item "$sfmlDir\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
+
+        # Zip the release folder
+        Compress-Archive -Path "$buildRelease\*" -DestinationPath "MaximumTrainer-windows-x64.zip" -Force
+      shell: powershell
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-zip
+        path: MaximumTrainer-windows-x64.zip
+
+  # ────────────────────────────────────── MACOS ──────────────────────────────────────
+  build_mac:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+        modules: 'qtwebengine qtconnectivity qtwebchannel qtpositioning'
+
+    - name: Install SFML
+      run: brew install sfml
+
+    - name: Build and install QWT
+      run: |
+        brew uninstall qwt --force --ignore-dependencies 2>/dev/null || true
+        cd /tmp
+        curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
+        tar -xjf qwt.tar.bz2
+        cd qwt-6.2.0
+        sed -i.bak 's/QwtFramework//' qwtconfig.pri
+        qmake qwt.pro
+        make -j$(sysctl -n hw.logicalcpu)
+        sudo make install
+
+    - name: Build MaximumTrainer
+      run: |
+        qmake PowerVelo.pro \
+          "SFML_INSTALL=$(brew --prefix sfml)" \
+          "QWT_INSTALL=/usr/local/qwt-6.2.0"
+        make -j$(sysctl -n hw.logicalcpu)
+
+    - name: Package with macdeployqt
+      run: |
+        install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+        macdeployqt build/release/MaximumTrainer.app -dmg
+        mv build/release/MaximumTrainer.dmg MaximumTrainer-macos.dmg
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-dmg
+        path: MaximumTrainer-macos.dmg
+
+  # ────────────────────────────────────── PUBLISH ────────────────────────────────────
+  publish:
+    needs: [build_linux, build_windows, build_mac]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download Linux AppImage
+      uses: actions/download-artifact@v4
+      with:
+        name: linux-appimage
+
+    - name: Download Windows zip
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-zip
+
+    - name: Download macOS dmg
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-dmg
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        generate_release_notes: true
+        files: |
+          MaximumTrainer-linux-x86_64.AppImage
+          MaximumTrainer-windows-x64.zip
+          MaximumTrainer-macos.dmg
