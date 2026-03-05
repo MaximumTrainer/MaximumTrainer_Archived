@@ -93,8 +93,11 @@ jobs:
           -appimage \
           -no-strip \
           -extra-plugins=iconengines,imageformats
-        # linuxdeployqt outputs AppImage in the current directory
-        mv MaximumTrainer*.AppImage MaximumTrainer-linux-x86_64.AppImage
+        # linuxdeployqt names the AppImage after the desktop Name= entry + git hash + arch
+        # (e.g. Maximum_Trainer-<hash>-x86_64.AppImage), so use a wildcard to rename it
+        appimage=$(find . -maxdepth 1 -name "*.AppImage" | head -1)
+        if [ -z "$appimage" ]; then echo "Error: No AppImage found"; exit 1; fi
+        mv "$appimage" MaximumTrainer-linux-x86_64.AppImage
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -272,6 +275,8 @@ jobs:
   # ────────────────────────────────────── WASM ──────────────────────────────────────
   build_wasm:
     runs-on: ubuntu-22.04
+    # WASM is a best-effort build; a failure here must not block the main-platform release
+    continue-on-error: true
 
     steps:
     - name: Checkout
@@ -280,12 +285,15 @@ jobs:
     - name: Set up Emscripten
       uses: mymindstorm/setup-emsdk@v14
       with:
-        version: '3.1.50'
+        # Qt 6.6.x requires Emscripten 3.1.37
+        version: '3.1.37'
 
     - name: Install Qt (Wasm singlethread)
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.3'
+        # 6.6.3 is the latest stable 6.6 release; 6.7.3 wasm_singlethread is
+        # no longer available on Qt mirrors as of early 2026
+        version: '6.6.3'
         host: 'linux'
         target: 'desktop'
         arch: 'wasm_singlethread'
@@ -294,7 +302,7 @@ jobs:
     - name: Install Qt (linux host tools)
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.3'
+        version: '6.6.3'
         host: 'linux'
         target: 'desktop'
         arch: 'gcc_64'
@@ -308,19 +316,22 @@ jobs:
         tar -xjf qwt.tar.bz2
         cd qwt-6.3.0
         source "$EMSDK/emsdk_env.sh"
+        # Patch the install prefix to a user-writable path before running qmake
+        sed -i "s|QWT_INSTALL_PREFIX[ \t]*=.*|QWT_INSTALL_PREFIX = $HOME/qwt-wasm|" qwtconfig.pri
         qmake qwt.pro \
           "QWT_CONFIG -= QwtFramework" \
           "QWT_CONFIG -= QwtSvg" \
           "QWT_CONFIG -= QwtOpenGL" \
           "QWT_CONFIG -= QwtDesigner" \
-          "QWT_CONFIG -= QwtExamples" \
-          "INSTALL_PREFIX=$HOME/qwt-wasm"
+          "QWT_CONFIG -= QwtExamples"
         emmake make -j$(nproc)
-        make install INSTALL_ROOT=""
+        make install
 
     - name: Build MaximumTrainer (Wasm)
       run: |
         source "$EMSDK/emsdk_env.sh"
+        # Point qmake to the WASM QWT feature file so CONFIG += qwt resolves correctly
+        export QMAKEFEATURES="$HOME/qwt-wasm/features"
         mkdir -p build-wasm && cd build-wasm
         qmake ../PowerVelo.pro \
           "QWT_INSTALL=$HOME/qwt-wasm"
@@ -347,6 +358,12 @@ jobs:
   publish:
     needs: [build_linux, build_windows, build_mac, build_wasm]
     runs-on: ubuntu-latest
+    # Run whenever the three main platform builds succeed, even if the WASM build failed
+    if: |
+      always() &&
+      needs.build_linux.result == 'success' &&
+      needs.build_windows.result == 'success' &&
+      needs.build_mac.result == 'success'
     permissions:
       contents: write
 
@@ -367,7 +384,9 @@ jobs:
         name: macos-dmg
 
     - name: Download Wasm zip
+      id: download_wasm
       uses: actions/download-artifact@v4
+      continue-on-error: true
       with:
         name: wasm-zip
 
@@ -378,6 +397,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Deploy Wasm files to docs/app/
+      if: steps.download_wasm.outcome == 'success'
       run: |
         mkdir -p repo/docs/app
         unzip -o MaximumTrainer-wasm.zip -d repo/docs/app/
@@ -393,6 +413,7 @@ jobs:
       with:
         tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
         generate_release_notes: true
+        fail_on_unmatched_files: false
         files: |
           MaximumTrainer-linux-x86_64.AppImage
           MaximumTrainer-windows-x64.zip
