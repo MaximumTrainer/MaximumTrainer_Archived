@@ -6,7 +6,6 @@
 #include <QTimer>
 #include <QNetworkReply>
 
-#include "hub.h"
 #include "account.h"
 #include "workout.h"
 #include "workoutplot.h"
@@ -15,7 +14,6 @@
 #include "managerachievement.h"
 #include "achievement.h"
 #include "soundplayer.h"
-#include "oxygen_controller.h"
 
 #include "faderlabel.h"
 #include "faderframe.h"
@@ -43,7 +41,7 @@ class WorkoutDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit WorkoutDialog(QVector<Hub*> vechub, QVector<int> vecStickIdUsed, Workout workout,
+    explicit WorkoutDialog(Workout workout,
                            QList<Radio> lstRadio, QVector<UserStudio> vecUserStudio, QWidget *parent = 0);
     ~WorkoutDialog();
 
@@ -93,7 +91,6 @@ signals:
     void sendSoloData(PowerCurve curve, int wheelCircMM, QList<Sensor> lstSensor, bool usePmForCadence, bool usePmForSpeed);
 
     void stopDecodingMsgHub();
-    void sendOxygenCommand(int antID, Oxygen_Controller::COMMAND);
 
     // Commands to FE-C
     void setLoad(int antID, double load);
@@ -350,8 +347,6 @@ private:
     Ui::WorkoutDialog *ui;
 
 
-    QVector<Hub*> vecHub;
-    QVector<int> vecStickIdUsed;
     QHash<int,int> hashControlList; //addId, hubId
     //    int nbTotalFecTrainer;
 

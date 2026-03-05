@@ -22,6 +22,7 @@
 #include <QSignalSpy>
 
 #include "../../src/BTLE/btle_hub.h"
+#include "../../src/BTLE/simulator_hub.h"
 #include "btle_device_simulator.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,6 +74,14 @@ private slots:
     void testWahooKickr_powerAndCsc();
     void testWahooKickr_cscRollover();
     void testGarminTacx_ftmsPlusCsc();
+
+    // ── SimulatorHub verification ────────────────────────────────────────────────
+    void testSimulator_emitsHr();
+    void testSimulator_emitsCadence();
+    void testSimulator_emitsSpeed();
+    void testSimulator_emitsPower();
+    void testSimulator_valuesInRange();
+    void testSimulator_stopStopsSignals();
 
 private:
     BtleHub *hub = nullptr;
@@ -533,6 +542,97 @@ void TstBtleHub::testGarminTacx_ftmsPlusCsc()
 
     QCOMPARE(spyCad.count(), 1);
     QCOMPARE(spyCad.at(0).at(1).toInt(), 120);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SimulatorHub verification tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+void TstBtleHub::testSimulator_emitsHr()
+{
+    SimulatorHub sim;
+    QSignalSpy spy(&sim, &SimulatorHub::signal_hr);
+    sim.start();
+    QVERIFY(spy.wait(2000));
+    sim.stop();
+    QVERIFY(spy.count() > 0);
+}
+
+void TstBtleHub::testSimulator_emitsCadence()
+{
+    SimulatorHub sim;
+    QSignalSpy spy(&sim, &SimulatorHub::signal_cadence);
+    sim.start();
+    QVERIFY(spy.wait(2000));
+    sim.stop();
+    QVERIFY(spy.count() > 0);
+}
+
+void TstBtleHub::testSimulator_emitsSpeed()
+{
+    SimulatorHub sim;
+    QSignalSpy spy(&sim, &SimulatorHub::signal_speed);
+    sim.start();
+    QVERIFY(spy.wait(2000));
+    sim.stop();
+    QVERIFY(spy.count() > 0);
+}
+
+void TstBtleHub::testSimulator_emitsPower()
+{
+    SimulatorHub sim;
+    QSignalSpy spy(&sim, &SimulatorHub::signal_power);
+    sim.start();
+    QVERIFY(spy.wait(2000));
+    sim.stop();
+    QVERIFY(spy.count() > 0);
+}
+
+void TstBtleHub::testSimulator_valuesInRange()
+{
+    SimulatorHub sim;
+    QSignalSpy spyHr(&sim,      &SimulatorHub::signal_hr);
+    QSignalSpy spyCad(&sim,     &SimulatorHub::signal_cadence);
+    QSignalSpy spySpd(&sim,     &SimulatorHub::signal_speed);
+    QSignalSpy spyPwr(&sim,     &SimulatorHub::signal_power);
+
+    sim.start();
+    QTest::qWait(1500);
+    sim.stop();
+
+    QVERIFY(spyHr.count() > 0);
+    int hr = spyHr.last().at(1).toInt();
+    QVERIFY2(hr >= 110 && hr <= 180,
+             qPrintable(QString("HR %1 out of range [110,180]").arg(hr)));
+
+    QVERIFY(spyCad.count() > 0);
+    int cad = spyCad.last().at(1).toInt();
+    QVERIFY2(cad >= 70 && cad <= 110,
+             qPrintable(QString("Cadence %1 out of range [70,110]").arg(cad)));
+
+    QVERIFY(spySpd.count() > 0);
+    double spd = spySpd.last().at(1).toDouble();
+    QVERIFY2(spd >= 20.0 && spd <= 38.0,
+             qPrintable(QString("Speed %1 out of range [20,38]").arg(spd)));
+
+    QVERIFY(spyPwr.count() > 0);
+    int pwr = spyPwr.last().at(1).toInt();
+    QVERIFY2(pwr >= 150 && pwr <= 260,
+             qPrintable(QString("Power %1 out of range [150,260]").arg(pwr)));
+}
+
+void TstBtleHub::testSimulator_stopStopsSignals()
+{
+    SimulatorHub sim;
+    QSignalSpy spyHr(&sim, &SimulatorHub::signal_hr);
+
+    sim.start();
+    QVERIFY(spyHr.wait(2000));  // at least one signal received
+    sim.stop();
+
+    int countAfterStop = spyHr.count();
+    QTest::qWait(500);          // wait a bit more – no new signals should arrive
+    QCOMPARE(spyHr.count(), countAfterStop);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -22,7 +22,6 @@
 #include "savingwindow.h"
 #include "userstudio.h"
 #include "myconstants.h"
-#include "hub.h"
 #include "btle_hub.h"
 
 
@@ -46,15 +45,6 @@ public:
 signals :
     void isExpanded(bool isExpanded);
     void ftpAndTabProfileChanged();
-
-
-    // -------------  Ant Stick--------
-    void signal_hubInitUsbStick(int stickNumber);
-    void signal_hubCloseChannelCSM(bool closeShop);
-
-    void signal_stopPairing();
-    void signal_searchForSensor(int deviceType, bool, int, bool);
-    //-------------------------------------
 
 
 
@@ -101,20 +91,8 @@ public slots:
 
 
 
-    // Hub --------------------------
-    void closeCSM(bool closeShop);
-    void closedCSMFinished();
-
     void setPmForCadence(bool usedFor);
     void setPmForSpeed(bool usedFor);
-    void searchSensor(int typeSensor, bool fromStudioPage);
-
-    void updateTrainerCurve(int trainer_id, QString companyName, QString trainerName,
-                            double coef0, double coef1, double coef2, double coef3, int formulaInCode);
-    // Coming from Hub
-    void setStickFound(bool found, QString desc, int stickNumber);
-    void setSensorFound(int,int,QList<int>,QList<int>,bool);
-    //-------------------------------------------------------------------
 
 
 
@@ -177,22 +155,10 @@ private:
 
 
     void checkToEnableWindow();
-    void startHub();
     void sendDataToSettingsOrStudioPage(int deviceType, int numberDeviceFound, QList<int> lstDevicePairedr, QList<int> lstTypeDevicePairedr, bool fromStudioPage);
 
 private:
     QVector<UserStudio> vecUserStudio;
-
-    //--------- Hub --------------
-    int numberInitStickDone;
-    int numberStickFound;
-    QString descSerialSticks; //lst of Serial to show on toolip
-    bool hubStickInitFinished;
-    QVector<Hub*> vecHub; //One thread per ANT Stick
-    QVector<QThread*> vecThread;
-    QVector<int> vecStickIdUsed;  //To keep track of Hub with an active stick
-    int closedCSMFinishedNb;
-    QTimer timerCloseCsm;
 
     //pairing
     QList<int> lstDevicePaired;

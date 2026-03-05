@@ -26,8 +26,10 @@ INCLUDEPATH += ../../src/BTLE
 
 SOURCES += \
     ../../src/BTLE/btle_hub.cpp \
+    ../../src/BTLE/simulator_hub.cpp \
     tst_btle_hub.cpp
 
 HEADERS += \
     ../../src/BTLE/btle_hub.h \
+    ../../src/BTLE/simulator_hub.h \
     btle_device_simulator.h

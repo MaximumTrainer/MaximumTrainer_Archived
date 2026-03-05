@@ -34,8 +34,6 @@
 
 #include "extrequest.h"
 #include "btle_scanner_dialog.h"
-#include "dialog_connection_method.h"
-#include "simulator_hub.h"
 
 
 
@@ -45,14 +43,6 @@ MainWindow::~MainWindow() {
     delete ui;
 
     qDebug() << "Desctructor MainWindow";
-
-    for (int i=0; i<vecThread.size(); i++) {
-        qDebug() << "Stopping this thread.." << i;
-        QThread *thread = vecThread.at(i);
-        thread->quit();
-        thread->wait();
-    }
-
     qDebug() << "Desctructor Over MainWindow";
 }
 
@@ -89,13 +79,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 
 
-    // ------------------------------------- Start Hubs ---------------------------------
-    hubStickInitFinished = false;
-    numberInitStickDone = 0;
-    numberStickFound = 0;
-    descSerialSticks = "";
-    closedCSMFinishedNb = 0;
-    startHub();
+    // ------------------------------------- BTLE ready ---------------------------------
 
 
     stravaUploadID = -1;
@@ -251,45 +235,12 @@ void MainWindow::downloadRequested(QWebEngineDownloadItem* download) {
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MainWindow::startHub() {
-
-    qDebug() << "ok creating a thread for a hub here.." << numberInitStickDone;
-    ui->widget_bottomMenu->updateHubStatus(numberInitStickDone);
-
-    QThread *thread = new QThread;
-    Hub *hub = new Hub(numberInitStickDone);
-    hub->moveToThread(thread);
-
-    vecHub.append(hub);
-    vecThread.append(thread);
-
-    connect(thread, SIGNAL(finished()), hub, SLOT(deleteLater()) );
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-
-    connect(hub, SIGNAL(stickFound(bool,QString,int)), this, SLOT(setStickFound(bool,QString,int)) );
-    connect(hub, SIGNAL(sensorFound(int,int,QList<int>,QList<int>,bool)), this, SLOT(setSensorFound(int,int,QList<int>,QList<int>,bool)) );
-
-    connect(this, SIGNAL(signal_hubInitUsbStick(int)), hub, SLOT(initUSBStick(int)) );
-    connect(this, SIGNAL(signal_hubCloseChannelCSM(bool)), hub, SLOT(closeScanningModeChannel(bool)) );
-    connect(this, SIGNAL(signal_searchForSensor(int, bool, int, bool)), hub, SLOT(startPairing(int, bool, int, bool)) );
-    connect(this, SIGNAL(signal_stopPairing()), hub, SIGNAL(stopPairing()) );
-
-    thread->start();
-
-    emit signal_hubInitUsbStick(numberInitStickDone);
-    //QThread::msleep(100); //Wait a bit, discovering USB device is done in sequence?
-
-    //hack to we don't try to start this thread again the next loop, because all hubs receive this signal we would need to use an ID
-    disconnect(this, SIGNAL(signal_hubInitUsbStick(int)), hub, SLOT(initUSBStick(int)) );
-
-}
-
 
 
 //---------------------------------------------------------------------------------
 void MainWindow::checkToEnableWindow() {
 
-    if (replyRadioDone && hubStickInitFinished) {
+    if (replyRadioDone) {
         this->setEnabled(true);
     }
 }
@@ -1010,59 +961,6 @@ void MainWindow::saveSettings() {
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////
-void MainWindow::setSensorFound(int deviceType, int numberDeviceFound, QList<int> lstDevicePairedr, QList<int> lstTypeDevicePairedr, bool fromStudioPage) {
-
-    qDebug() << "setSensorFound" << deviceType << "numberDeviceFound" << numberDeviceFound << lstDevicePairedr.size() << lstTypeDevicePairedr.size() << fromStudioPage;
-
-    pairingResponseNumber++;
-
-
-    // Check if we already got theses sensors, if not, add to mainList
-    for(int i=0; i<lstDevicePairedr.size(); i++) {
-
-        int antID = lstDevicePairedr.at(i);
-        int deviceType = lstTypeDevicePairedr.at(i);
-
-        if (!this->lstDevicePaired.contains(antID)) {
-            qDebug() << "This One is a new! add it" << antID;
-            this->lstDevicePaired.append(antID);
-            this->lstTypeDevicePaired.append(deviceType);
-        }
-    }
-
-
-    if (!pairingResponseAlreadySent) {
-
-        // We got one ID already, stop pairing!
-        if (account->stop_pairing_on_found && this->lstDevicePaired.size() > 0) {
-            //Stop looking in other Thread
-            qDebug() << "Ok Stop other pairing thread!";
-            pairingResponseAlreadySent = true;
-            emit signal_stopPairing();
-            sendDataToSettingsOrStudioPage(deviceType, this->lstDevicePaired.size(), this->lstDevicePaired, this->lstTypeDevicePaired, fromStudioPage);
-
-
-        }
-
-        // Last hub replied, pairing over!
-        if (pairingResponseNumber == numberInitStickDone && !pairingResponseAlreadySent) {
-
-            qDebug() << "last hub replied! pairing done!";
-            sendDataToSettingsOrStudioPage(deviceType, this->lstDevicePaired.size(), this->lstDevicePaired, this->lstTypeDevicePaired, fromStudioPage);
-        }
-
-    }
-    else {
-        qDebug() << "We already sent response, ignore this!";
-    }
-
-
-
-
-
-}
-
 
 void MainWindow::sendDataToSettingsOrStudioPage(int deviceType, int numberDeviceFound, QList<int> lstDevicePaired, QList<int> lstTypeDevicePaired, bool fromStudioPage) {
 
@@ -1095,40 +993,6 @@ void MainWindow::sendDataToSettingsOrStudioPage(int deviceType, int numberDevice
 
 }
 
-//----------------------------------------------------------------
-void MainWindow::setStickFound(bool found, QString serial, int stickNumber) {
-
-
-    numberInitStickDone++;
-    QString lineMsgStick;
-    if (found) {
-        numberStickFound++;
-        lineMsgStick = serial;
-        vecStickIdUsed.append(stickNumber);
-
-        descSerialSticks += tr("Stick#") + QString::number(stickNumber) +  " : " + lineMsgStick + "<br/>";
-
-        qDebug() << "Found a stick, then continue searching for more!";
-        startHub();
-    }
-    else {
-        qDebug() << "No more stick, stop searching!";
-        hubStickInitFinished = true;
-
-        ui->widget_bottomMenu->hubStickFound(numberStickFound, descSerialSticks);
-        ui->tab_workout1->setHubStickFound(numberStickFound);
-
-        checkToEnableWindow();
-    }
-
-
-
-
-}
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::closeEvent(QCloseEvent *event) {
 
@@ -1155,13 +1019,8 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     }
 
     // Wait for hub to close
-    for (int i=0; i<vecHub.size(); i++) {
-        Hub *hub = vecHub.at(i);
-        connect(hub, SIGNAL(closeCSMFinished()), this, SLOT(closedCSMFinished()));
-    }
-
     //Stop Hub thread
-    this->closeCSM(true);
+    //this->closeCSM(true);
 
 
     //Save Studio User to XML File
@@ -1184,18 +1043,6 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     replySaveAccount = UserDAO::putAccount(account);
     QObject::connect(replySaveAccount, SIGNAL(finished()), this, SLOT(postDataAccountFinished()) );
     loop.exec(); //dont leave until data uploaded to server
-
-
-    //Wait for hub to close
-    qDebug() << "how many already closed?" << closedCSMFinishedNb << " hub size is " << vecHub.size();
-    if (closedCSMFinishedNb != vecHub.size()) {
-        qDebug() << "MainWindow, Wait for hub to close..";
-        timerCloseCsm.setSingleShot(true);
-        QEventLoop loop2;
-        timerCloseCsm.start(10000);
-        QObject::connect(&timerCloseCsm, SIGNAL(timeout()), &loop2, SLOT(quit()));
-        loop2.exec();
-    }
 
 
     savingWindow.hide();
@@ -1363,127 +1210,71 @@ void MainWindow::on_actionOpen_Ride_triggered()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::executeWorkout(Workout workout) {
 
-    // ── Ask the user how they want to connect ───────────────────────────────
-    DialogConnectionMethod methodDlg(this);
-    if (methodDlg.exec() != QDialog::Accepted)
+    // ── BTLE Device path ─────────────────────────────────────────────────
+    BtleScannerDialog scanner(this);
+    if (scanner.exec() != QDialog::Accepted || !scanner.hasSelection())
         return;
 
-    const bool useSimulation =
-        (methodDlg.selectedMethod() == DialogConnectionMethod::Simulation);
+    QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    BtleHub       *btleHub  = nullptr;
-    SimulatorHub  *simHub   = nullptr;
-
-    if (useSimulation) {
-        // ── Simulation path ─────────────────────────────────────────────────
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-
-        for (int i = 0; i < vecUserStudio.size(); i++) {
-            UserStudio userStudio = vecUserStudio.at(i);
-            qDebug() << "Before Execute__ User Studio power Curve is_WORKOUTDIALOG:"
-                     << userStudio.getPowerCurve().getFullName()
-                     << userStudio.getPowerCurve().getId()
-                     << "test att:" << userStudio.getDisplayName();
-        }
-
-        simHub = new SimulatorHub(this);
-
-        QVector<Hub*> emptyHubs;
-        QVector<int>  emptySticks;
-        WorkoutDialog w(emptyHubs, emptySticks, workout, lstRadio, vecUserStudio);
-
-        connect(simHub, SIGNAL(signal_hr(int,int)),       &w, SLOT(HrDataReceived(int,int)));
-        connect(simHub, SIGNAL(signal_cadence(int,int)),  &w, SLOT(CadenceDataReceived(int,int)));
-        connect(simHub, SIGNAL(signal_speed(int,double)), &w, SLOT(TrainerSpeedDataReceived(int,double)));
-        connect(simHub, SIGNAL(signal_power(int,int)),    &w, SLOT(PowerDataReceived(int,int)));
-
-        connect(&w, SIGNAL(setLoad(int,double)),  simHub, SLOT(setLoad(int,double)));
-        connect(&w, SIGNAL(setSlope(int,double)), simHub, SLOT(setSlope(int,double)));
-        connect(&w, SIGNAL(stopDecodingMsgHub()), simHub, SLOT(stopDecodingMsg()));
-
-        connect(&w, SIGNAL(fitFileReady(QString, QString, QString)), this, SLOT(checkToUploadFile(QString,QString,QString)));
-        connect(&w, SIGNAL(ftp_lthr_changed()), this, SLOT(updateZoneInterface()));
-        connect(&w, SIGNAL(ftp_lthr_changed()), ui->tab_workout1, SLOT(updateTableViewMetrics()));
-        connect(&w, SIGNAL(ftpUserStudioChanged(QVector<UserStudio>)), this, SLOT(updateVecStudio(QVector<UserStudio>)));
-
-        simHub->start();
-        workoutExecuting();
-        QApplication::restoreOverrideCursor();
-        w.exec();
-        workoutOver();
-
-        simHub->stop();
-        delete simHub;
-
-    } else {
-        // ── BTLE Device path ─────────────────────────────────────────────────
-        BtleScannerDialog scanner(this);
-        if (scanner.exec() != QDialog::Accepted || !scanner.hasSelection())
-            return;
-
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-
-        for (int i = 0; i < vecUserStudio.size(); i++) {
-            UserStudio userStudio = vecUserStudio.at(i);
-            qDebug() << "Before Execute__ User Studio power Curve is_WORKOUTDIALOG:"
-                     << userStudio.getPowerCurve().getFullName()
-                     << userStudio.getPowerCurve().getId()
-                     << "test att:" << userStudio.getDisplayName();
-        }
-
-        btleHub = new BtleHub(this);
-        if (account->wheel_circ > 0)
-            btleHub->setWheelCircumferenceMm(account->wheel_circ);
-
-        {
-            QEventLoop loop;
-            connect(btleHub, &BtleHub::deviceConnected,    &loop, &QEventLoop::quit);
-            connect(btleHub, &BtleHub::deviceDisconnected, &loop, &QEventLoop::quit);
-            connect(btleHub, &BtleHub::connectionError,
-                    &loop, [&loop](const QString &) { loop.quit(); });
-            btleHub->connectToDevice(scanner.selectedDevice());
-
-            QApplication::restoreOverrideCursor();
-            loop.exec();
-        }
-
-        if (!btleHub->isConnected()) {
-            QMessageBox::warning(this,
-                                 tr("Connection Failed"),
-                                 tr("Could not connect to the selected Bluetooth device.\n"
-                                    "Please check the device is powered on and try again."));
-            delete btleHub;
-            return;
-        }
-
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-
-        QVector<Hub*> emptyHubs;
-        QVector<int>  emptySticks;
-        WorkoutDialog w(emptyHubs, emptySticks, workout, lstRadio, vecUserStudio);
-
-        connect(btleHub, SIGNAL(signal_hr(int,int)),         &w, SLOT(HrDataReceived(int,int)));
-        connect(btleHub, SIGNAL(signal_cadence(int,int)),    &w, SLOT(CadenceDataReceived(int,int)));
-        connect(btleHub, SIGNAL(signal_speed(int,double)),   &w, SLOT(TrainerSpeedDataReceived(int,double)));
-        connect(btleHub, SIGNAL(signal_power(int,int)),      &w, SLOT(PowerDataReceived(int,int)));
-
-        connect(&w, SIGNAL(setLoad(int,double)),  btleHub, SLOT(setLoad(int,double)));
-        connect(&w, SIGNAL(setSlope(int,double)), btleHub, SLOT(setSlope(int,double)));
-        connect(&w, SIGNAL(stopDecodingMsgHub()), btleHub, SLOT(stopDecodingMsg()));
-
-        connect(&w, SIGNAL(fitFileReady(QString, QString, QString)), this, SLOT(checkToUploadFile(QString,QString,QString)));
-        connect(&w, SIGNAL(ftp_lthr_changed()), this, SLOT(updateZoneInterface()));
-        connect(&w, SIGNAL(ftp_lthr_changed()), ui->tab_workout1, SLOT(updateTableViewMetrics()));
-        connect(&w, SIGNAL(ftpUserStudioChanged(QVector<UserStudio>)), this, SLOT(updateVecStudio(QVector<UserStudio>)));
-
-        workoutExecuting();
-        QApplication::restoreOverrideCursor();
-        w.exec();
-        workoutOver();
-
-        btleHub->disconnectFromDevice();
-        delete btleHub;
+    for (int i = 0; i < vecUserStudio.size(); i++) {
+        UserStudio userStudio = vecUserStudio.at(i);
+        qDebug() << "Before Execute__ User Studio power Curve is_WORKOUTDIALOG:"
+                 << userStudio.getPowerCurve().getFullName()
+                 << userStudio.getPowerCurve().getId()
+                 << "test att:" << userStudio.getDisplayName();
     }
+
+    BtleHub *btleHub = new BtleHub(this);
+    if (account->wheel_circ > 0)
+        btleHub->setWheelCircumferenceMm(account->wheel_circ);
+
+    {
+        QEventLoop loop;
+        connect(btleHub, &BtleHub::deviceConnected,    &loop, &QEventLoop::quit);
+        connect(btleHub, &BtleHub::deviceDisconnected, &loop, &QEventLoop::quit);
+        connect(btleHub, &BtleHub::connectionError,
+                &loop, [&loop](const QString &) { loop.quit(); });
+        btleHub->connectToDevice(scanner.selectedDevice());
+
+        QApplication::restoreOverrideCursor();
+        loop.exec();
+    }
+
+    if (!btleHub->isConnected()) {
+        QMessageBox::warning(this,
+                             tr("Connection Failed"),
+                             tr("Could not connect to the selected Bluetooth device.\n"
+                                "Please check the device is powered on and try again."));
+        delete btleHub;
+        return;
+    }
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    WorkoutDialog w(workout, lstRadio, vecUserStudio);
+
+    connect(btleHub, SIGNAL(signal_hr(int,int)),         &w, SLOT(HrDataReceived(int,int)));
+    connect(btleHub, SIGNAL(signal_cadence(int,int)),    &w, SLOT(CadenceDataReceived(int,int)));
+    connect(btleHub, SIGNAL(signal_speed(int,double)),   &w, SLOT(TrainerSpeedDataReceived(int,double)));
+    connect(btleHub, SIGNAL(signal_power(int,int)),      &w, SLOT(PowerDataReceived(int,int)));
+
+    connect(&w, SIGNAL(setLoad(int,double)),  btleHub, SLOT(setLoad(int,double)));
+    connect(&w, SIGNAL(setSlope(int,double)), btleHub, SLOT(setSlope(int,double)));
+    connect(&w, SIGNAL(stopDecodingMsgHub()), btleHub, SLOT(stopDecodingMsg()));
+
+    connect(&w, SIGNAL(fitFileReady(QString, QString, QString)), this, SLOT(checkToUploadFile(QString,QString,QString)));
+    connect(&w, SIGNAL(ftp_lthr_changed()), this, SLOT(updateZoneInterface()));
+    connect(&w, SIGNAL(ftp_lthr_changed()), ui->tab_workout1, SLOT(updateTableViewMetrics()));
+    connect(&w, SIGNAL(ftpUserStudioChanged(QVector<UserStudio>)), this, SLOT(updateVecStudio(QVector<UserStudio>)));
+
+    workoutExecuting();
+    QApplication::restoreOverrideCursor();
+    w.exec();
+    workoutOver();
+
+    btleHub->disconnectFromDevice();
+    delete btleHub;
 
     ui->webView_achiev->reload();
 }
@@ -1803,24 +1594,6 @@ void MainWindow::slotStravaUploadStatusFinished() {
 
 
 
-/// -------------------------------------Hub Stick ------------------------------------------------------------------
-void MainWindow::closeCSM(bool closeShop) {
-    qDebug() << "SettingsObject::closeCSM()";
-    emit signal_hubCloseChannelCSM(closeShop);
-}
-//----------------------------------------
-void MainWindow::closedCSMFinished() {
-
-    qDebug() << "closedCSMFinished" << closedCSMFinishedNb;
-    closedCSMFinishedNb++;
-
-    qDebug() << "how many already closed?" << closedCSMFinishedNb << " hub size is " << vecHub.size();
-    if (closedCSMFinishedNb == vecHub.size()) {
-        qDebug() << "force timerToShoot timeout";
-        timerCloseCsm.setInterval(0);
-    }
-}
-
 ///////////////////////////////////////////////////////////////
 void MainWindow::setPmForCadence(bool usedFor) {
 
@@ -1834,49 +1607,6 @@ void MainWindow::setPmForSpeed(bool usedFor) {
     account->use_pm_for_speed = usedFor;
 }
 ///////////////////////////////////////////////////////////////
-
-//const int hrDeviceType = 120;
-//const int speedCadDeviceType = 121; //not used here
-//const int cadDeviceType= 122;
-//const int speedDeviceType = 123;
-//const int powerDeviceType = 11;
-//const int fecDeviceType = 17;
-//const int oxyDeviceType = 31;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MainWindow::searchSensor(int typeSensor, bool fromStudioPage) {
-
-    qDebug() << "searchSensor" << typeSensor <<  "fromStudioPage?" << fromStudioPage;
-
-    //reset counter (counter increase when a hub send a response to the pairing)
-    pairingResponseAlreadySent = false;
-    pairingResponseNumber = 0;
-    lstDevicePaired.clear();
-    lstTypeDevicePaired.clear();
-
-
-    QString noAntStickDetected = tr("No Ant Stick detected!\\nPlease insert one or more and restart MaximumTrainer.");
-    QString jsCode = "alert('" + noAntStickDetected + "');";
-
-    QList<int> lstBidon;
-
-    if (numberStickFound == 0 && fromStudioPage) {
-        qDebug() << "NO STICK STUDIO PAGE, Show alert";
-        ui->webView_studio->page()->runJavaScript(jsCode);
-        sendDataToSettingsOrStudioPage(typeSensor, 0, lstBidon, lstBidon, true);
-    }
-    else if (numberStickFound == 0) {
-        qDebug() << "NO STICK SEttings PAGE, Show alert";
-        ui->webView_settings->page()->runJavaScript(jsCode);
-        sendDataToSettingsOrStudioPage(typeSensor, 0, lstBidon, lstBidon, false);
-    }
-    else {
-        qDebug() << "Start a new Pairing";
-        emit signal_searchForSensor(typeSensor, account->stop_pairing_on_found, account->nb_sec_pairing, fromStudioPage);
-    }
-
-
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::updateTrainerCurve(int trainer_id, QString companyName, QString trainerName,

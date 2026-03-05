@@ -65,7 +65,7 @@ WorkoutDialog::~WorkoutDialog() {
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, Workout workout,  QList<Radio> lstRadio, QVector<UserStudio> vecUserStudio,
+WorkoutDialog::WorkoutDialog(Workout workout,  QList<Radio> lstRadio, QVector<UserStudio> vecUserStudio,
                              QWidget *parent) : QDialog(parent), ui(new Ui::WorkoutDialog) {
 
     ui->setupUi(this);
@@ -79,8 +79,6 @@ WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, 
 #endif
 
 
-    this->vecHub = vecHub;
-    this->vecStickIdUsed = vecStickIdUsed;
     this->account = qApp->property("Account").value<Account*>();
     this->settings = qApp->property("User_Settings").value<Settings*>();
     this->soundPlayer =  qApp->property("SoundPlayer").value<SoundPlayer*>();
@@ -340,17 +338,9 @@ WorkoutDialog::WorkoutDialog(QVector<Hub*> vecHub, QVector<int> vecStickIdUsed, 
     ///----------------------------- End Calibration widgets ------------------------
 
 
-    if (vecStickIdUsed.size() > 0) {
-        labelPairHr->setText(tr(" Checking Session..."));
-        labelPairHr->setVisible(true);
-        labelPairHr->fadeIn(500);
-    }
-    else {
-        labelPairHr->setStyleSheet("background-color : rgba(1,1,1,220); color : red;");
-        labelPairHr->setText(tr(" No ANT+ USB Stick was detected, Make sure it is connected and that no other program is using it."));
-        labelPairHr->setVisible(true);
-        labelPairHr->fadeInAndFadeOutAfterPause(500,2000,7000);
-    }
+    labelPairHr->setText(tr(" Checking Session..."));
+    labelPairHr->setVisible(true);
+    labelPairHr->fadeIn(500);
 
     //-- Check Session_ID is in DB and session is not expired
     numberFailCheckSessionExpired = 0;
@@ -705,29 +695,7 @@ void WorkoutDialog::startCalibrateFEC() {
         return;
     }
 
-    if (vecHub.isEmpty()) {
-        return; // No ANT+ hub available (e.g. BTLE mode)
-    }
-
-    //Pause workout if active
-    if (isWorkoutStarted && !isWorkoutPaused) {
-        start_or_pause_workout();
-    }
-    isCalibrating = true;
-
-    DialogCalibrate dialogCalibrate(sensorFEC.getAntId(), this);
-    dialogCalibrate.setStyleSheet("QLabel {color: black;}");
-
-
-    Hub *firstHub = vecHub.at(0);
-    connect(&dialogCalibrate, SIGNAL(sendCalibrationFEC(int, FEC_Controller::CALIBRATION_TYPE)), firstHub, SLOT(sendCalibrationFEC(int, FEC_Controller::CALIBRATION_TYPE)) );
-    connect(firstHub, SIGNAL(calibrationInProgress(bool,bool,FEC_Controller::TEMPERATURE_CONDITION,FEC_Controller::SPEED_CONDITION,double,double,double)),
-            &dialogCalibrate, SLOT(calibrationInProgress(bool,bool,FEC_Controller::TEMPERATURE_CONDITION,FEC_Controller::SPEED_CONDITION,double,double,double)) ) ;
-    connect(firstHub, SIGNAL(calibrationOver(bool,bool,double,double,double)),
-            &dialogCalibrate, SLOT(calibrationOver(bool,bool,double,double,double)));
-    dialogCalibrate.exec();
-
-    isCalibrating = false;
+    return; // No ANT+ hub available (BTLE-only build)
 }
 
 
@@ -738,32 +706,7 @@ void WorkoutDialog::startCalibrationPM() {
         return;
     }
 
-    if (vecHub.isEmpty()) {
-        return; // No ANT+ hub available (e.g. BTLE mode)
-    }
-
-    //Pause workout if active
-    if (isWorkoutStarted && !isWorkoutPaused) {
-        start_or_pause_workout();
-    }
-    isCalibrating = true;
-
-    DialogCalibratePM dialogCalibrate(sensorPower.getAntId(), this);
-    dialogCalibrate.setStyleSheet("QLabel {color: black;}");
-
-    Hub *firstHub = vecHub.at(0);
-    connect(firstHub, SIGNAL(signal_powerCalibrationOverWithStatus(bool,QString,int)),
-            &dialogCalibrate, SLOT(calibrationInfoReceived(bool,QString,int)));
-    connect(firstHub, SIGNAL(signal_powerSupportAutoZero()),
-            &dialogCalibrate, SLOT(supportAutoZero()) );
-    connect(&dialogCalibrate, SIGNAL(startCalibration(int, bool)),
-            firstHub, SLOT(sendCalibrationPM(int, bool)) );
-    connect(firstHub, SIGNAL(calibrationProgressPM(int,double,double,double,double,double,double,double,double,double,double,double)),
-            &dialogCalibrate, SLOT(calibrationProgress(int,double,double,double,double,double,double,double,double,double,double,double)));
-
-    dialogCalibrate.exec();
-
-    isCalibrating = false;
+    return; // No ANT+ hub available (BTLE-only build)
 }
 
 
@@ -1580,8 +1523,6 @@ void WorkoutDialog::workoutOver() {
 
     isWorkoutOver = true;
 
-    emit sendOxygenCommand(sensorOxygen.getAntId(), Oxygen_Controller::STOP_SESSION);
-
     qDebug() << "STOPPING WORKOUT";
     if (account->enable_sound && account->sound_end_workout)
         soundPlayer->playSoundEndWorkout();
@@ -1644,7 +1585,6 @@ void WorkoutDialog::start_or_pause_workout() {
         startWorkout();
         emit playPlayer();
         ui->widget_webPlayer->playVideo();
-        emit sendOxygenCommand(sensorOxygen.getAntId(), Oxygen_Controller::START_SESSION);
 
     }
     // If workout paused, we resume it
@@ -3040,7 +2980,7 @@ void WorkoutDialog::slotPutAccountFinished() {
     }
     // User is legit, retrieve User data
     else {
-        if (vecStickIdUsed.size() > 0 && !account->enable_studio_mode) {
+        if (!account->enable_studio_mode) {
             numberFailGetListSensor = 0;
             labelPairHr->setText(tr(" Retrieving Sensors..."));
             replyGetListSensor = SensorDAO::getActiveSensorList(account->id);
@@ -3299,7 +3239,6 @@ void WorkoutDialog::changeIntervalsDataWorkout(double timeStarted, double timeNo
 
     lastIntervalEndTime_msec = timeElapsed_sec;
     lastIntervalTotalTimePausedWorkout_msec = totalTimePausedWorkout_msec;
-    emit sendOxygenCommand(sensorOxygen.getAntId(), Oxygen_Controller::LAP);
 }
 
 
@@ -3473,45 +3412,6 @@ void WorkoutDialog::sendUserInfoToClock() {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 void WorkoutDialog::connectHubs() {
-
-    for (int i=0; i<vecHub.size(); i++) {
-
-        if (vecStickIdUsed.contains(i)) {
-
-            Hub *hub = vecHub.at(i);
-
-            connect(hub, SIGNAL(signal_hr(int, int)), this, SLOT(HrDataReceived(int, int)) );
-            connect(hub, SIGNAL(signal_cadence(int, int)), this, SLOT(CadenceDataReceived(int, int)) );
-            connect(hub, SIGNAL(signal_speed(int, double)), this, SLOT(TrainerSpeedDataReceived(int, double)) );
-            connect(hub, SIGNAL(signal_power(int, int)), this, SLOT(PowerDataReceived(int, int)) );
-            connect(hub, SIGNAL(signal_rightPedal(int, int)), this, SLOT(PowerBalanceDataReceived(int, int)) );
-            connect(hub, SIGNAL(signal_oxygenValueChanged(int, double,double)), this, SLOT(OxygenValueChanged(int, double,double)) );
-            connect(hub, SIGNAL(pedalMetricChanged(int, double,double,double,double,double)), this, SLOT(pedalMetricReceived(int, double,double,double,double,double)));
-            connect(hub, SIGNAL(signal_batteryLow(QString,int,int)), this, SLOT(batteryStatusReceived(QString,int,int)) );
-
-            connect(hub, SIGNAL(askPermissionForSensor(int,int)), this, SLOT(addToControlList(int,int)) );
-            connect(this, SIGNAL(permissionGrantedControl(int,int)), hub, SLOT(addToControlListHub(int,int)) );
-
-            // Trainer Control signals
-            connect(this, SIGNAL(setLoad(int, double)), hub, SLOT(setLoad(int, double)));
-            connect(this, SIGNAL(setSlope(int, double)), hub, SLOT(setSlope(int, double)));
-            // Stop decoding when this Window is closed to save cpu
-            connect(this, SIGNAL(stopDecodingMsgHub()), hub, SLOT(stopDecodingMsg()) );
-
-
-            // Enable Lap To be changed by Trainer (FEC) only in Solo Mode, Oxygen only available in Solo mode
-            if (!account->enable_studio_mode) {
-                connect(hub, SIGNAL(signal_lapChanged(int)), this, SLOT(lapButtonPressed()) );
-                connect(this, SIGNAL(sendOxygenCommand(int, Oxygen_Controller::COMMAND)), hub, SLOT(sendOxygenCommand(int, Oxygen_Controller::COMMAND)) );
-                connect(this, SIGNAL(sendSoloData(PowerCurve,int, QList<Sensor>, bool, bool)), hub, SLOT(setSoloDataToHub(PowerCurve,int, QList<Sensor>, bool, bool)) );
-            }
-            // Studio Mode
-            else {
-                connect(this, SIGNAL(sendDataUserStudio(QVector<UserStudio>)), hub, SLOT(setUserStudioData(QVector<UserStudio>)) );
-            }
-        }
-
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
