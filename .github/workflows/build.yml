@@ -115,12 +115,10 @@ jobs:
         7z x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt_temp"
         $vlcqtDir = (Get-ChildItem "C:\vlcqt_temp" -Directory | Select-Object -First 1).FullName
         Move-Item $vlcqtDir "C:\vlcqt"
+        $vlcqtInstall = "C:\vlcqt" -replace '\\','/'
+        echo "VLCQT_DIR=$vlcqtInstall" >> $env:GITHUB_ENV
         Write-Host "=== VLC-Qt directory tree ==="
         Get-ChildItem -Recurse "C:\vlcqt" | Select-Object FullName | Format-Table -AutoSize
-      shell: powershell
-
-    - name: Set VLCQT_DIR
-      run: echo "VLCQT_DIR=C:\vlcqt" >> $env:GITHUB_ENV
       shell: powershell
 
     - name: Download and install SFML
