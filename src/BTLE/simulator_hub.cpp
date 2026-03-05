@@ -1,0 +1,76 @@
+#include "simulator_hub.h"
+#include <QtGlobal>    // qrand / QRandomGenerator
+#include <QRandomGenerator>
+
+SimulatorHub::SimulatorHub(QObject *parent)
+    : QObject(parent)
+    , m_timer(new QTimer(this))
+{
+    m_timer->setInterval(1000);
+    connect(m_timer, &QTimer::timeout, this, &SimulatorHub::tick);
+}
+
+void SimulatorHub::start()
+{
+    m_timer->start();
+}
+
+void SimulatorHub::stop()
+{
+    m_timer->stop();
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tick – advance each channel by a small random delta, keep within bounds
+// ──────────────────────────────────────────────────────────────────────────────
+static double clamp(double v, double lo, double hi)
+{
+    return v < lo ? lo : (v > hi ? hi : v);
+}
+
+void SimulatorHub::tick()
+{
+    auto &rng = *QRandomGenerator::global();
+
+    // Helper: random delta 0..maxDelta, applied in current direction
+    auto drift = [&](double &val, int &dir, double base,
+                     double lo, double hi, double maxDelta) {
+        double delta = rng.bounded(maxDelta);
+        val += dir * delta;
+        val = clamp(val, lo, hi);
+        // Flip direction when close to limits or randomly ~10% of the time
+        if (val <= lo + 1.0 || val >= hi - 1.0 || rng.bounded(10) == 0)
+            dir = -dir;
+    };
+
+    drift(m_hr,      m_hrDir,      140.0, 125.0, 165.0, 3.0);
+    drift(m_cadence, m_cadenceDir,  90.0,  80.0, 100.0, 2.0);
+    drift(m_speed,   m_speedDir,    28.0,  23.0,  33.0, 1.0);
+    drift(m_power,   m_powerDir,   200.0, 170.0, 260.0, 5.0);
+
+    emit signal_hr(0,      static_cast<int>(m_hr));
+    emit signal_cadence(0, static_cast<int>(m_cadence));
+    emit signal_speed(0,   m_speed);
+    emit signal_power(0,   static_cast<int>(m_power));
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Slots – accept trainer commands; adjust power target to make simulation react
+// ──────────────────────────────────────────────────────────────────────────────
+void SimulatorHub::setLoad(int /*antID*/, double watts)
+{
+    // Nudge simulated power toward the requested load
+    m_power = clamp(watts, 100.0, 400.0);
+}
+
+void SimulatorHub::setSlope(int /*antID*/, double grade)
+{
+    // Simulate power increase with positive grade
+    double targetPower = 200.0 + grade * 15.0;
+    m_power = clamp(targetPower, 100.0, 400.0);
+}
+
+void SimulatorHub::stopDecodingMsg()
+{
+    stop();
+}

@@ -40,7 +40,7 @@ void Oxygen_Controller::decodeOxygenMessage(ANT_MESSAGE stMessage) {
 
 
 
-    //qDebug() << "Oxygen_Controller: [" << hex << "[" << hex << stMessage.aucData[1] << "]" << "[" << hex << stMessage.aucData[2] << "]" << "[" << hex << stMessage.aucData[3] << "]" << "[" << hex << stMessage.aucData[4] << "]" << "[" << hex << stMessage.aucData[5] << "]" << "[" << hex << stMessage.aucData[6] << "]" << "[" << hex << stMessage.aucData[7]  << "]" << "[" << hex << stMessage.aucData[8] << "]";
+    //qDebug() << "Oxygen_Controller: [" << Qt::hex << "[" << Qt::hex << stMessage.aucData[1] << "]" << "[" << Qt::hex << stMessage.aucData[2] << "]" << "[" << Qt::hex << stMessage.aucData[3] << "]" << "[" << Qt::hex << stMessage.aucData[4] << "]" << "[" << Qt::hex << stMessage.aucData[5] << "]" << "[" << Qt::hex << stMessage.aucData[6] << "]" << "[" << Qt::hex << stMessage.aucData[7]  << "]" << "[" << Qt::hex << stMessage.aucData[8] << "]";
 
 
 

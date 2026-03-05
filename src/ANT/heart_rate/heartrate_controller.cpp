@@ -152,7 +152,7 @@ void HeartRate_Controller::decodeHeartRateMessage(ANT_MESSAGE stMessage) {
 
 
     //    qDebug() << "Time:" << stPage0Data.usBeatTime;
-    //    qDebug() << "CountHR:" << hex <<  stPage0Data.ucBeatCount;
+    //    qDebug() << "CountHR:" << Qt::hex <<  stPage0Data.ucBeatCount;
     //    qDebug() << "InstantHR:" << stPage0Data.ucComputedHeartRate;
 
 
