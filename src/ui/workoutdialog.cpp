@@ -1588,7 +1588,7 @@ void WorkoutDialog::start_or_pause_workout() {
         setWidgetsStopped(false);
         startWorkout();
         emit playPlayer();
-        ui->widget_webPlayer->playVideo();
+        // ui->widget_webPlayer->playVideo(); // WebBrowserV2 removed
 
     }
     // If workout paused, we resume it
@@ -1603,7 +1603,7 @@ void WorkoutDialog::start_or_pause_workout() {
         setWidgetsStopped(false);
         emit resumeClock();
         emit playPlayer();
-        ui->widget_webPlayer->playVideo();
+        // ui->widget_webPlayer->playVideo(); // WebBrowserV2 removed
 
     }
     // If not paused, we pause it
@@ -1617,7 +1617,7 @@ void WorkoutDialog::start_or_pause_workout() {
         setMessagePlot();
         emit pauseClock();
         emit pausePlayer();
-        ui->widget_webPlayer->pauseVideo();
+        // ui->widget_webPlayer->pauseVideo(); // WebBrowserV2 removed
     }
 }
 

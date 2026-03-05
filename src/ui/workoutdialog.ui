@@ -139,7 +139,7 @@ QwtScaleWidget {
         <number>0</number>
        </property>
        <item>
-        <widget class="WebBrowserV2" name="widget_webPlayer" native="true">
+        <widget class="QWidget" name="widget_webPlayer" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -661,12 +661,6 @@ QwtScaleWidget {
    <class>OxygenWidget</class>
    <extends>QWidget</extends>
    <header>oxygenwidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>WebBrowserV2</class>
-   <extends>QWidget</extends>
-   <header location="global">webbrowserv2.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
