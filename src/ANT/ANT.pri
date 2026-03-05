@@ -9,8 +9,8 @@ SOURCES     += \
 
 # hub.cpp uses DSIFramerANT/DSISerialGeneric/DSIThread which are not available
 # on macOS (ARM64) or Windows (ANT USB replaced by BTLE).  Use a no-op stub.
-!macx:!win32 {
-    SOURCES += src/ANT/hub.cpp
+unix:!macx {
+    SOURCES += $$PWD/hub_linux_stub.cpp
 }
 macx {
     SOURCES += $$PWD/hub_mac_stub.cpp
@@ -58,7 +58,7 @@ win32 {
 #////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 unix:!macx {
-    LIBS += $$PWD/libs/linux/libANT_LIB.a -lusb-1.0
+    # ANT USB library removed — hub_linux_stub.cpp provides no-op Hub implementations.
 }
 macx {
 
