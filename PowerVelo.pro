@@ -140,8 +140,7 @@ win32 {
     # Windows: VLC-Qt and SFML paths (configure via qmake variables)
     !isEmpty(VLCQT_INSTALL) {
         INCLUDEPATH += $${VLCQT_INSTALL}/include
-        # In VLC-Qt 1.1.0 win64 MSVC package, import libs live in include/ not lib/
-        LIBS += -L$${VLCQT_INSTALL}/include -lVLCQtCore -lVLCQtWidgets
+        LIBS += -L$${VLCQT_INSTALL}/lib -lVLCQtCore -lVLCQtWidgets
     }
     !isEmpty(SFML_INSTALL) {
         INCLUDEPATH += $${SFML_INSTALL}/include
