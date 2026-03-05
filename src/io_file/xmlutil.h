@@ -7,7 +7,6 @@
 #include <workout.h>
 #include <interval.h>
 #include "repeatwidget.h"
-#include "version.h"
 #include "account.h"
 #include "settings.h"
 #include "course.h"

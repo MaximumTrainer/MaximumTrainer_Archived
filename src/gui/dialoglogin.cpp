@@ -8,7 +8,6 @@
 
 
 
-#include "version.h"
 #include "updatedialog.h"
 #include "userdao.h"
 #include "versiondao.h"
