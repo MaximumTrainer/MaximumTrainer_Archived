@@ -160,6 +160,10 @@ jobs:
         qmake PowerVelo.pro `
           "VLCQT_INSTALL=$($env:VLCQT_DIR -replace '\\','/')" `
           "SFML_INSTALL=$sfmlDirFwd"
+        Write-Host "=== VLCQt lines in Makefile.Release ==="
+        if (Test-Path Makefile.Release) {
+          Select-String -Path Makefile.Release -Pattern "VLCQt|vlcqt" | Select-Object -First 10
+        }
       shell: powershell
 
     - name: Build
