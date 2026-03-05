@@ -1,6 +1,6 @@
 # MaximumTrainer
 
-An open-source, high-performance indoor cycling training application built with the **Qt framework (C++17)**. MaximumTrainer delivers structured interval workouts with real-time power, cadence, heart rate, and speed feedback, and controls smart trainers automatically via FTMS ERG mode. Browse and sync workouts from [ErgDb.org](https://www.ergdb.org/maximum-trainer/), or import your own `.erg` / `.mrc` files.
+An open-source, high-performance indoor cycling training application built with the **Qt framework (C++17)**. MaximumTrainer delivers structured interval workouts with real-time power, cadence, heart rate, and speed feedback, and controls smart trainers automatically via FTMS ERG mode. Browse and sync workouts from [TrainerDay.com](https://www.trainerday.com/), or import your own `.erg` / `.mrc` files.
 
 ## Technical Overview
 
@@ -13,7 +13,7 @@ An open-source, high-performance indoor cycling training application built with 
 | **Trainer protocol** | Bluetooth LE Fitness Machine Service (FTMS / 0x1826) for ERG resistance control |
 | **Sensor profiles** | Heart Rate (0x180D) · Cycling Speed & Cadence (0x1816) · Cycling Power (0x1818) |
 | **Workout formats** | `.erg`, `.mrc` (imported and converted to the native `.workout` XML format) |
-| **Workout source** | Integrated ErgDb.org browser for online workout plans |
+| **Workout source** | Integrated TrainerDay.com browser for online workout plans |
 
 ## Hardware Setup
 
@@ -61,10 +61,10 @@ The simulator responds to ERG load commands from the workout player, making it a
 
 ### Selecting a workout
 
-**Option A — ErgDb.org library (integrated)**
+**Option A — TrainerDay.com library (integrated)**
 
 1. Click the **Find Workouts** tab in the left sidebar.
-2. Browse or search the ErgDb.org catalogue directly inside the app.
+2. Browse or search the TrainerDay.com catalogue directly inside the app.
 3. Double-click a workout to download it to your local library.
 
 **Option B — Import a custom file**
@@ -104,7 +104,7 @@ Completed workout data is saved as a FIT activity file and can be uploaded to **
 | Platform | Description |
 |----------|-------------|
 | Windows | Main workout player with power graph and metrics |
-| macOS | Dashboard showing the ErgDb.org workout browser |
+| macOS | Dashboard showing the TrainerDay.com workout browser |
 | Linux | App running on Ubuntu — proof of cross-platform build |
 | Device Manager | BTLE scanner with multiple sensors connected |
 
