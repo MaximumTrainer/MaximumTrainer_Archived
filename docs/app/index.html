@@ -135,7 +135,15 @@
       const script = document.createElement('script');
       script.src = 'qtloader.js';
       script.onerror = () => {
-        loadingStatus.textContent = 'Error: Wasm files not found. Check back soon.';
+        loadingStatus.textContent = '';
+        document.getElementById('loading-screen').innerHTML = `
+          <img src="../assets/images/main_icon.png" alt="Maximum Trainer" style="width:80px;opacity:0.9"/>
+          <div style="font-size:1.4rem;font-weight:600">Browser App — Coming Soon</div>
+          <div style="max-width:360px;text-align:center;color:#aaa;line-height:1.6;font-size:0.95rem">
+            The WebAssembly build hasn't been deployed yet.<br>
+            It will be available here after the first tagged release.<br><br>
+            <a href=".." style="color:#ff8c00;text-decoration:none;font-weight:600">← Download the native app</a>
+          </div>`;
       };
       script.onload = () => {
         QtLoader({
