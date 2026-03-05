@@ -7,7 +7,14 @@ Connects to cycle trainers and sensors exclusively via **Bluetooth Low Energy (B
 
 MaximumTrainer uses **Bluetooth Low Energy (BTLE) only** to connect to cycle trainers and sensors on all platforms (Windows, Linux, macOS).
 
-When starting a workout, a Bluetooth device scanner dialog appears. Select your trainer or sensor from the list of discovered BTLE devices to begin. Supported sensor profiles:
+When starting a workout, a **connection method dialog** appears first:
+
+- **BTLE Device** — scan for and connect to a real Bluetooth LE sensor/trainer
+- **Simulation** — generate synthetic sensor data locally (no hardware required)
+
+### BTLE Device mode
+
+Select your trainer or sensor from the Bluetooth scanner list. Supported sensor profiles:
 
 | Profile | UUID | Data |
 |---------|------|------|
@@ -15,6 +22,19 @@ When starting a workout, a Bluetooth device scanner dialog appears. Select your 
 | Cycling Speed & Cadence | 0x1816 | Speed (km/h), cadence (RPM) |
 | Cycling Power | 0x1818 | Power (W) |
 | Fitness Machine (FTMS) | 0x1826 | Speed, cadence, power + trainer control |
+
+### Simulation mode
+
+Simulation mode generates realistic sensor data using a software simulator — no Bluetooth hardware is needed. Values drift gradually within realistic ranges:
+
+| Channel | Base value | Range |
+|---------|-----------|-------|
+| Heart rate | 140 bpm | 125–165 bpm |
+| Cadence | 90 rpm | 80–100 rpm |
+| Speed | 28 km/h | 23–33 km/h |
+| Power | 200 W | 170–260 W |
+
+The simulator also responds to trainer load/slope commands from the workout profile, adjusting simulated power accordingly. This makes simulation mode useful for testing workouts, developing new features, and demonstrating the app without hardware.
 
 ## Building
 Build with the `.pro` file inside the project & GitHub Actions CI.
