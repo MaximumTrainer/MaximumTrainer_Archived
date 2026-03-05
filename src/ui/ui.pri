@@ -15,6 +15,7 @@ $$PWD/workoutdialog.cpp \
     $$PWD/savingwindow.cpp \
     $$PWD/dialogmainwindowconfig.cpp \
     $$PWD/dialoginfowebview.cpp \
+    $$PWD/dialog_connection_method.cpp \
     #$$PWD/main_coursepage.cpp
 
 HEADERS += $$PWD/mainwindow.h\
@@ -27,6 +28,7 @@ $$PWD/workoutdialog.h \
     $$PWD/savingwindow.h \
     $$PWD/dialogmainwindowconfig.h \
     $$PWD/dialoginfowebview.h \
+    $$PWD/dialog_connection_method.h \
     #$$PWD/main_coursepage.h
 
 FORMS    += $$PWD/mainwindow.ui \
