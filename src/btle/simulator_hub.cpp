@@ -47,11 +47,14 @@ void SimulatorHub::tick()
     drift(m_cadence, m_cadenceDir,  90.0,  80.0, 100.0, 2.0);
     drift(m_speed,   m_speedDir,    28.0,  23.0,  33.0, 1.0);
     drift(m_power,   m_powerDir,   200.0, 170.0, 260.0, 5.0);
+    drift(m_smo2,    m_smo2Dir,     65.0,  50.0,  80.0, 1.0);
+    drift(m_thb,     m_thbDir,      13.0,  11.0,  15.0, 0.2);
 
     emit signal_hr(0,      static_cast<int>(m_hr));
     emit signal_cadence(0, static_cast<int>(m_cadence));
     emit signal_speed(0,   m_speed);
     emit signal_power(0,   static_cast<int>(m_power));
+    emit signal_oxygen(0,  m_smo2, m_thb);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

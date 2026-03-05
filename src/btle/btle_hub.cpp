@@ -32,6 +32,9 @@ static const QBluetoothUuid CyclingPowerMeasurement (QBluetoothUuid::CyclingPowe
 #endif
 static const QBluetoothUuid FtmsIndoorBikeData      (quint16(0x2AD2));
 static const QBluetoothUuid FtmsControlPoint        (quint16(0x2AD9));
+// Moxy Muscle Oxygen Monitor (proprietary UUIDs - not in BT SIG enum)
+static const QBluetoothUuid MoxyService             (quint16(0xAAB0));
+static const QBluetoothUuid MoxyMeasurement         (quint16(0xAAB2));
 
 // Descriptors
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -52,6 +55,10 @@ BtleHub::BtleHub(QObject *parent)
     m_cscStopTimer = new QTimer(this);
     m_cscStopTimer->setSingleShot(true);
     connect(m_cscStopTimer, &QTimer::timeout, this, &BtleHub::onCscStopTimer);
+
+    m_reconnectTimer = new QTimer(this);
+    m_reconnectTimer->setSingleShot(true);
+    connect(m_reconnectTimer, &QTimer::timeout, this, &BtleHub::onReconnectTimer);
 }
 
 BtleHub::~BtleHub()
@@ -81,9 +88,12 @@ void BtleHub::connectToDevice(const QBluetoothDeviceInfo &device)
     delete m_cscService;   m_cscService   = nullptr;
     delete m_powerService; m_powerService = nullptr;
     delete m_ftmsService;  m_ftmsService  = nullptr;
+    delete m_moxyService;  m_moxyService  = nullptr;
 
     m_firstCscMeasurement   = true;
     m_ftmsControlRequested  = false;
+    m_reconnectDevice   = device;
+    m_reconnectAttempts = 0;
 
     m_controller = QLowEnergyController::createCentral(device, this);
 
@@ -182,6 +192,7 @@ void BtleHub::simulateNotification(quint16 characteristicUuid, const QByteArray 
     case BTLE_UUID_CSC_MEASUREMENT:   parseCscMeasurement(data);     break;
     case BTLE_UUID_POWER_MEASUREMENT: parsePowerMeasurement(data);   break;
     case BTLE_UUID_FTMS_BIKE_DATA:    parseFtmsIndoorBikeData(data); break;
+    case BTLE_UUID_MOXY_MEASUREMENT:  parseMoxyMeasurement(data);    break;
     default: break;
     }
 }
@@ -200,6 +211,16 @@ void BtleHub::onControllerDisconnected()
     qDebug() << "BtleHub: device disconnected";
     m_cscStopTimer->stop();
     emit deviceDisconnected();
+
+    if (m_reconnectAttempts < MAX_RECONNECT_ATTEMPTS)
+        m_reconnectTimer->start(RECONNECT_INTERVAL_MS);
+}
+
+void BtleHub::onReconnectTimer()
+{
+    qDebug() << "BtleHub: reconnect attempt" << (m_reconnectAttempts + 1);
+    ++m_reconnectAttempts;
+    connectToDevice(m_reconnectDevice);
 }
 
 void BtleHub::onControllerError(QLowEnergyController::Error error)
@@ -231,6 +252,11 @@ void BtleHub::onServiceDiscovered(const QBluetoothUuid &serviceUuid)
         m_ftmsService = m_controller->createServiceObject(serviceUuid, this);
         if (m_ftmsService)
             setupService(m_ftmsService);
+    }
+    else if (serviceUuid == BtleUuid::MoxyService) {
+        m_moxyService = m_controller->createServiceObject(serviceUuid, this);
+        if (m_moxyService)
+            setupService(m_moxyService);
     }
 }
 
@@ -318,6 +344,10 @@ void BtleHub::onServiceStateChanged(QLowEnergyService::ServiceState state)
             service->characteristic(BtleUuid::FtmsIndoorBikeData));
         requestFtmsControl();
     }
+    else if (service == m_moxyService) {
+        enableNotification(service,
+            service->characteristic(BtleUuid::MoxyMeasurement));
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -335,6 +365,8 @@ void BtleHub::onCharacteristicChanged(const QLowEnergyCharacteristic &characteri
     else if (uuid == BtleUuid::CyclingPowerMeasurement)
         parsePowerMeasurement(value);
     else if (uuid == BtleUuid::FtmsIndoorBikeData)
+    else if (uuid == BtleUuid::MoxyMeasurement)
+        parseMoxyMeasurement(value);
         parseFtmsIndoorBikeData(value);
 }
 

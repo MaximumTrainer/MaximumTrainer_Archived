@@ -24,6 +24,8 @@
 #include "reportutil.h"
 #include "importerworkout.h"
 #include "managerachievement.h"
+#include "simulator_hub.h"
+#include "dialog_connection_method.h"
 
 #include <QWebEngineProfile>
 #include <QWebEngineScript>
@@ -1210,6 +1212,43 @@ void MainWindow::on_actionOpen_Ride_triggered()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::executeWorkout(Workout workout) {
 
+    DialogConnectionMethod connDlg(this);
+    if (connDlg.exec() != QDialog::Accepted)
+        return;
+
+    // ── Simulation path ───────────────────────────────────────────────────
+    if (connDlg.selectedMethod() == DialogConnectionMethod::Simulation) {
+        SimulatorHub *simHub = new SimulatorHub(this);
+
+        WorkoutDialog w(workout, lstRadio, vecUserStudio);
+
+        connect(simHub, SIGNAL(signal_hr(int,int)),               &w, SLOT(HrDataReceived(int,int)));
+        connect(simHub, SIGNAL(signal_cadence(int,int)),          &w, SLOT(CadenceDataReceived(int,int)));
+        connect(simHub, SIGNAL(signal_speed(int,double)),         &w, SLOT(TrainerSpeedDataReceived(int,double)));
+        connect(simHub, SIGNAL(signal_power(int,int)),            &w, SLOT(PowerDataReceived(int,int)));
+        connect(simHub, SIGNAL(signal_oxygen(int,double,double)), &w, SLOT(OxygenValueChanged(int,double,double)));
+
+        connect(&w, SIGNAL(setLoad(int,double)),  simHub, SLOT(setLoad(int,double)));
+        connect(&w, SIGNAL(setSlope(int,double)), simHub, SLOT(setSlope(int,double)));
+        connect(&w, SIGNAL(stopDecodingMsgHub()), simHub, SLOT(stopDecodingMsg()));
+
+        connect(&w, SIGNAL(fitFileReady(QString, QString, QString)), this, SLOT(checkToUploadFile(QString,QString,QString)));
+        connect(&w, SIGNAL(ftp_lthr_changed()), this, SLOT(updateZoneInterface()));
+        connect(&w, SIGNAL(ftp_lthr_changed()), ui->tab_workout1, SLOT(updateTableViewMetrics()));
+        connect(&w, SIGNAL(ftpUserStudioChanged(QVector<UserStudio>)), this, SLOT(updateVecStudio(QVector<UserStudio>)));
+
+        simHub->start();
+        workoutExecuting();
+        QApplication::restoreOverrideCursor();
+        w.exec();
+        workoutOver();
+
+        simHub->stopDecodingMsg();
+        delete simHub;
+        ui->webView_achiev->reload();
+        return;
+    }
+
     // ── BTLE Device path ─────────────────────────────────────────────────
     BtleScannerDialog scanner(this);
     if (scanner.exec() != QDialog::Accepted || !scanner.hasSelection())
@@ -1254,10 +1293,11 @@ void MainWindow::executeWorkout(Workout workout) {
 
     WorkoutDialog w(workout, lstRadio, vecUserStudio);
 
-    connect(btleHub, SIGNAL(signal_hr(int,int)),         &w, SLOT(HrDataReceived(int,int)));
-    connect(btleHub, SIGNAL(signal_cadence(int,int)),    &w, SLOT(CadenceDataReceived(int,int)));
-    connect(btleHub, SIGNAL(signal_speed(int,double)),   &w, SLOT(TrainerSpeedDataReceived(int,double)));
-    connect(btleHub, SIGNAL(signal_power(int,int)),      &w, SLOT(PowerDataReceived(int,int)));
+    connect(btleHub, SIGNAL(signal_hr(int,int)),               &w, SLOT(HrDataReceived(int,int)));
+    connect(btleHub, SIGNAL(signal_cadence(int,int)),          &w, SLOT(CadenceDataReceived(int,int)));
+    connect(btleHub, SIGNAL(signal_speed(int,double)),         &w, SLOT(TrainerSpeedDataReceived(int,double)));
+    connect(btleHub, SIGNAL(signal_power(int,int)),            &w, SLOT(PowerDataReceived(int,int)));
+    connect(btleHub, SIGNAL(signal_oxygen(int,double,double)), &w, SLOT(OxygenValueChanged(int,double,double)));
 
     connect(&w, SIGNAL(setLoad(int,double)),  btleHub, SLOT(setLoad(int,double)));
     connect(&w, SIGNAL(setSlope(int,double)), btleHub, SLOT(setSlope(int,double)));

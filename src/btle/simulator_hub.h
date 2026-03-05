@@ -16,6 +16,8 @@
  *   Cadence : ~90 rpm   (±10)
  *   Speed   : ~28 km/h  (±5)
  *   Power   : ~200 W    (±30)
+ *   SmO2    : ~65 %     (±15)
+ *   tHb     : ~13 g/dL  (±2)
  */
 class SimulatorHub : public QObject
 {
@@ -34,6 +36,7 @@ signals:
     void signal_cadence(int userID, int cadence);
     void signal_speed(int userID, double speed);   // km/h
     void signal_power(int userID, int power);      // watts
+    void signal_oxygen(int userID, double smo2Percent, double thbGdL);
 
 public slots:
     // No-op stubs matching BtleHub/Hub slot signatures
@@ -52,12 +55,16 @@ private:
     double m_cadence =  90.0;
     double m_speed   =  28.0;
     double m_power   = 200.0;
+    double m_smo2    =  65.0;   // SmO2 % – typical mid-exercise value
+    double m_thb     =  13.0;   // tHb g/dL – typical value
 
     // Drift direction per channel (+1 / -1)
     int m_hrDir      = 1;
     int m_cadenceDir = 1;
     int m_speedDir   = 1;
     int m_powerDir   = 1;
+    int m_smo2Dir    = 1;
+    int m_thbDir     = 1;
 };
 
 #endif // SIMULATOR_HUB_H

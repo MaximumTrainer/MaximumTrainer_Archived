@@ -21,6 +21,7 @@
  *   - Heart Rate Service               (0x180D)  heart rate
  *   - Cycling Power Service            (0x1818)  power
  *   - Fitness Machine Service / FTMS   (0x1826)  indoor-bike data + resistance control
+ *   - Moxy Muscle Oxygen Service (0xAAB0) SmO2 + tHb
  */
 class BtleHub : public QObject
 {
@@ -47,6 +48,7 @@ signals:
     void signal_cadence(int userID, int cadence);
     void signal_speed(int userID, double speed);       // km/h
     void signal_power(int userID, int power);          // watts
+    void signal_oxygen(int userID, double smo2Percent, double thbGdL);
 
     // ----------- Connection status signals ---------------------------------
     void deviceConnected();
@@ -78,6 +80,7 @@ private slots:
     void onCharacteristicChanged(const QLowEnergyCharacteristic &characteristic,
                                  const QByteArray &value);
     void onCscStopTimer();
+    void onReconnectTimer();
 
 private:
     void setupService(QLowEnergyService *service);
@@ -89,6 +92,7 @@ private:
     void parseCscMeasurement(const QByteArray &data);
     void parsePowerMeasurement(const QByteArray &data);
     void parseFtmsIndoorBikeData(const QByteArray &data);
+    void parseMoxyMeasurement(const QByteArray &data);
 
     QLowEnergyController *m_controller = nullptr;
 
@@ -96,12 +100,21 @@ private:
     QLowEnergyService *m_cscService   = nullptr;
     QLowEnergyService *m_powerService = nullptr;
     QLowEnergyService *m_ftmsService  = nullptr;
+    QLowEnergyService *m_moxyService  = nullptr;
 
     bool m_ftmsControlRequested = false;
 
     // Zero-out cadence / speed after a few missed messages (like ANT+ does)
     QTimer *m_cscStopTimer = nullptr;
     static constexpr int CSC_STOP_TIMEOUT_MS    = 3000;
+
+    // Auto-reconnect
+    QTimer              *m_reconnectTimer    = nullptr;
+    QBluetoothDeviceInfo m_reconnectDevice;
+    int                  m_reconnectAttempts = 0;
+    static constexpr int MAX_RECONNECT_ATTEMPTS = 3;
+    static constexpr int RECONNECT_INTERVAL_MS  = 5000;
+
     static constexpr int DEFAULT_WHEEL_CIRC_MM  = 2100; // ~700c / 29" wheel
 
     int m_wheelCircMm = DEFAULT_WHEEL_CIRC_MM;

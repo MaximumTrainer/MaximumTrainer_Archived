@@ -12,4 +12,8 @@ static constexpr quint16 BTLE_UUID_CSC_MEASUREMENT   = 0x2A5B;
 static constexpr quint16 BTLE_UUID_POWER_MEASUREMENT = 0x2A63;
 static constexpr quint16 BTLE_UUID_FTMS_BIKE_DATA    = 0x2AD2;
 
+// Moxy Muscle Oxygen Monitor (proprietary, not BT SIG)
+static constexpr quint16 BTLE_UUID_MOXY_SERVICE     = 0xAAB0;
+static constexpr quint16 BTLE_UUID_MOXY_MEASUREMENT = 0xAAB2;
+
 #endif // BTLE_UUIDS_H
