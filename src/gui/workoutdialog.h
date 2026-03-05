@@ -8,6 +8,7 @@
 
 #include "account.h"
 #include "workout.h"
+#include "sensor.h"
 #include "workoutplot.h"
 #include "settings.h"
 #include "dataworkout.h"
