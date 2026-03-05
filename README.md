@@ -48,7 +48,7 @@ qmake PowerVelo.pro `
   "SFML_INSTALL=C:/sfml/SFML-2.6.1"
 ```
 
-> `VLCQT_INSTALL` must point to the VLC-Qt root (the directory containing `include/` and `lib/`).  
+> `VLCQT_INSTALL` must point to the VLC-Qt package root (containing `bin/`, `include/`, `lib/`). The pre-built 1.1.0 win64 MSVC package places both headers and import `.lib` files inside `include/`.  
 > `SFML_INSTALL` must point to the SFML root (the directory containing `include/` and `lib/`).  
 > The Windows Kit libraries (`Gdi32`, `User32`) are resolved automatically by the MSVC linker — no `WINKIT_INSTALL` is needed when building with a proper MSVC developer command prompt.
 

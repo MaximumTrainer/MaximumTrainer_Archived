@@ -112,13 +112,12 @@ jobs:
       run: |
         . C:\helpers.ps1
         Invoke-WebRequestWithRetry -Uri "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_win64_msvc2015.7z" -OutFile "$env:TEMP\vlcqt.7z"
-        7z x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt_temp"
-        $vlcqtDir = (Get-ChildItem "C:\vlcqt_temp" -Directory | Select-Object -First 1).FullName
-        Move-Item $vlcqtDir "C:\vlcqt"
-        $vlcqtInstall = "C:\vlcqt" -replace '\\','/'
+        # Archive extracts directly to bin/, include/, lib/ with no wrapper dir
+        & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt"
+        $vlcqtInstall = "C:/vlcqt"
         echo "VLCQT_DIR=$vlcqtInstall" >> $env:GITHUB_ENV
-        Write-Host "=== VLC-Qt directory tree ==="
-        Get-ChildItem -Recurse "C:\vlcqt" | Select-Object FullName | Format-Table -AutoSize
+        Write-Host "=== VLC-Qt lib files ==="
+        Get-ChildItem "C:\vlcqt\include" -Filter "*.lib"
       shell: powershell
 
     - name: Download and install SFML
