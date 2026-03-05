@@ -36,7 +36,7 @@
 #include <QByteArray>
 #include <QtGlobal>
 
-#include "../../src/BTLE/btle_uuids.h"
+#include "../../src/btle/btle_uuids.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Characteristic UUIDs – imported from btle_uuids.h for convenience

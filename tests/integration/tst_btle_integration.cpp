@@ -36,7 +36,7 @@
 #include <QDir>
 #include <QGuiApplication>
 
-#include "../../src/BTLE/simulator_hub.h"
+#include "../../src/btle/simulator_hub.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SensorDisplayWidget – shows live BTLE metrics from SimulatorHub

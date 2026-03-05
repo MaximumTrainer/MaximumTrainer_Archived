@@ -75,7 +75,6 @@ UI_DIR = $$DESTDIR/.u
 ###=======================================================================
 ### Directory Structure - Split into subdirs to be more manageable
 ###=======================================================================
-INCLUDEPATH += ./src/core
 QMAKE_CFLAGS_ISYSTEM =
 
 
@@ -191,20 +190,13 @@ if (defined(GC_WANT_X11)) {
 
 
 
-include (src/_db/_db.pri)
-include (src/_subclassQT/_subclassQT.pri)
-include (src/_subclassQWT/_subclassQWT.pri)
-include (src/createWorkout/createWorkout.pri)
-include (src/main/main.pri)
-include (src/model/model.pri)
-include (src/achievements/achievements.pri)
-include (src/gui/gui.pri)
-include (src/io_file/io_file.pri)
-include (src/workout/workout.pri)
-include (src/webBrowser/webBrowser.pri)
-
-include (src/BTLE/BTLE.pri)
-include (src/Fit_20_16/Fit.pri)
+include(src/app/app.pri)
+include(src/btle/btle.pri)
+include(src/model/model.pri)
+include(src/persistence/persistence.pri)
+include(src/fitness/fitness.pri)
+include(src/ui/ui.pri)
+include(src/workout/workout.pri)
 
 
 RESOURCES += MyResources.qrc

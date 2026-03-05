@@ -21,8 +21,8 @@
 #include <QtTest/QtTest>
 #include <QSignalSpy>
 
-#include "../../src/BTLE/btle_hub.h"
-#include "../../src/BTLE/simulator_hub.h"
+#include "../../src/btle/btle_hub.h"
+#include "../../src/btle/simulator_hub.h"
 #include "btle_device_simulator.h"
 
 // ─────────────────────────────────────────────────────────────────────────────

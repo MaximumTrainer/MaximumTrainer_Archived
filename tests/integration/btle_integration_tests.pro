@@ -20,11 +20,11 @@ TEMPLATE = app
 
 DESTDIR  = ../../build/tests
 
-INCLUDEPATH += ../../src/BTLE
+INCLUDEPATH += ../../src/btle
 
 SOURCES += \
-    ../../src/BTLE/simulator_hub.cpp \
+    ../../src/btle/simulator_hub.cpp \
     tst_btle_integration.cpp
 
 HEADERS += \
-    ../../src/BTLE/simulator_hub.h
+    ../../src/btle/simulator_hub.h
