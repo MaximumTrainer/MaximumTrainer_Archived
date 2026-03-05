@@ -365,9 +365,9 @@ void BtleHub::onCharacteristicChanged(const QLowEnergyCharacteristic &characteri
     else if (uuid == BtleUuid::CyclingPowerMeasurement)
         parsePowerMeasurement(value);
     else if (uuid == BtleUuid::FtmsIndoorBikeData)
+        parseFtmsIndoorBikeData(value);
     else if (uuid == BtleUuid::MoxyMeasurement)
         parseMoxyMeasurement(value);
-        parseFtmsIndoorBikeData(value);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -578,4 +578,26 @@ void BtleHub::onCscStopTimer()
 {
     emit signal_cadence(0, 0);
     emit signal_speed(0, 0.0);
+}
+
+// Moxy Muscle Oxygen Measurement (0xAAB2)
+// Bytes 0-1: flags (uint16 LE) – bit0=SmO2 present, bit1=tHb present
+// Bytes 2-3: SmO2 (uint16 LE, units 0.1 %)
+// Bytes 4-5: tHb  (uint16 LE, units 0.01 g/dL)
+void BtleHub::parseMoxyMeasurement(const QByteArray &data)
+{
+    if (data.size() < 6)
+        return;
+
+    quint16 flags = static_cast<quint8>(data[0])
+                  | (static_cast<quint8>(data[1]) << 8);
+    quint16 rawSmo2 = static_cast<quint8>(data[2])
+                    | (static_cast<quint8>(data[3]) << 8);
+    quint16 rawThb  = static_cast<quint8>(data[4])
+                    | (static_cast<quint8>(data[5]) << 8);
+
+    double smo2 = (flags & 0x01) ? rawSmo2 / 10.0  : 0.0;
+    double thb  = (flags & 0x02) ? rawThb  / 100.0 : 0.0;
+
+    emit signal_oxygen(0, smo2, thb);
 }
