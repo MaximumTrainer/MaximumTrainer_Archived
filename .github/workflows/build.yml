@@ -61,6 +61,56 @@ jobs:
         name: linux
         path: build/
 
+  # ──────────────────────────────────────────────────────────────────────────
+  # BTLE Integration Test (Linux)
+  #
+  # Runs SimulatorHub in a Qt window under Xvfb, takes a screenshot as
+  # evidence that Bluetooth sensor detection and an activity session work
+  # end-to-end without physical hardware.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_btle_integration:
+    runs-on: ubuntu-22.04
+    needs: build_linux
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          qtconnectivity5-dev \
+          xvfb \
+          libfontconfig1 \
+          libxrender1 \
+          libxext6 \
+          libgl1-mesa-dev \
+          build-essential
+
+    - name: Build BTLE integration test
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        mkdir -p build/tests
+        cd tests/integration
+        qmake btle_integration_tests.pro
+        make -j$(nproc)
+
+    - name: Run BTLE integration test with Xvfb
+      run: |
+        Xvfb :99 -screen 0 1280x800x24 &
+        sleep 1
+        export DISPLAY=:99
+        ./build/tests/btle_integration_tests -v2
+
+    - name: Upload screenshot evidence
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: btle-integration-screenshot
+        path: build/tests/btle_integration_screenshot.png
+
   build_windows:
     runs-on: windows-latest
     env:
