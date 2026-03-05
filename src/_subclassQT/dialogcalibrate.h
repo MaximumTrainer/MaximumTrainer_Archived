@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QKeyEvent>
 #include <QEvent>
-#include "fec_controller.h"
+#include "calibration_types.h"
 
 namespace Ui {
 class DialogCalibrate;

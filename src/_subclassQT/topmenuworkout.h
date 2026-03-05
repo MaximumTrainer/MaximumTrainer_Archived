@@ -4,8 +4,7 @@
 #include <QWidget>
 #include <QPushButton>
 
-#include "BPS_pages.h"
-#include "fec_controller.h"
+#include "calibration_types.h"
 
 namespace Ui {
 class TopMenuWorkout;

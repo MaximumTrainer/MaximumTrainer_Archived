@@ -6,9 +6,7 @@
 #include "settings.h"
 #include "soundplayer.h"
 #include "sensor.h"
-#include "fec_controller.h"
-#include "oxygen_controller.h"
-#include "power_controller.h"
+#include "calibration_types.h"
 #include "trackpoint.h"
 #include "userstudio.h"
 
@@ -47,7 +45,6 @@ GlobalVars::GlobalVars(QObject *parent) :
     qRegisterMetaType<QList<int> >( "QList<int>" );
     qRegisterMetaType<CalibrationType>("CalibrationType");
     qRegisterMetaType<QVector<UserStudio> >( "QVector<UserStudio>" );
-    qRegisterMetaType<Oxygen_Controller::COMMAND>("Oxygen_Controller::COMMAND");
     qRegisterMetaType<FEC_Controller::CALIBRATION_TYPE>("FEC_Controller::CALIBRATION_TYPE");
     qRegisterMetaType<FEC_Controller::TEMPERATURE_CONDITION>("FEC_Controller::TEMPERATURE_CONDITION");
     qRegisterMetaType<FEC_Controller::SPEED_CONDITION>("FEC_Controller::SPEED_CONDITION");
