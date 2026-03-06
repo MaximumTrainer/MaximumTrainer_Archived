@@ -322,14 +322,15 @@ jobs:
         tar -xjf qwt.tar.bz2
         cd qwt-6.3.0
         source "$EMSDK/emsdk_env.sh"
-        # Patch the install prefix to a user-writable path before running qmake
-        sed -i "s|QWT_INSTALL_PREFIX[ \t]*=.*|QWT_INSTALL_PREFIX = $HOME/qwt-wasm|" qwtconfig.pri
-        qmake qwt.pro \
-          "QWT_CONFIG -= QwtFramework" \
-          "QWT_CONFIG -= QwtSvg" \
-          "QWT_CONFIG -= QwtOpenGL" \
-          "QWT_CONFIG -= QwtDesigner" \
-          "QWT_CONFIG -= QwtExamples"
+        # Patch install prefix and disable WASM-incompatible QWT features via sed.
+        # Inline qmake "-=" assignments (e.g. "QWT_CONFIG -= QwtFramework") are
+        # split by the WASM qmake wrapper script before reaching the host qmake6,
+        # causing "Unknown option -=".  Editing qwtconfig.pri directly avoids this.
+        sed -i "s|QWT_INSTALL_PREFIX[^=]*=.*|QWT_INSTALL_PREFIX = $HOME/qwt-wasm|" qwtconfig.pri
+        for feat in QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtExamples; do
+          sed -i "/${feat}/d" qwtconfig.pri
+        done
+        qmake qwt.pro
         emmake make -j$(nproc)
         make install
 
