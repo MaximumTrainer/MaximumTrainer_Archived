@@ -297,7 +297,10 @@ jobs:
         host: 'linux'
         target: 'desktop'
         arch: 'wasm_singlethread'
-        modules: 'qtwebchannel qtconnectivity'
+        # qtconnectivity is not available for wasm_singlethread; WASM Bluetooth
+        # is bridged via JavaScript WebBluetooth (PowerVelo.pro already does
+        # QT -= bluetooth in the wasm_emscripten scope).
+        modules: 'qtwebchannel'
 
     - name: Install Qt (linux host tools)
       uses: jurplel/install-qt-action@v3
