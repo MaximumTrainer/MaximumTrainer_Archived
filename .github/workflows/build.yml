@@ -295,6 +295,7 @@ jobs:
     if: github.ref == 'refs/heads/master'
     permissions:
       contents: write
+      actions: write
     # Serialize tag creation so concurrent master builds don't race on the same version
     concurrency:
       group: tag_release
@@ -324,12 +325,13 @@ jobs:
         echo "New tag: $new_tag"
         echo "new_tag=$new_tag" >> "$GITHUB_OUTPUT"
 
-    - name: Push tag
-      # Use the GitHub API to create the tag ref instead of 'git push'.
-      # A plain 'git push origin <tag>' is rejected by GitHub when any commit
-      # in the tag ancestry modified .github/workflows/ files and the token
-      # doesn't have the special 'workflows' scope (which GITHUB_TOKEN cannot
-      # hold). Creating the ref via the REST API does not trigger that check.
+    - name: Push tag and trigger release
+      # Use the GitHub API to create the tag ref instead of 'git push':
+      # 'git push origin <tag>' is rejected when commits modify workflow files
+      # and GITHUB_TOKEN lacks the 'workflows' scope (which can't be granted
+      # via the permissions: block). Tags created by GITHUB_TOKEN also don't
+      # trigger other workflows, so we follow up with workflow_dispatch on
+      # release.yml (requires actions: write permission above).
       uses: actions/github-script@v7
       with:
         script: |
@@ -341,3 +343,11 @@ jobs:
             sha: context.sha
           });
           console.log(`Created tag: ${tag}`);
+          await github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'release.yml',
+            ref: tag,
+            inputs: { tag_name: tag }
+          });
+          console.log(`Dispatched release.yml for ${tag}`);
