@@ -347,22 +347,24 @@ jobs:
             -e '/QT[[:space:]]*+=/s/\bconcurrent\b//g' \
             -e '/QT[[:space:]]*+=/s/\bopengl\b//g' \
             -e '/QT[[:space:]]*+=/s/\bsvg\b//g'
-        # Strategy 3: explicitly define QWT_NO_CONCURRENT.  Unlike SVG/OpenGL,
-        # src.pri has no "else { DEFINES += QWT_NO_CONCURRENT }" branch, so the
-        # define is never set automatically when QwtConcurrent is absent.
+        # Strategy 3: disable concurrent at both the QWT level and the Qt level.
+        # - QWT_NO_CONCURRENT: prevents QwtConcurrent from being enabled in QWT.
+        #   (src.pri has no else-clause for this so we set it explicitly.)
+        # - QT_NO_QFUTURE: the code body in qwt_plot_spectrogram.cpp is guarded
+        #   by  #if !defined(QT_NO_QFUTURE)  (not QWT_NO_CONCURRENT), so we must
+        #   define this Qt-level flag to skip the multi-threaded rendering path.
         echo "DEFINES += QWT_NO_CONCURRENT" >> qwtconfig.pri
+        echo "DEFINES += QT_NO_QFUTURE"    >> qwtconfig.pri
         # Strategy 4: guard the unconditional concurrent #includes in
-        # qwt_plot_spectrogram.cpp.  The file includes <qfuture.h> and
-        # <qtconcurrentrun.h> without #ifndef QWT_NO_CONCURRENT guards; those
-        # headers do not exist in the wasm_singlethread Qt install.
-        # Use sed (line-by-line) which is reliable regardless of surrounding context.
+        # qwt_plot_spectrogram.cpp with QWT_NO_CONCURRENT so the missing
+        # qfuture.h / qtconcurrentrun.h headers are not even attempted.
         sed -i \
           's|#include <qfuture\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#endif|' \
           src/qwt_plot_spectrogram.cpp
         sed -i \
           's|#include <qtconcurrentrun\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qtconcurrentrun.h>\n#endif|' \
           src/qwt_plot_spectrogram.cpp
-        grep -n "QWT_NO_CONCURRENT\|qfuture\|qtconcurrentrun" src/qwt_plot_spectrogram.cpp | head -10
+        grep -n "QWT_NO_CONCURRENT\|QT_NO_QFUTURE\|qfuture\|qtconcurrentrun" src/qwt_plot_spectrogram.cpp | head -10
         qmake qwt.pro
         emmake make -j$(nproc)
         make install
