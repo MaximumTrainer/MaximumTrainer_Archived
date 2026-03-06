@@ -340,12 +340,30 @@ jobs:
         done
         # Strategy 2: directly strip Qt modules unavailable in wasm_singlethread from
         # every .pro and .pri file so even if the QwtXxx guard is bypassed the QT
-        # variable stays clean.
+        # variable stays clean.  Note: src/src.pri has an unconditional
+        # "QT += concurrent" for Qt5+ with no else-clause, so this sed is required.
         find . \( -name "*.pro" -o -name "*.pri" \) -print0 | \
           xargs -0 sed -i \
             -e '/QT[[:space:]]*+=/s/\bconcurrent\b//g' \
             -e '/QT[[:space:]]*+=/s/\bopengl\b//g' \
             -e '/QT[[:space:]]*+=/s/\bsvg\b//g'
+        # Strategy 3: explicitly define QWT_NO_CONCURRENT.  Unlike SVG/OpenGL,
+        # src.pri has no "else { DEFINES += QWT_NO_CONCURRENT }" branch, so the
+        # define is never set automatically when QwtConcurrent is absent.
+        echo "DEFINES += QWT_NO_CONCURRENT" >> qwtconfig.pri
+        # Strategy 4: guard the unconditional concurrent #includes in
+        # qwt_plot_spectrogram.cpp.  The file includes <qfuture.h> and
+        # <qtconcurrentrun.h> without #ifndef QWT_NO_CONCURRENT guards; those
+        # headers do not exist in the wasm_singlethread Qt install.
+        python3 -c "
+path = 'src/qwt_plot_spectrogram.cpp'
+c = open(path).read()
+c = c.replace(
+    '#include <qfuture.h>\n#include <qtconcurrentrun.h>',
+    '#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#include <qtconcurrentrun.h>\n#endif')
+open(path, 'w').write(c)
+print('Patched', path)
+"
         qmake qwt.pro
         emmake make -j$(nproc)
         make install
