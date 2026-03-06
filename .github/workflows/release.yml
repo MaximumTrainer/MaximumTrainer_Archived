@@ -355,16 +355,26 @@ jobs:
         #   define this Qt-level flag to skip the multi-threaded rendering path.
         echo "DEFINES += QWT_NO_CONCURRENT" >> qwtconfig.pri
         echo "DEFINES += QT_NO_QFUTURE"    >> qwtconfig.pri
-        # Strategy 4: guard the unconditional concurrent #includes in
-        # qwt_plot_spectrogram.cpp with QWT_NO_CONCURRENT so the missing
-        # qfuture.h / qtconcurrentrun.h headers are not even attempted.
+        # Strategy 4: patch qwt_plot_spectrogram.cpp for WASM:
+        #   a) Guard the concurrent #includes — qfuture.h / qtconcurrentrun.h do
+        #      not exist in wasm_singlethread Qt; they were previously only
+        #      forward-guarded by the code body check (#if !defined QT_NO_QFUTURE)
+        #      but NOT the includes at the top of the file.
         sed -i \
           's|#include <qfuture\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#endif|' \
           src/qwt_plot_spectrogram.cpp
         sed -i \
           's|#include <qtconcurrentrun\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qtconcurrentrun.h>\n#endif|' \
           src/qwt_plot_spectrogram.cpp
-        grep -n "QWT_NO_CONCURRENT\|QT_NO_QFUTURE\|qfuture\|qtconcurrentrun" src/qwt_plot_spectrogram.cpp | head -10
+        #   b) Add explicit <qmap.h> include after <qthread.h>.
+        #      QMap was previously pulled in transitively via qfuture.h; now that
+        #      those includes are guarded out, QwtRasterData::ContourLines
+        #      (a typedef for QMap<double,QPolygonF>) only has a forward declaration
+        #      and the contour-line rendering code fails to compile.
+        sed -i \
+          '/#include <qthread\.h>/a #include <qmap.h>' \
+          src/qwt_plot_spectrogram.cpp
+        grep -n "QWT_NO_CONCURRENT\|QT_NO_QFUTURE\|qfuture\|qtconcurrentrun\|qmap" src/qwt_plot_spectrogram.cpp | head -12
         qmake qwt.pro
         emmake make -j$(nproc)
         make install

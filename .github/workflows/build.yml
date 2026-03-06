@@ -285,6 +285,95 @@ jobs:
         path: build/
 
   # ──────────────────────────────────────────────────────────────────────────
+  # WASM build (best-effort — runs on every push so WASM issues surface early,
+  # but failures do not block tag_release or any other job).
+  # Steps are kept in sync with the build_wasm job in release.yml.
+  # ──────────────────────────────────────────────────────────────────────────
+  build_wasm:
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Emscripten
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: '3.1.50'
+
+    - name: Install Qt (Wasm singlethread)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.6.3'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'wasm_singlethread'
+        modules: 'qtwebchannel'
+
+    - name: Install Qt (linux host tools)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.6.3'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'gcc_64'
+        set-env: false
+
+    - name: Build QWT (Wasm)
+      run: |
+        cd /tmp
+        curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.3.0/qwt-6.3.0.tar.bz2/download"
+        tar -xjf qwt.tar.bz2
+        cd qwt-6.3.0
+        source "$EMSDK/emsdk_env.sh"
+        sed -i "s|QWT_INSTALL_PREFIX[^=]*=.*|QWT_INSTALL_PREFIX = $HOME/qwt-wasm|" qwtconfig.pri
+        for feat in QwtDll QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtDesignerSelfContained \
+                    QwtExamples QwtPlayground QwtTests QwtConcurrent; do
+          echo "QWT_CONFIG -= $feat" >> qwtconfig.pri
+        done
+        find . \( -name "*.pro" -o -name "*.pri" \) -print0 | \
+          xargs -0 sed -i \
+            -e '/QT[[:space:]]*+=/s/\bconcurrent\b//g' \
+            -e '/QT[[:space:]]*+=/s/\bopengl\b//g' \
+            -e '/QT[[:space:]]*+=/s/\bsvg\b//g'
+        echo "DEFINES += QWT_NO_CONCURRENT" >> qwtconfig.pri
+        echo "DEFINES += QT_NO_QFUTURE"    >> qwtconfig.pri
+        sed -i \
+          's|#include <qfuture\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#endif|' \
+          src/qwt_plot_spectrogram.cpp
+        sed -i \
+          's|#include <qtconcurrentrun\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qtconcurrentrun.h>\n#endif|' \
+          src/qwt_plot_spectrogram.cpp
+        sed -i \
+          '/#include <qthread\.h>/a #include <qmap.h>' \
+          src/qwt_plot_spectrogram.cpp
+        grep -n "QWT_NO_CONCURRENT\|QT_NO_QFUTURE\|qfuture\|qtconcurrentrun\|qmap" \
+          src/qwt_plot_spectrogram.cpp | head -12
+        qmake qwt.pro
+        emmake make -j$(nproc)
+        make install
+
+    - name: Build MaximumTrainer (Wasm)
+      run: |
+        source "$EMSDK/emsdk_env.sh"
+        export QMAKEFEATURES="$HOME/qwt-wasm/features"
+        mkdir -p build-wasm && cd build-wasm
+        qmake ../PowerVelo.pro \
+          "QWT_INSTALL=$HOME/qwt-wasm"
+        emmake make -j$(nproc)
+
+    - name: Upload Wasm artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: wasm
+        path: |
+          build-wasm/MaximumTrainer.wasm
+          build-wasm/MaximumTrainer.js
+          build-wasm/qtloader.js
+          build-wasm/qtlogo.svg
+
+  # ──────────────────────────────────────────────────────────────────────────
   # Auto-tag a new semantic version on master so that release.yml fires.
   # Only runs when all build and test jobs succeed on the master branch.
   # ──────────────────────────────────────────────────────────────────────────
