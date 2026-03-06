@@ -290,7 +290,7 @@
             <li>VLC-Qt 1.1.0 (pre-built MSVC)</li>
             <li>SFML 2.6.1</li>
           </ul>
-          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-windows-x64.zip" class="btn btn-primary" target="_blank" rel="noopener">
+          <a id="win-download-btn" href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-windows-x64.zip" class="btn btn-primary" target="_blank" rel="noopener">
             Download .zip
           </a>
           <details class="build-details">
@@ -314,7 +314,7 @@ nmake</code></pre>
             <li>VLC-Qt 1.1.1 (from source)</li>
             <li>libsfml-dev</li>
           </ul>
-          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-linux-x86_64.AppImage" class="btn btn-primary" target="_blank" rel="noopener">
+          <a id="linux-download-btn" href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-linux-x86_64.AppImage" class="btn btn-primary" target="_blank" rel="noopener">
             Download .AppImage
           </a>
           <details class="build-details">
@@ -340,7 +340,7 @@ make -j$(nproc)</code></pre>
             <li>QWT 6.2.0 (from source)</li>
             <li>SFML (brew install sfml)</li>
           </ul>
-          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-macos.dmg" class="btn btn-primary" target="_blank" rel="noopener">
+          <a id="mac-download-btn" href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-macos.dmg" class="btn btn-primary" target="_blank" rel="noopener">
             Download .dmg
           </a>
           <details class="build-details">
@@ -355,11 +355,12 @@ make -j$(sysctl -n hw.logicalcpu)</code></pre>
 
       </div>
 
-      <p class="download-note">
-        If a download link above returns a 404, no release has been published yet — check the
-        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases" target="_blank" rel="noopener">GitHub Releases page</a>
-        directly, or build from source using the instructions above.
-        For full build instructions including dependencies, environment variables, and CI configuration see the
+      <p id="no-release-note" class="download-note" style="display:none">
+        No release has been published yet — the download links above will activate after the first
+        tagged build completes on GitHub Actions.
+        Browse the <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases" target="_blank" rel="noopener">GitHub Releases page</a>
+        for the latest status, or build from source using the instructions above.
+        For full build instructions see the
         <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux#building" target="_blank" rel="noopener">README on GitHub</a>.
       </p>
 
@@ -426,5 +427,64 @@ make -j$(sysctl -n hw.logicalcpu)</code></pre>
   </footer>
 
   <script src="js/main.js"></script>
+
+  <script>
+    // ── Dynamic versioned download links ──────────────────────────────────
+    // Fetches the latest GitHub release and rewrites the static
+    // /releases/latest/download/ links to versioned /releases/download/vX.Y.Z/
+    // URLs, and injects a version badge into each download card.
+    (function () {
+      var REPO = 'MaximumTrainer/MaximumTrainer_Redux';
+      var API  = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+
+      var ASSETS = {
+        'MaximumTrainer-windows-x64.zip':       'win-download-btn',
+        'MaximumTrainer-linux-x86_64.AppImage': 'linux-download-btn',
+        'MaximumTrainer-macos.dmg':             'mac-download-btn',
+      };
+
+      fetch(API)
+        .then(function (r) {
+          if (!r.ok) throw new Error('no release');
+          return r.json();
+        })
+        .then(function (release) {
+          var tag = release.tag_name;
+
+          // Build a quick filename → download URL map from the release assets
+          var urlMap = {};
+          (release.assets || []).forEach(function (a) {
+            urlMap[a.name] = a.browser_download_url;
+          });
+
+          Object.keys(ASSETS).forEach(function (filename) {
+            var btnId = ASSETS[filename];
+            var btn   = document.getElementById(btnId);
+            if (!btn) return;
+
+            // Point to the versioned asset URL (from the API or constructed)
+            var url = urlMap[filename] ||
+              'https://github.com/' + REPO + '/releases/download/' + tag + '/' + filename;
+            btn.href = url;
+
+            // Inject a version badge before the button text
+            var badge = document.createElement('span');
+            badge.className = 'version-badge';
+            badge.textContent = tag;
+            // Insert badge as first child of the button
+            btn.insertBefore(badge, btn.firstChild);
+          });
+
+          // Hide the "no release yet" note if it exists
+          var note = document.getElementById('no-release-note');
+          if (note) note.style.display = 'none';
+        })
+        .catch(function () {
+          // No release published yet or network error — show a helpful note
+          var note = document.getElementById('no-release-note');
+          if (note) note.style.display = '';
+        });
+    }());
+  </script>
 </body>
 </html>

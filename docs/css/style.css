@@ -534,6 +534,19 @@ code, pre {
   align-self: flex-start;
 }
 
+/* Version badge injected dynamically by JS once a release is published */
+.version-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  padding: 0 0.35em;
+  margin-right: 0.5em;
+  font-size: 0.78em;
+  font-weight: 700;
+  vertical-align: middle;
+  letter-spacing: 0.03em;
+}
+
 /* Build details accordion */
 .build-details {
   border: 1px solid var(--clr-border);
