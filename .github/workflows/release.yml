@@ -425,6 +425,9 @@ jobs:
         tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
         generate_release_notes: true
         fail_on_unmatched_files: false
+        # Don't try to delete/overwrite existing assets - attempting to delete
+        # assets from an immutable release causes a fatal API error.
+        overwrite_files: false
         files: |
           MaximumTrainer-linux-x86_64.AppImage
           MaximumTrainer-windows-x64.zip

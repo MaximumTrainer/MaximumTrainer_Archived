@@ -295,6 +295,10 @@ jobs:
     if: github.ref == 'refs/heads/master'
     permissions:
       contents: write
+      # Required when any commit in the ancestry modifies .github/workflows/ files:
+      # GitHub rejects tag pushes that would trigger a new workflow run unless the
+      # token has the 'workflows' write permission.
+      workflows: write
     # Serialize tag creation so concurrent master builds don't race on the same version
     concurrency:
       group: tag_release
