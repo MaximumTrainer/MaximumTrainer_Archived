@@ -40,9 +40,9 @@ contains(QMAKE_PLATFORM, wasm) | wasm_emscripten | wasm_emscripten_singlethread 
     INCLUDEPATH = $$PWD/src/ui/wasm_stubs $$INCLUDEPATH
     INCLUDEPATH += $$PWD/src/ui/wasm_stubs/QtWebEngineWidgets
 
-    # Asyncify is required for the async WebBluetooth JS bridge
-    QMAKE_LFLAGS += -s ASYNCIFY=1
-    QMAKE_LFLAGS += "SHELL:-s ASYNCIFY_IMPORTS=['qt_asyncify_resume_js']"
+    # The WebBluetooth bridge uses EM_JS with JavaScript async/await internally;
+    # C++ never blocks waiting for async results (all results arrive via bleNotifyC
+    # callbacks), so ASYNCIFY is not required.
 
     DEFINES += GC_WASM_BUILD
 }
