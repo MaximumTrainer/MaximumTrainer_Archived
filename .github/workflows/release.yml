@@ -419,3 +419,56 @@ jobs:
           MaximumTrainer-windows-x64.zip
           MaximumTrainer-macos.dmg
           MaximumTrainer-wasm.zip
+
+  # ────────────────────────────────────── VERIFY ─────────────────────────────────────
+  verify_assets:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+    - name: Verify release assets are downloadable
+      run: |
+        REPO="${{ github.repository }}"
+        mkdir -p /tmp/release-assets
+        cd /tmp/release-assets
+
+        echo "Verifying release assets for tag: $TAG"
+
+        # Required assets – the job fails if any of these are missing or empty
+        REQUIRED=(
+          "MaximumTrainer-linux-x86_64.AppImage"
+          "MaximumTrainer-windows-x64.zip"
+          "MaximumTrainer-macos.dmg"
+        )
+
+        for asset in "${REQUIRED[@]}"; do
+          echo "Downloading $asset ..."
+          gh release download "$TAG" --repo "$REPO" --pattern "$asset"
+          if [ ! -s "$asset" ]; then
+            echo "ERROR: $asset is missing or empty in release $TAG"
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$asset")
+          echo "✓ $asset  (${SIZE} bytes)"
+        done
+
+        # WASM asset is best-effort: warn but do not fail if absent
+        echo "Checking optional WASM asset ..."
+        if gh release download "$TAG" --repo "$REPO" --pattern "MaximumTrainer-wasm.zip" 2>/dev/null; then
+          if [ -s "MaximumTrainer-wasm.zip" ]; then
+            SIZE=$(stat -c%s "MaximumTrainer-wasm.zip")
+            echo "✓ MaximumTrainer-wasm.zip  (${SIZE} bytes)"
+          else
+            echo "WARNING: MaximumTrainer-wasm.zip is present but empty"
+          fi
+        else
+          echo "NOTE: MaximumTrainer-wasm.zip not found in release (Wasm build is best-effort)"
+        fi
+
+        echo ""
+        echo "All required release assets are present and downloadable."
