@@ -35,7 +35,11 @@
 #include "myqwebenginepage.h"
 
 #include "extrequest.h"
+#ifdef GC_WASM_BUILD
+#include "btle_scanner_dialog_wasm.h"
+#else
 #include "btle_scanner_dialog.h"
+#endif
 
 
 

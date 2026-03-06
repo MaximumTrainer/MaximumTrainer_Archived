@@ -1,6 +1,10 @@
-// WebAssembly stub implementations for Qt WebEngine classes.
-// These are included via the wasm_stubs INCLUDEPATH when building for Wasm,
-// replacing the unavailable Qt WebEngine module headers.
+// WebAssembly implementations for Qt WebEngine classes.
+// Qt WebEngine is unavailable for WASM builds; these classes replace it with
+// browser-native equivalents:
+//   - QWebEngineView::setUrl() opens the URL in a new browser tab via
+//     QDesktopServices::openUrl(), which Qt WASM routes through the browser.
+//   - QWebEnginePage / QWebEngineProfile are lightweight no-ops whose API
+//     surface is just enough to satisfy callers in the application code.
 #pragma once
 
 #include <QObject>
@@ -10,6 +14,8 @@
 #include <QStringList>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QPushButton>
+#include <QDesktopServices>
 #include <functional>
 
 // ─────────────────────────────── Forward declarations ────────────────────────
@@ -86,19 +92,30 @@ public:
         : QWidget(parent), m_page(new QWebEnginePage(this))
     {
         auto *layout = new QVBoxLayout(this);
-        layout->setContentsMargins(0, 0, 0, 0);
-        auto *label = new QLabel(
-            "<center><b>Web content</b><br>Not available in the browser version.<br>"
-            "Open the desktop app to access this feature.</center>",
-            this);
-        label->setWordWrap(true);
-        label->setTextFormat(Qt::RichText);
-        layout->addWidget(label, 0, Qt::AlignCenter);
+        layout->setContentsMargins(8, 8, 8, 8);
+        m_label = new QLabel(
+            "<center><i>No content loaded</i></center>", this);
+        m_label->setWordWrap(true);
+        m_label->setTextFormat(Qt::RichText);
+        m_label->setOpenExternalLinks(true);
+        layout->addWidget(m_label, 0, Qt::AlignCenter);
     }
 
-    void load(const QUrl &) {}
-    void setUrl(const QUrl &) {}
-    QUrl url() const { return {}; }
+    void load(const QUrl &url) { setUrl(url); }
+    void setUrl(const QUrl &url) {
+        m_currentUrl = url;
+        // Open in the browser — Qt WASM routes QDesktopServices::openUrl()
+        // through window.open(), which is the native browser equivalent of
+        // an embedded web view.
+        QDesktopServices::openUrl(url);
+        m_label->setText(QString(
+            "<center><b>%1</b><br><br>"
+            "<a href='%2'>Open in browser tab</a><br><br>"
+            "<small>This content requires the desktop app for inline display.<br>"
+            "Click the link to open it in a browser tab.</small></center>"
+        ).arg(url.host(), url.toString()));
+    }
+    QUrl url() const { return m_currentUrl; }
     void setPage(QWebEnginePage *page) { if (page) m_page = page; }
     QWebEnginePage *page() const { return m_page; }
     void back() {}
@@ -108,6 +125,8 @@ public:
 
 private:
     QWebEnginePage *m_page;
+    QLabel         *m_label   = nullptr;
+    QUrl            m_currentUrl;
 };
 
 // ─────────────────── QWebEngineDownloadRequest (Qt 6) ────────────────────────

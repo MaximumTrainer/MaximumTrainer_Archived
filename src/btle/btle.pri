@@ -5,13 +5,13 @@ contains(QMAKE_PLATFORM, wasm) {
     SOURCES += \
         $$PWD/btle_hub_wasm.cpp \
         $$PWD/webbluetooth_bridge.cpp \
-        $$PWD/btle_scanner_dialog.cpp \
+        $$PWD/btle_scanner_dialog_wasm.cpp \
         $$PWD/simulator_hub.cpp
 
     HEADERS += \
         $$PWD/btle_hub_wasm.h \
         $$PWD/webbluetooth_bridge.h \
-        $$PWD/btle_scanner_dialog.h \
+        $$PWD/btle_scanner_dialog_wasm.h \
         $$PWD/btle_uuids.h \
         $$PWD/simulator_hub.h
 } else {

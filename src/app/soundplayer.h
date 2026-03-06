@@ -70,6 +70,10 @@ private :
     std::optional<sf::Sound> soundPowerTooHigh;
 #endif // Q_OS_WASM
 
+#ifdef Q_OS_WASM
+    double m_volume = 0.7; // 0.0 – 1.0, set by setVolume(0–100)
+#endif
+
 };
 Q_DECLARE_METATYPE(SoundPlayer*)
 
