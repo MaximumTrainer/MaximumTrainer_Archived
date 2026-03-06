@@ -327,7 +327,7 @@ jobs:
         # split by the WASM qmake wrapper script before reaching the host qmake6,
         # causing "Unknown option -=".  Editing qwtconfig.pri directly avoids this.
         sed -i "s|QWT_INSTALL_PREFIX[^=]*=.*|QWT_INSTALL_PREFIX = $HOME/qwt-wasm|" qwtconfig.pri
-        for feat in QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtExamples; do
+        for feat in QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtExamples QwtConcurrent; do
           sed -i "/${feat}/d" qwtconfig.pri
         done
         qmake qwt.pro
