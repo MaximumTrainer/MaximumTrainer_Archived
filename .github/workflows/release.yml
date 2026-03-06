@@ -330,9 +330,11 @@ jobs:
         # Disable all features that require Qt modules unavailable in wasm_singlethread
         # or that try to build host-only binaries (examples, tests, playground, designer).
         # QwtDll is disabled so QWT builds as a static lib (WASM has no shared libs).
+        # Append QWT_CONFIG -= directives at the END of qwtconfig.pri so they always
+        # override any earlier += assignments, regardless of where features are added.
         for feat in QwtDll QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtDesignerSelfContained \
                     QwtExamples QwtPlayground QwtTests QwtConcurrent; do
-          sed -i "/${feat}/d" qwtconfig.pri
+          echo "QWT_CONFIG -= $feat" >> qwtconfig.pri
         done
         qmake qwt.pro
         emmake make -j$(nproc)
