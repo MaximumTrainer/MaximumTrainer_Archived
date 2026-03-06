@@ -44,6 +44,11 @@ contains(QMAKE_PLATFORM, wasm) | wasm_emscripten | wasm_emscripten_singlethread 
     # C++ never blocks waiting for async results (all results arrive via bleNotifyC
     # callbacks), so ASYNCIFY is not required.
 
+    # libqwasm.a (Qt's WASM platform plugin) and webbluetooth_bridge.cpp both use
+    # emscripten::val / emscripten/val.h, which requires the embind runtime library.
+    # Without this, wasm-ld reports undefined symbols _emval_new, _emval_call_void_method etc.
+    LIBS += -lembind
+
     DEFINES += GC_WASM_BUILD
 }
 # ────────────────────────────────────────────────────────────────────────────
