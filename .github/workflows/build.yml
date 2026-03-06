@@ -339,17 +339,15 @@ jobs:
             -e '/QT[[:space:]]*+=/s/\bsvg\b//g'
         echo "DEFINES += QWT_NO_CONCURRENT" >> qwtconfig.pri
         echo "DEFINES += QT_NO_QFUTURE"    >> qwtconfig.pri
-        sed -i \
-          's|#include <qfuture\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#endif|' \
-          src/qwt_plot_spectrogram.cpp
-        sed -i \
-          's|#include <qtconcurrentrun\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qtconcurrentrun.h>\n#endif|' \
-          src/qwt_plot_spectrogram.cpp
+        find src -name "*.cpp" -print0 | xargs -0 sed -i \
+          's|#include <qfuture\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#endif|g'
+        find src -name "*.cpp" -print0 | xargs -0 sed -i \
+          's|#include <qtconcurrentrun\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qtconcurrentrun.h>\n#endif|g'
         sed -i \
           '/#include <qthread\.h>/a #include <qmap.h>' \
           src/qwt_plot_spectrogram.cpp
-        grep -n "QWT_NO_CONCURRENT\|QT_NO_QFUTURE\|qfuture\|qtconcurrentrun\|qmap" \
-          src/qwt_plot_spectrogram.cpp | head -12
+        echo "--- patched includes in concurrent-using files ---"
+        grep -rn "QWT_NO_CONCURRENT\|qfuture\|qtconcurrentrun" src/*.cpp | grep -v "^Binary"
         qmake qwt.pro
         emmake make -j$(nproc)
         make install
