@@ -25,7 +25,11 @@ GlobalVars::GlobalVars(QObject *parent) :
     QObject(parent)
 {
 
-    qDebug() << "SSL version" << QSslSocket::sslLibraryBuildVersionString();
+    qDebug() << "SSL version"
+#ifndef GC_WASM_BUILD
+             << QSslSocket::sslLibraryBuildVersionString()
+#endif
+    ;
 
     QCoreApplication::setOrganizationName("Max++ inc.");
     QCoreApplication::setOrganizationDomain("maximumtrainer.com");
@@ -70,6 +74,7 @@ GlobalVars::GlobalVars(QObject *parent) :
     QNetworkAccessManager *managerWS = new QNetworkAccessManager(this);
 
 
+#ifndef GC_WASM_BUILD
     QSslConfiguration sslCfg = QSslConfiguration::defaultConfiguration();
     QList<QSslCertificate> ca_list = sslCfg.caCertificates();
     QList<QSslCertificate> ca_new = QSslCertificate::fromData("CaCertificates");
@@ -81,6 +86,7 @@ GlobalVars::GlobalVars(QObject *parent) :
 
     connect(manager, SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)), this, SLOT(sslErrorHandler(QNetworkReply*,QList<QSslError>)));
     connect(managerWS, SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)), this, SLOT(sslErrorHandler(QNetworkReply*,QList<QSslError>)));
+#endif
 
 
     qApp->setProperty("Account", QVariant::fromValue<Account*>(account));
@@ -93,13 +99,11 @@ GlobalVars::GlobalVars(QObject *parent) :
 }
 
 //----------------------------------------------------------------------------------
+#ifndef GC_WASM_BUILD
 void GlobalVars::sslErrorHandler(QNetworkReply* qnr, const QList<QSslError> & errlist) {
 
     Q_UNUSED(errlist);
 
-    // show list of all ssl errors
-    // foreach (QSslError err, errlist)
-    //   qDebug() << "Max ssl error: " << err;
-
     qnr->ignoreSslErrors();
 }
+#endif

@@ -5,6 +5,9 @@
 #include <QApplication>
 
 #include <QNetworkReply>
+#ifndef GC_WASM_BUILD
+#include <QSslError>
+#endif
 
 class GlobalVars : public QObject
 {
@@ -15,7 +18,9 @@ public:
 signals:
 
 public slots:
+#ifndef GC_WASM_BUILD
     void sslErrorHandler(QNetworkReply* qnr, const QList<QSslError> & errlist);
+#endif
 
 };
 
