@@ -355,15 +355,14 @@ jobs:
         # qwt_plot_spectrogram.cpp.  The file includes <qfuture.h> and
         # <qtconcurrentrun.h> without #ifndef QWT_NO_CONCURRENT guards; those
         # headers do not exist in the wasm_singlethread Qt install.
-        python3 -c "
-path = 'src/qwt_plot_spectrogram.cpp'
-c = open(path).read()
-c = c.replace(
-    '#include <qfuture.h>\n#include <qtconcurrentrun.h>',
-    '#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#include <qtconcurrentrun.h>\n#endif')
-open(path, 'w').write(c)
-print('Patched', path)
-"
+        # Use sed (line-by-line) which is reliable regardless of surrounding context.
+        sed -i \
+          's|#include <qfuture\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#endif|' \
+          src/qwt_plot_spectrogram.cpp
+        sed -i \
+          's|#include <qtconcurrentrun\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qtconcurrentrun.h>\n#endif|' \
+          src/qwt_plot_spectrogram.cpp
+        grep -n "QWT_NO_CONCURRENT\|qfuture\|qtconcurrentrun" src/qwt_plot_spectrogram.cpp | head -10
         qmake qwt.pro
         emmake make -j$(nproc)
         make install
