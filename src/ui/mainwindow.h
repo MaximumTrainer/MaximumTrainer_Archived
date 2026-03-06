@@ -22,7 +22,11 @@
 #include "savingwindow.h"
 #include "userstudio.h"
 #include "myconstants.h"
+#ifdef GC_WASM_BUILD
+#include "btle_hub_wasm.h"
+#else
 #include "btle_hub.h"
+#endif
 
 
 namespace Ui {

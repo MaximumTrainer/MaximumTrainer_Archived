@@ -142,7 +142,7 @@ win32-msvc* {
     # gnu toolchain wants math libs
     LIBS += -lm
 
-    unix:!macx:!wasm_emscripten {
+    unix:!macx:!contains(QMAKE_PLATFORM, wasm) {
         # Linux gcc 5 grumbles about unused static globals and leads
         # to a gazillion warnings that are harmless so lets remove them
         QMAKE_CXXFLAGS += -Wno-unused-variable

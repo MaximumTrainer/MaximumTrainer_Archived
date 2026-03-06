@@ -1,7 +1,7 @@
 INCLUDEPATH += $$PWD
 
 # On Wasm use the WebBluetooth bridge; on all other platforms use native Qt BLE
-wasm_emscripten {
+contains(QMAKE_PLATFORM, wasm) {
     SOURCES += \
         $$PWD/btle_hub_wasm.cpp \
         $$PWD/webbluetooth_bridge.cpp \

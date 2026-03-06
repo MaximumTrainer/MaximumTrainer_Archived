@@ -8,7 +8,7 @@ SOURCES += $$PWD/main.cpp\
     $$PWD/reportutil.cpp \
 
 # SoundPlayer: full SFML implementation on native, no-op stub on Wasm
-wasm_emscripten {
+contains(QMAKE_PLATFORM, wasm) {
     SOURCES += $$PWD/soundplayer_wasm.cpp
 } else {
     SOURCES += $$PWD/soundplayer.cpp
