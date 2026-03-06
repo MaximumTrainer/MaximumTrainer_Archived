@@ -285,16 +285,15 @@ jobs:
     - name: Set up Emscripten
       uses: mymindstorm/setup-emsdk@v14
       with:
-        # Qt 6.6.x requires Emscripten >= 3.1.37 (minimum); 3.1.37's prebuilt
-        # binary was removed from GCS storage, so use 3.1.50 (Qt 6.7's version).
-        # Qt 6.6.3's qmake checks for a minimum, not an exact version.
-        version: '3.1.50'
+        # Qt 6.6.3 was built with Emscripten 3.1.37. The emval ABI changed at
+        # 3.1.44 (_emval_new etc. moved from compiled WASM to JS-only), which
+        # breaks linking against Qt 6.6.3's libqwasm.a. Use 3.1.43 — the last
+        # version with the original emval WASM ABI. 3.1.37 was removed from GCS.
+        version: '3.1.43'
 
     - name: Install Qt (Wasm singlethread)
       uses: jurplel/install-qt-action@v3
       with:
-        # 6.6.3 is the latest stable 6.6 release; 6.7.3 wasm_singlethread is
-        # no longer available on Qt mirrors as of early 2026
         version: '6.6.3'
         host: 'linux'
         target: 'desktop'
