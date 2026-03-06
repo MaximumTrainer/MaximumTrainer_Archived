@@ -309,8 +309,11 @@ jobs:
         host: 'linux'
         target: 'desktop'
         arch: 'gcc_64'
+        # set-env: false keeps gcc_64 from overwriting the WASM Qt env vars.
+        # No 'dir:' here — both WASM and host installs must share the same
+        # base directory so the wasm_singlethread qmake wrapper can resolve
+        # the sibling path Qt/6.6.3/gcc_64/bin/qmake6.
         set-env: false
-        dir: ${{ github.workspace }}/qt-host
 
     - name: Build QWT (Wasm)
       run: |
