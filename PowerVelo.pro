@@ -17,21 +17,25 @@ CONFIG += c++17
 
 # include
 QT       += core gui widgets
-QT       += network printsupport concurrent
-QT       += bluetooth
+QT       += network printsupport
+# Only add modules that exist in the current Qt installation; this makes the
+# .pro file work for both full Qt builds and the WASM singlethread target
+# (which lacks concurrent, bluetooth, and webenginewidgets).
+qtHaveModule(concurrent):       QT += concurrent
+qtHaveModule(bluetooth):        QT += bluetooth
+qtHaveModule(webenginewidgets): QT += webenginewidgets
 
 #QT += serialport
 #QT += multimedia
 #QT += multimediawidgets
 #QT += webengine
 #QT += webenginecore
-QT += webenginewidgets
 
-# ─── WebAssembly (wasm-emscripten) overrides ────────────────────────────────
-wasm_emscripten {
-    # Qt modules not available in the Wasm sandbox
-    QT -= bluetooth webenginewidgets printsupport concurrent
-
+# ─── WebAssembly overrides ───────────────────────────────────────────────────
+# Qt 6.5+ names the singlethread WASM mkspec "wasm-emscripten-singlethread"
+# (scope: wasm_emscripten_singlethread); older versions use "wasm-emscripten"
+# (scope: wasm_emscripten).  contains(QMAKE_PLATFORM, wasm) covers both.
+contains(QMAKE_PLATFORM, wasm) | wasm_emscripten | wasm_emscripten_singlethread {
     # Stubs make #include <QWebEngineView> etc. resolve to no-op classes
     INCLUDEPATH = $$PWD/src/ui/wasm_stubs $$INCLUDEPATH
     INCLUDEPATH += $$PWD/src/ui/wasm_stubs/QtWebEngineWidgets
