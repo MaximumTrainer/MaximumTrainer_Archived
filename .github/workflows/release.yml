@@ -327,15 +327,23 @@ jobs:
         # split by the WASM qmake wrapper script before reaching the host qmake6,
         # causing "Unknown option -=".  Editing qwtconfig.pri directly avoids this.
         sed -i "s|QWT_INSTALL_PREFIX[^=]*=.*|QWT_INSTALL_PREFIX = $HOME/qwt-wasm|" qwtconfig.pri
-        # Disable all features that require Qt modules unavailable in wasm_singlethread
-        # or that try to build host-only binaries (examples, tests, playground, designer).
-        # QwtDll is disabled so QWT builds as a static lib (WASM has no shared libs).
-        # Append QWT_CONFIG -= directives at the END of qwtconfig.pri so they always
-        # override any earlier += assignments, regardless of where features are added.
+        # Disable WASM-incompatible QWT features using two complementary strategies,
+        # because qmake sub-directory builds re-evaluate .pri files from scratch and
+        # can re-add features that were removed at the top level.
+        #
+        # Strategy 1: append QWT_CONFIG -= to qwtconfig.pri (sequential override).
         for feat in QwtDll QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtDesignerSelfContained \
                     QwtExamples QwtPlayground QwtTests QwtConcurrent; do
           echo "QWT_CONFIG -= $feat" >> qwtconfig.pri
         done
+        # Strategy 2: directly strip Qt modules unavailable in wasm_singlethread from
+        # every .pro and .pri file so even if the QwtXxx guard is bypassed the QT
+        # variable stays clean.
+        find . \( -name "*.pro" -o -name "*.pri" \) -print0 | \
+          xargs -0 sed -i \
+            -e '/QT[[:space:]]*+=/s/\bconcurrent\b//g' \
+            -e '/QT[[:space:]]*+=/s/\bopengl\b//g' \
+            -e '/QT[[:space:]]*+=/s/\bsvg\b//g'
         qmake qwt.pro
         emmake make -j$(nproc)
         make install
