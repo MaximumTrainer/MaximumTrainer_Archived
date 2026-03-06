@@ -285,8 +285,10 @@ jobs:
     - name: Set up Emscripten
       uses: mymindstorm/setup-emsdk@v14
       with:
-        # Qt 6.6.x requires Emscripten 3.1.37
-        version: '3.1.37'
+        # Qt 6.6.x requires Emscripten >= 3.1.37 (minimum); 3.1.37's prebuilt
+        # binary was removed from GCS storage, so use 3.1.50 (Qt 6.7's version).
+        # Qt 6.6.3's qmake checks for a minimum, not an exact version.
+        version: '3.1.50'
 
     - name: Install Qt (Wasm singlethread)
       uses: jurplel/install-qt-action@v3
