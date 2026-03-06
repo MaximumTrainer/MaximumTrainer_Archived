@@ -296,6 +296,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      workflows: write
     # Serialize tag creation so concurrent master builds don't race on the same version
     concurrency:
       group: tag_release
