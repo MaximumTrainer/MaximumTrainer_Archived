@@ -295,10 +295,6 @@ jobs:
     if: github.ref == 'refs/heads/master'
     permissions:
       contents: write
-      # Required when any commit in the ancestry modifies .github/workflows/ files:
-      # GitHub rejects tag pushes that would trigger a new workflow run unless the
-      # token has the 'workflows' write permission.
-      workflows: write
     # Serialize tag creation so concurrent master builds don't race on the same version
     concurrency:
       group: tag_release
@@ -329,8 +325,19 @@ jobs:
         echo "new_tag=$new_tag" >> "$GITHUB_OUTPUT"
 
     - name: Push tag
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag "${{ steps.semver.outputs.new_tag }}"
-        git push origin "${{ steps.semver.outputs.new_tag }}"
+      # Use the GitHub API to create the tag ref instead of 'git push'.
+      # A plain 'git push origin <tag>' is rejected by GitHub when any commit
+      # in the tag ancestry modified .github/workflows/ files and the token
+      # doesn't have the special 'workflows' scope (which GITHUB_TOKEN cannot
+      # hold). Creating the ref via the REST API does not trigger that check.
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const tag = '${{ steps.semver.outputs.new_tag }}';
+          await github.rest.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: `refs/tags/${tag}`,
+            sha: context.sha
+          });
+          console.log(`Created tag: ${tag}`);
