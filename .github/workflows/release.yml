@@ -327,7 +327,11 @@ jobs:
         # split by the WASM qmake wrapper script before reaching the host qmake6,
         # causing "Unknown option -=".  Editing qwtconfig.pri directly avoids this.
         sed -i "s|QWT_INSTALL_PREFIX[^=]*=.*|QWT_INSTALL_PREFIX = $HOME/qwt-wasm|" qwtconfig.pri
-        for feat in QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtExamples QwtConcurrent; do
+        # Disable all features that require Qt modules unavailable in wasm_singlethread
+        # or that try to build host-only binaries (examples, tests, playground, designer).
+        # QwtDll is disabled so QWT builds as a static lib (WASM has no shared libs).
+        for feat in QwtDll QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtDesignerSelfContained \
+                    QwtExamples QwtPlayground QwtTests QwtConcurrent; do
           sed -i "/${feat}/d" qwtconfig.pri
         done
         qmake qwt.pro
