@@ -21,6 +21,12 @@ BtleHubWasm::~BtleHubWasm()
 
 void BtleHubWasm::scanForDevice()
 {
+    // TODO(Gap 2): deviceConnected / serviceDiscoveryFinished are emitted here
+    // synchronously, but js_scanAndConnect() is fully async — GATT connection
+    // and service subscription happen later in the browser's microtask queue.
+    // ERG commands sent immediately after deviceConnected() may be dropped.
+    // Fix: route a callback from JS back into C++ (via bleNotifyC or a separate
+    // "connected" EM_JS callback) and defer these two signals until that fires.
     WebBluetoothBridge::scanForDevices();
     m_connected = true;
     emit deviceConnected();
@@ -32,6 +38,11 @@ void BtleHubWasm::disconnectFromDevice()
     WebBluetoothBridge::disconnectDevice();
     m_connected = false;
     emit deviceDisconnected();
+    // TODO(Gap 1): No auto-reconnection logic here.  BtleHub (desktop) retries
+    // up to MAX_RECONNECT_ATTEMPTS times at RECONNECT_INTERVAL_MS.  On WASM
+    // the browser owns the GATT lifecycle; we should at minimum emit
+    // connectionError() and show the user a "Reconnect" prompt so they can
+    // trigger navigator.bluetooth.requestDevice() again via a user gesture.
 }
 
 bool BtleHubWasm::isConnected() const { return m_connected; }

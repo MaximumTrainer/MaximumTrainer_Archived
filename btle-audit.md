@@ -75,7 +75,14 @@ selection) not by in-source preprocessor guards.
 grep -rn "TODO\|FIXME\|HACK" src/btle/
 ```
 
-**Result: zero hits.**  No outstanding markers in the BTLE subsystem.
+Three `TODO` markers were added as part of this audit to track remaining WASM gaps
+directly in the source (see Section 6 for full descriptions):
+
+| File | Marker | Gap |
+|------|--------|-----|
+| `btle_hub_wasm.cpp` | `TODO(Gap 2)` in `scanForDevice()` | Signals emitted before async GATT is ready |
+| `btle_hub_wasm.cpp` | `TODO(Gap 1)` in `disconnectFromDevice()` | No reconnect prompt / logic |
+| `webbluetooth_bridge.cpp` | `TODO(Gap 6)` above `js_sendFtmsCommand` | FTMS Request Control opcode missing |
 
 ---
 

@@ -115,6 +115,13 @@ EM_JS(void, js_disconnect, (), {
 });
 
 // Send raw bytes to a FTMS control point characteristic (0x2AD9)
+// TODO(Gap 6): The FTMS spec requires opcode 0x00 (Request Control) to be
+// sent to 0x2AD9 before any Set Target Power (0x05) or Indoor Bike Simulation
+// (0x11) commands.  BtleHub (desktop) calls requestFtmsControl() during
+// service discovery.  Add a js_requestFtmsControl() EM_JS helper that writes
+// opcode 0x00 once after connect, and call it from scanForDevice() (or from
+// the JS async connect callback once Gap 2 is resolved).  Without this,
+// trainers such as Tacx NEO silently reject ERG commands.
 EM_JS(void, js_sendFtmsCommand, (const uint8_t *dataPtr, int dataLen), {
     (async function() {
         if (!window._mtBleDevice || !window._mtBleDevice.gatt.connected) return;
