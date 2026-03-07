@@ -76,7 +76,7 @@ LABELS_TO_CREATE = [
 
 def _headers():
     return {
-        "Authorization": f"token {TOKEN}",
+        "Authorization": f"Bearer {TOKEN}",
         "Accept": "application/vnd.github+json",
         "Content-Type": "application/json",
         "X-GitHub-Api-Version": "2022-11-28",

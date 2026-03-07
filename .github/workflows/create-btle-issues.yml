@@ -2,9 +2,19 @@ name: Create BTLE Audit Issues
 
 # Creates the six gap-tracking GitHub issues identified in btle-audit.md and
 # adds them to the MaximumTrainer project board.
-# Trigger manually once; every step is idempotent (existing issues are skipped).
+#
+# Triggers:
+#   - Automatically when this workflow file first lands on master (PR merge).
+#   - Manually via the GitHub Actions UI (workflow_dispatch).
+#
+# Every step is idempotent — existing issues are skipped.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/create-btle-issues.yml
 
 permissions:
   issues: write

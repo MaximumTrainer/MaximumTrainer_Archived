@@ -33,6 +33,10 @@ silently fail on trainers that enforce the handshake.
 ## Implementation sketch
 
 ```cpp
+// NOTE: 0x1826 and 0x2AD9 are 16-bit Bluetooth service/characteristic alias
+// numbers. Web Bluetooth accepts them as-is in JavaScript (hex literals are
+// numeric; 0x1826 === 6182). The existing webbluetooth_bridge.cpp uses the
+// same notation in js_sendFtmsCommand.
 EM_JS(void, js_requestFtmsControl, (), {
     (async function() {
         if (!window._mtBleDevice || !window._mtBleDevice.gatt.connected) return;
