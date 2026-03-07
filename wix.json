@@ -39,6 +39,6 @@
   "choco": {
     "description": "MaximumTrainer Redux - Cycling and Rowing Training Application",
     "tags": "maximumtrainer cycling training",
-    "license-url": "https://opensource.org/licenses/MIT"
+    "license-url": "https://www.gnu.org/licenses/gpl-3.0.html"
   }
 }
