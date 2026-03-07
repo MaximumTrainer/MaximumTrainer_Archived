@@ -24,6 +24,8 @@
         <li><a href="#gallery">Gallery</a></li>
         <li><a href="#download">Download</a></li>
         <li><a href="#license">License</a></li>
+        <li><a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/discussions" target="_blank" rel="noopener">Community</a></li>
+        <li><a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/wiki" target="_blank" rel="noopener">Docs</a></li>
         <li>
           <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux" class="btn btn-outline" target="_blank" rel="noopener">
             GitHub
@@ -33,18 +35,24 @@
     </nav>
   </header>
 
+  <!-- ══════════════════════════════ COMING SOON BAR ════════════════════════════════════ -->
+  <div class="coming-soon-bar" role="status">
+    🚧 <strong>Coming Soon</strong> — This project is in pre-release. Download links will activate on the first official release.
+  </div>
+
   <!-- ═══════════════════════════════════════ HERO ══════════════════════════════════════ -->
   <section class="hero" id="hero">
     <div class="hero-bg"></div>
     <div class="hero-content">
       <img src="assets/images/main_icon.png" alt="Maximum Trainer icon" class="hero-icon" />
+      <div class="coming-soon-badge">Coming Soon</div>
       <h1>Maximum Trainer</h1>
       <p class="hero-tagline">
         Free, open-source indoor cycling training — ERG mode, real-time power, BLE sensors &amp; structured intervals.
       </p>
       <div class="hero-actions">
-        <a href="#download" class="btn btn-primary">Download</a>
-        <a href="app/" class="btn btn-outline" title="Chrome / Edge required (WebBluetooth)">Try in Browser <sup>Beta</sup></a>
+        <button class="btn btn-primary btn-disabled" disabled title="Not yet available — coming soon">Download</button>
+        <button class="btn btn-outline btn-disabled" disabled title="Coming soon — Chrome / Edge required (WebBluetooth)">Try in Browser <sup>Beta</sup></button>
         <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux" class="btn btn-outline" target="_blank" rel="noopener">View on GitHub</a>
       </div>
       <div class="hero-badges">
@@ -290,9 +298,9 @@
             <li>VLC-Qt 1.1.0 (pre-built MSVC)</li>
             <li>SFML 2.6.1</li>
           </ul>
-          <a id="win-download-btn" href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-windows-x64.zip" class="btn btn-primary" target="_blank" rel="noopener">
+          <button id="win-download-btn" class="btn btn-primary btn-disabled" disabled title="Not yet available — coming soon">
             Download .zip
-          </a>
+          </button>
           <details class="build-details">
             <summary>Build from source</summary>
             <pre><code>$env:QMAKEFEATURES = "C:\qwt\features"
@@ -314,9 +322,9 @@ nmake</code></pre>
             <li>VLC-Qt 1.1.1 (from source)</li>
             <li>libsfml-dev</li>
           </ul>
-          <a id="linux-download-btn" href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-linux-x86_64.AppImage" class="btn btn-primary" target="_blank" rel="noopener">
+          <button id="linux-download-btn" class="btn btn-primary btn-disabled" disabled title="Not yet available — coming soon">
             Download .AppImage
-          </a>
+          </button>
           <details class="build-details">
             <summary>Build from source</summary>
             <pre><code>sudo apt-get install -y \
@@ -340,9 +348,9 @@ make -j$(nproc)</code></pre>
             <li>QWT 6.2.0 (from source)</li>
             <li>SFML (brew install sfml)</li>
           </ul>
-          <a id="mac-download-btn" href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest/download/MaximumTrainer-macos.dmg" class="btn btn-primary" target="_blank" rel="noopener">
+          <button id="mac-download-btn" class="btn btn-primary btn-disabled" disabled title="Not yet available — coming soon">
             Download .dmg
-          </a>
+          </button>
           <details class="build-details">
             <summary>Build from source</summary>
             <pre><code>brew install sfml
@@ -372,7 +380,7 @@ make -j$(sysctl -n hw.logicalcpu)</code></pre>
           <li>Chrome or Edge 70+ (desktop)</li>
           <li>Bluetooth LE hardware required</li>
         </ul>
-        <a href="app/" class="btn btn-primary">Launch in Browser</a>
+        <button class="btn btn-primary btn-disabled" disabled title="Not yet available — coming soon">Launch in Browser</button>
         <p style="font-size:0.8rem;color:#888;margin-top:0.75rem;">
           WebBluetooth is supported on Chrome &amp; Edge only.<br>
           Not available in Firefox or Safari.
@@ -419,6 +427,8 @@ make -j$(sysctl -n hw.logicalcpu)</code></pre>
         <a href="#download">Download</a>
         <a href="#license">License</a>
         <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/discussions" target="_blank" rel="noopener">Community</a>
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/wiki" target="_blank" rel="noopener">Docs</a>
       </nav>
       <p class="footer-copy">
         GPL-3.0 &nbsp;·&nbsp; Originally created by Maxime Blais &nbsp;·&nbsp; Revived as open source
