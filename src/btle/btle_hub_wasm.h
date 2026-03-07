@@ -67,6 +67,7 @@ private:
     void parseCscMeasurement(const QByteArray &data);
     void parsePowerMeasurement(const QByteArray &data);
     void parseFtmsIndoorBikeData(const QByteArray &data);
+    void parseMoxyMeasurement(const QByteArray &data);
 
     bool   m_connected         = false;
     int    m_wheelCircMm       = 2100;

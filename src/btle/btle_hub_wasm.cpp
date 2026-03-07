@@ -48,7 +48,10 @@ void BtleHubWasm::setSlope(int /*antID*/, double grade)
     WebBluetoothBridge::sendFtmsSetIndoorBikeSimulation(static_cast<int>(grade * 100.0));
 }
 
-void BtleHubWasm::stopDecodingMsg() {}
+void BtleHubWasm::stopDecodingMsg()
+{
+    disconnectFromDevice();
+}
 
 void BtleHubWasm::simulateNotification(quint16 characteristicUuid, const QByteArray &data)
 {
@@ -64,6 +67,7 @@ void BtleHubWasm::onBleNotification(quint16 uuid16, const QByteArray &data)
     case 0x2A63: parsePowerMeasurement(data);    break; // Cycling Power Measurement
     case 0x2A5B: parseCscMeasurement(data);      break; // CSC Measurement
     case 0x2AD2: parseFtmsIndoorBikeData(data);  break; // Indoor Bike Data
+    case 0xAAB2: parseMoxyMeasurement(data);     break; // Moxy Muscle Oxygen
     default:
         qDebug() << "[BtleHubWasm] Unknown characteristic UUID:" << Qt::hex << uuid16;
         break;
@@ -187,4 +191,26 @@ void BtleHubWasm::parseFtmsIndoorBikeData(const QByteArray &data)
         std::memcpy(&powerRaw, data.constData() + offset, 2);
         emit signal_power(0, static_cast<int>(powerRaw));
     }
+}
+
+// Moxy Muscle Oxygen Measurement (0xAAB2)
+// Bytes 0-1: flags (uint16 LE) – bit0=SmO2 present, bit1=tHb present
+// Bytes 2-3: SmO2 (uint16 LE, units 0.1 %)
+// Bytes 4-5: tHb  (uint16 LE, units 0.01 g/dL)
+void BtleHubWasm::parseMoxyMeasurement(const QByteArray &data)
+{
+    if (data.size() < 6)
+        return;
+
+    quint16 flags;
+    std::memcpy(&flags, data.constData(), 2);
+    quint16 rawSmo2;
+    std::memcpy(&rawSmo2, data.constData() + 2, 2);
+    quint16 rawThb;
+    std::memcpy(&rawThb, data.constData() + 4, 2);
+
+    double smo2 = (flags & 0x01) ? rawSmo2 / 10.0  : 0.0;
+    double thb  = (flags & 0x02) ? rawThb  / 100.0 : 0.0;
+
+    emit signal_oxygen(0, smo2, thb);
 }
