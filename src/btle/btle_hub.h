@@ -12,9 +12,9 @@
 /*
  * BtleHub
  *
- * Connects to a Bluetooth Low Energy cycling device and emits the same
- * sensor-data signals as the ANT+ Hub class, allowing WorkoutDialog to use
- * either connection method without modification.
+ * Connects to a Bluetooth Low Energy cycling device and emits
+ * sensor-data signals, allowing WorkoutDialog to receive data
+ * without knowledge of the underlying connection method.
  *
  * Supported standard BTLE profiles:
  *   - Cycling Speed & Cadence Service  (0x1816)  cadence + speed
@@ -104,7 +104,7 @@ private:
 
     bool m_ftmsControlRequested = false;
 
-    // Zero-out cadence / speed after a few missed messages (like ANT+ does)
+    // Zero-out cadence / speed after a few missed messages
     QTimer *m_cscStopTimer = nullptr;
     static constexpr int CSC_STOP_TIMEOUT_MS    = 3000;
 
@@ -119,7 +119,7 @@ private:
 
     int m_wheelCircMm = DEFAULT_WHEEL_CIRC_MM;
 
-    // CSC state – mirrors the ANT+ cadence / speed controller logic
+    // CSC state – mirrors the cadence / speed controller logic
     quint32 m_lastWheelRevolutions  = 0;
     quint16 m_lastWheelEventTime    = 0;
     quint16 m_lastCrankRevolutions  = 0;

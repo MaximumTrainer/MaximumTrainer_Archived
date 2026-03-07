@@ -373,7 +373,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="stackedWidget_menuPageAnt">
+      <widget class="QWidget" name="stackedWidget_menuPageSettings">
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <property name="leftMargin">
          <number>0</number>
@@ -388,7 +388,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTabWidget" name="tabAnt">
+         <widget class="QTabWidget" name="tabSettings">
           <property name="currentIndex">
            <number>0</number>
           </property>
@@ -398,9 +398,9 @@
           <property name="documentMode">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="tab_ant">
+          <widget class="QWidget" name="tab_settings">
            <attribute name="title">
-            <string>ANT+</string>
+            <string>Settings</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout">
             <property name="leftMargin">

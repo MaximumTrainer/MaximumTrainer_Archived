@@ -39,7 +39,7 @@ DialogMainWindowConfig::DialogMainWindowConfig(QWidget *parent) : QDialog(parent
     ui->listWidget_settings->setIconSize(QSize(24, 24));
 
     QListWidgetItem *item1 = new QListWidgetItem(QIcon(":/image/icon/general"), tr("General"), ui->listWidget_settings);
-    QListWidgetItem *item2 = new QListWidgetItem(QIcon(":/image/icon/ant"), tr("ANT+"), ui->listWidget_settings);
+    QListWidgetItem *item2 = new QListWidgetItem(QIcon(":/image/icon/gear"), tr("Connectivity"), ui->listWidget_settings);
     QListWidgetItem *item3 = new QListWidgetItem(QIcon(":/image/icon/folder"), tr("Folders"), ui->listWidget_settings);
     QListWidgetItem *item4 = new QListWidgetItem(QIcon(":/image/icon/upload"), tr("Auto Upload"), ui->listWidget_settings);
     item1->setSizeHint(QSize(35,35));

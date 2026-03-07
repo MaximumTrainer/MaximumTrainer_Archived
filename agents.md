@@ -24,7 +24,7 @@
 MaximumTrainer is a cross-platform cycling and rowing training application
 built with **Qt / C++17**.  It connects to smart trainers, power meters, heart
 rate monitors, cadence sensors, and rowing ergometers via Bluetooth Low Energy
-(BLE) and ANT+, plays structured interval workouts in ERG-mode, and exports
+(BLE), plays structured interval workouts in ERG-mode, and exports
 completed activities to the Garmin FIT format.
 
 | Attribute | Value |
@@ -33,7 +33,7 @@ completed activities to the Garmin FIT format.
 | UI Toolkit | Qt 6 (Widgets + WebEngineWidgets) |
 | Plotting | QWT 6.3 |
 | Serialisation | Garmin FIT SDK, TCX, GPX, XML |
-| Hardware protocols | BLE (Qt Bluetooth), ANT+ (USB HID — stub on Windows) |
+| Hardware protocols | BLE (Qt Bluetooth) |
 | Audio/Video | VLC-Qt (desktop), SFML (audio), platform stubs for WASM |
 | Build system | qmake `.pro` / `.pri` |
 | CI/CD | GitHub Actions (Linux · Windows · macOS · WebAssembly) |
@@ -67,14 +67,13 @@ other by the domain model.
 │  Hardware             │  │  Persistence                 │
 │  Abstraction Layer    │  │  src/persistence/            │
 │  (HAL)                │  │  SQLite DAOs (users, sensors,│
-│  src/btle/ src/ANT/   │  │  achievements), FIT/TCX/GPX  │
+│  src/btle/            │  │  achievements), FIT/TCX/GPX  │
 │  BtleHub · SimHub     │  │  file writers/readers        │
-│  AntHub (stubs)       │  │                              │
 └──────────────────────┘  └──────────────────────────────┘
 ```
 
 **Key invariant:** `src/model/`, `src/workout/`, and `src/fitness/` must
-**never** `#include` anything from `src/btle/`, `src/ANT/`, or `src/ui/`.
+**never** `#include` anything from `src/btle/` or `src/ui/`.
 Hardware and UI concerns are injected via Qt signals/slots and constructor
 parameters.
 
@@ -88,7 +87,6 @@ classes that present **identical signal/slot contracts**:
 | `BtleHub` | `src/btle/btle_hub.h` | Real BLE hardware via Qt Bluetooth |
 | `BtleHubWasm` | `src/btle/btle_hub_wasm.h` | Web Bluetooth API via JS bridge |
 | `SimulatorHub` | `src/btle/simulator_hub.h` | Synthetic data for CI & demos |
-| `Hub` (ANT+) | `src/ANT/hub.h` | ANT+ USB; no-op stubs on all platforms |
 
 The **signal contract** shared by every hub:
 
@@ -213,9 +211,6 @@ behind compile-time guards or swappable adapters"**.
      │                                                 │
      │  WebEngine: real QtWebEngineWidgets (desktop)   │
      │             src/ui/wasm_stubs/ header stubs     │
-     │                                                 │
-     │  ANT+:    hub.cpp  (Linux with libusb)          │
-     │           hub_*_stub.cpp (Windows / macOS / no-op) │
      └─────────────────────────────────────────────────┘
 ```
 
@@ -330,7 +325,6 @@ DISPLAY=:99 ./build/tests/btle_integration_tests -v2
 |-----------|------|---------|
 | `SimulatorHub` | `src/btle/simulator_hub.cpp` | UI simulation mode, integration tests |
 | `BtleDeviceSimulator` | `tests/btle/btle_device_simulator.h` | Unit test byte-level fake device |
-| ANT+ no-op stubs | `src/ANT/hub_*_stub.cpp` | All platforms (ANT+ never linked) |
 | WASM audio stub | `src/app/soundplayer_wasm.cpp` | WASM build (no SFML) |
 | WASM WebEngine stub | `src/ui/wasm_stubs/` | WASM build (no QtWebEngineWidgets) |
 
@@ -437,7 +431,6 @@ responsibility:
 | `src/model/model.pri` | Pure domain model (Workout, Interval, Course, …) | None |
 | `src/workout/workout.pri` | Workout file conversion utilities | `model` |
 | `src/btle/btle.pri` | BLE HAL (hub + scanner + simulator) | `model` |
-| `src/ANT/ANT.pri` | ANT+ HAL (stubs on all platforms) | `model` |
 | `src/persistence/persistence.pri` | SQLite DAOs + file readers/writers | `model`, `fitness` |
 | `src/fitness/fitness.pri` | FIT SDK + Achievement logic | `model` |
 | `src/ui/ui.pri` | All UI: MainWindow, WorkoutDialog, plots, editors | All above |

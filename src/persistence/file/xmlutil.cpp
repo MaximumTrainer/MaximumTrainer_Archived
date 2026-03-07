@@ -285,13 +285,13 @@ bool XmlUtil::saveUserStudioFile(QVector<UserStudio> vecUserStudio, QString file
             writer.writeTextElement("FTP", QString::number(userStudio.getFTP()));
             writer.writeTextElement("LTHR", QString::number(userStudio.getLTHR()));
 
-            writer.writeStartElement("ANT");
+            writer.writeStartElement("Sensors");
             writer.writeTextElement("hrID", QString::number(userStudio.getHrID()));
             writer.writeTextElement("powerID", QString::number(userStudio.getPowerID()));
             writer.writeTextElement("cadenceID", QString::number(userStudio.getCadenceID()));
             writer.writeTextElement("speedID", QString::number(userStudio.getSpeedID()));
             writer.writeTextElement("fecID", QString::number(userStudio.getFecID()));
-            writer.writeEndElement();  // ANT
+            writer.writeEndElement();  // Sensors
 
             writer.writeTextElement("wheelCircMM", QString::number(userStudio.getWheelCircMM()));
             writer.writeTextElement("usingPowerCurve", QString::number(userStudio.getUsingPowerCurve()));

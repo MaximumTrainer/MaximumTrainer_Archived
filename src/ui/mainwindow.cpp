@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ftb->insertTab(2, QIcon(":/image/icon/calendar"),  tr("Plan"));
     ftb->insertTab(3, QIcon(":/image/icon/studio"), tr("Studio"));
     ftb->insertTab(4, QIcon(":/image/icon/user"), tr("Profile"));
-    ftb->insertTab(5, QIcon(":/image/icon/antmenu"), "ANT+");
+    ftb->insertTab(5, QIcon(":/image/icon/gear"), tr("Settings"));
 
     ftb->setTabEnabled(0, true);
     ftb->setTabEnabled(1, true);

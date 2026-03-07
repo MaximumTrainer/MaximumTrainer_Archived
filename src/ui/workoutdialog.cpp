@@ -178,7 +178,7 @@ WorkoutDialog::WorkoutDialog(Workout workout,  QList<Radio> lstRadio, QVector<Us
     sendUserInfoToClock();
     emit startClockSpeed();
 
-    // Connect all Hubs (one per ANT stick)
+    // Connect all sensor hubs
     connectHubs();
 
 
@@ -699,7 +699,7 @@ void WorkoutDialog::startCalibrateFEC() {
         return;
     }
 
-    return; // No ANT+ hub available (BTLE-only build)
+    return; // No hub available (BTLE-only build)
 }
 
 
@@ -710,7 +710,7 @@ void WorkoutDialog::startCalibrationPM() {
         return;
     }
 
-    return; // No ANT+ hub available (BTLE-only build)
+    return; // No hub available (BTLE-only build)
 }
 
 
@@ -2742,7 +2742,7 @@ void WorkoutDialog::slotGetSensorListFinished() {
         if (numberFailGetListSensor > 3) {
             QMessageBox msgBox(this);
             msgBox.setIcon(QMessageBox::Warning);
-            msgBox.setText(tr("<font color=black>Could not retrieve ANT+ sensors from our server<br/>"
+            msgBox.setText(tr("<font color=black>Could not retrieve sensors from our server<br/>"
                               "Please re-open the workout again.</font>"));
             msgBox.setStandardButtons(QMessageBox::Ok);
             msgBox.setDefaultButton(QMessageBox::Ok);

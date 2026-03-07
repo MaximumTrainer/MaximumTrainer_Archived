@@ -28,9 +28,6 @@ public:
     ~Main_WorkoutPage();
 
 
-    //received from mainwindow
-    void setHubStickFound(bool found);
-
     void parseIncludedWorkouts();
     void parseMapWorkout(int userFTP);
     void parseUserWorkouts();
@@ -95,8 +92,6 @@ private slots:
 
 
 private:
-    bool gotAntStick;
-
     QString nameFilter;
     QString planFilter;
     QString creatorFilter;

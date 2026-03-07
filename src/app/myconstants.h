@@ -23,7 +23,7 @@ const int nbMaxRepeatPointFitFile = 5; //4sec
 const int nbMaxRepeatHrPointFitFile = 10; //4sec
 
 
-// ---- Ant Constant -------------------
+// ---- Sensor Device Type Constants -------------------
 const int hrDeviceType = 120;
 const int speedCadDeviceType = 121;
 const int cadDeviceType= 122;
