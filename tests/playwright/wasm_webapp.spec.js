@@ -20,6 +20,11 @@ test.describe('WASM assets are deployed', () => {
     const res = await request.get(`${BASE_URL}/MaximumTrainer.wasm`);
     expect(res.status(), 'MaximumTrainer.wasm should be deployed (200), not missing (404)').toBe(200);
   });
+
+  test('logger.js returns 200', async ({ request }) => {
+    const res = await request.get(`${BASE_URL}/logger.js`);
+    expect(res.status(), 'logger.js should be deployed (200), not missing (404)').toBe(200);
+  });
 });
 
 // ── Page-level checks ──────────────────────────────────────────────────────
@@ -82,5 +87,38 @@ test.describe('WASM webapp page', () => {
 
     expect(loadingVisible || canvasVisible,
       'Either the loading screen or the Qt canvas should be visible').toBe(true);
+  });
+
+  test('WASM log overlay is present and has the copy button', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (!navigator.bluetooth) {
+        Object.defineProperty(navigator, 'bluetooth', {
+          value: { requestDevice: async () => { throw new Error('stub'); } },
+          configurable: true,
+        });
+      }
+    });
+
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+
+    // Wait for the overlay to appear in the DOM (injected by logger.js on DOMContentLoaded)
+    await page.waitForSelector('#wasm-log-overlay', { timeout: 10000 });
+
+    // The log overlay must exist in the DOM
+    const overlay = page.locator('#wasm-log-overlay');
+    expect(await overlay.count(), '#wasm-log-overlay should be present in the DOM').toBe(1);
+
+    // The copy button must exist inside the overlay
+    const copyBtn = page.locator('#wasm-log-copy-btn');
+    expect(await copyBtn.count(), '#wasm-log-copy-btn should be present inside the overlay').toBe(1);
+
+    // Wait for at least one log line to be written, then verify
+    await page.waitForFunction(() => {
+      const overlay = document.querySelector('#wasm-log-overlay');
+      return overlay && overlay.querySelectorAll('div > div').length > 0;
+    }, { timeout: 10000 });
+    const logLines = overlay.locator('div > div');
+    const lineCount = await logLines.count();
+    expect(lineCount, 'The log overlay should contain at least one log entry').toBeGreaterThan(0);
   });
 });
