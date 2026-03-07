@@ -51,9 +51,10 @@ EM_JS(void, js_scanAndConnect, (), {
                     { services: [0x1826] }, // FTMS
                     { services: [0x1818] }, // Cycling Power
                     { services: [0x1816] }, // CSC
-                    { services: [0x180D] }  // Heart Rate
+                    { services: [0x180D] }, // Heart Rate
+                    { services: [0xAAB0] }  // Moxy Muscle Oxygen
                 ],
-                optionalServices: [0x1826, 0x1818, 0x1816, 0x180D]
+                optionalServices: [0x1826, 0x1818, 0x1816, 0x180D, 0xAAB0]
             });
 
             window._mtBleDevice = device;
@@ -68,7 +69,8 @@ EM_JS(void, js_scanAndConnect, (), {
                 0x180D: [0x2A37],       // HR Measurement
                 0x1818: [0x2A63],       // Cycling Power Measurement
                 0x1816: [0x2A5B],       // CSC Measurement
-                0x1826: [0x2AD2]        // Indoor Bike Data
+                0x1826: [0x2AD2],       // Indoor Bike Data
+                0xAAB0: [0xAAB2]        // Moxy Muscle Oxygen Measurement
             };
 
             for (const [svcUuid, charUuids] of Object.entries(profileMap)) {
@@ -113,6 +115,13 @@ EM_JS(void, js_disconnect, (), {
 });
 
 // Send raw bytes to a FTMS control point characteristic (0x2AD9)
+// TODO(Gap 6): The FTMS spec requires opcode 0x00 (Request Control) to be
+// sent to 0x2AD9 before any Set Target Power (0x05) or Indoor Bike Simulation
+// (0x11) commands.  BtleHub (desktop) calls requestFtmsControl() during
+// service discovery.  Add a js_requestFtmsControl() EM_JS helper that writes
+// opcode 0x00 once after connect, and call it from scanForDevice() (or from
+// the JS async connect callback once Gap 2 is resolved).  Without this,
+// trainers such as Tacx NEO silently reject ERG commands.
 EM_JS(void, js_sendFtmsCommand, (const uint8_t *dataPtr, int dataLen), {
     (async function() {
         if (!window._mtBleDevice || !window._mtBleDevice.gatt.connected) return;
@@ -121,7 +130,7 @@ EM_JS(void, js_sendFtmsCommand, (const uint8_t *dataPtr, int dataLen), {
             const service = await server.getPrimaryService(0x1826);
             const char = await service.getCharacteristic(0x2AD9);
             const bytes = Module.HEAPU8.slice(dataPtr, dataPtr + dataLen);
-            await char.writeValueWithoutResponse(bytes);
+            await char.writeValueWithResponse(bytes);
         } catch (e) {
             console.warn('[MT] FTMS write failed:', e);
         }
