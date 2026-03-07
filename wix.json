@@ -1,0 +1,44 @@
+{
+  "product": "MaximumTrainer Redux",
+  "company": "MaximumTrainer Team",
+  "license": "LICENSE",
+  "upgrade-code": "B076B8C4-CC65-4286-90F3-B34DA237EFAD",
+  "files": {
+    "guid": "9DA3624B-F491-4CCB-AB69-BE931DCFFD70",
+    "items": [
+      "bin/MaximumTrainer.exe",
+      "bin/*.dll"
+    ]
+  },
+  "env": {
+    "guid": "410CCB06-4E71-4C91-9CBB-35B36632BA20",
+    "vars": [
+      {
+        "name": "PATH",
+        "value": "[INSTALLDIR]",
+        "permanent": "no",
+        "system": "no",
+        "action": "set",
+        "part": "last"
+      }
+    ]
+  },
+  "shortcuts": {
+    "guid": "AC37E9C8-4FF6-4F3F-864E-DA527596356F",
+    "items": [
+      {
+        "name": "MaximumTrainer Redux",
+        "description": "Cycling and Rowing Training Application",
+        "target": "[INSTALLDIR]\\MaximumTrainer.exe",
+        "wdir": "INSTALLDIR",
+        "arguments": "",
+        "icon": ""
+      }
+    ]
+  },
+  "choco": {
+    "description": "MaximumTrainer Redux - Cycling and Rowing Training Application",
+    "tags": "maximumtrainer cycling training",
+    "license-url": "https://opensource.org/licenses/MIT"
+  }
+}

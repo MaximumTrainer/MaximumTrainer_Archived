@@ -221,6 +221,60 @@ jobs:
         name: windows-zip
         path: MaximumTrainer-windows-x64.zip
 
+    - name: Prepare application folder for MSI
+      run: |
+        # Copy the full build output (exe + all DLLs) into the application/ folder
+        # that AliceOh/CreateWindowsInstaller expects to find in the workspace root.
+        New-Item -ItemType Directory -Path application -Force
+        Copy-Item "build\release\MaximumTrainer.exe" "application\" -Force
+        # Copy top-level DLLs (windeployqt + VLC-Qt + SFML runtime)
+        $dlls = Get-ChildItem "build\release\*.dll" -ErrorAction SilentlyContinue
+        if ($dlls) {
+          Copy-Item $dlls.FullName "application\" -Force
+        } else {
+          Write-Warning "No DLL files found in build\release\ — installer will contain the exe only"
+        }
+        # The AliceOh/CreateWindowsInstaller action creates its own 'build/' directory
+        # for the MSI output. Remove the existing build/ directory (we have already
+        # uploaded the zip artifact) so the action's fs.mkdirSync('build') succeeds.
+        Remove-Item -Path "build" -Recurse -Force
+      shell: powershell
+
+    - name: Install go-msi
+      run: choco install -y go-msi
+      shell: powershell
+
+    - name: Set MSI version
+      id: msi_version
+      run: |
+        $tag = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}"
+        # Strip leading 'v' so WiX gets a numeric version like 1.2.3
+        $version = $tag -replace '^v', ''
+        # Fall back to 0.0.1 if the tag is not a valid semver
+        if (-not ($version -match '^\d+\.\d+\.\d+')) {
+          $version = '0.0.1'
+        }
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        Write-Host "MSI version: $version"
+      shell: powershell
+
+    - name: Build Windows Installer MSI from exe file
+      uses: AliceOh/CreateWindowsInstaller@1.0.0
+      with:
+        exefile: 'MaximumTrainer.exe'
+        version: ${{ steps.msi_version.outputs.version }}
+
+    - name: Rename MSI to release name
+      run: |
+        Move-Item "build\MaximumTrainer.exe.msi" "MaximumTrainer-windows-x64.msi" -Force
+      shell: powershell
+
+    - name: Upload MSI artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-msi
+        path: MaximumTrainer-windows-x64.msi
+
   # ────────────────────────────────────── MACOS ──────────────────────────────────────
   build_mac:
     runs-on: macos-latest
@@ -425,6 +479,11 @@ jobs:
       with:
         name: windows-zip
 
+    - name: Download Windows MSI
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-msi
+
     - name: Download macOS dmg
       uses: actions/download-artifact@v4
       with:
@@ -467,6 +526,7 @@ jobs:
         files: |
           MaximumTrainer-linux-x86_64.AppImage
           MaximumTrainer-windows-x64.zip
+          MaximumTrainer-windows-x64.msi
           MaximumTrainer-macos.dmg
           MaximumTrainer-wasm.zip
 
@@ -493,6 +553,7 @@ jobs:
         REQUIRED=(
           "MaximumTrainer-linux-x86_64.AppImage"
           "MaximumTrainer-windows-x64.zip"
+          "MaximumTrainer-windows-x64.msi"
           "MaximumTrainer-macos.dmg"
         )
 
