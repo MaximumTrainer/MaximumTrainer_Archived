@@ -370,10 +370,10 @@ jobs:
       with:
         name: wasm
         path: |
-          build-wasm/MaximumTrainer.wasm
-          build-wasm/MaximumTrainer.js
-          build-wasm/qtloader.js
-          build-wasm/qtlogo.svg
+          build-wasm/build/release/MaximumTrainer.wasm
+          build-wasm/build/release/MaximumTrainer.js
+          build-wasm/build/release/qtloader.js
+          build-wasm/build/release/qtlogo.svg
 
   # ──────────────────────────────────────────────────────────────────────────
   # Auto-tag a new semantic version on master so that release.yml fires.
