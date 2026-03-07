@@ -86,6 +86,8 @@
   </style>
 </head>
 <body>
+  <!-- WASM Loading Logger — inject before any other scripts so hooks are in place -->
+  <script src="logger.js"></script>
 
   <!-- Browser capability check -->
   <div id="browser-warning">
@@ -146,16 +148,21 @@
       }
 
       // Step 1: load qtloader.js (Qt 6.6 — defines window.QtLoader)
+      const log = (msg) => window._wasmLogger && window._wasmLogger.log(msg);
+      log('Loading qtloader.js…');
       const loaderScript = document.createElement('script');
       loaderScript.src = 'qtloader.js';
-      loaderScript.onerror = showNotDeployed;
+      loaderScript.onerror = () => { log('ERROR: Failed to load qtloader.js'); showNotDeployed(); };
       loaderScript.onload = () => {
+        log('qtloader.js ready');
 
         // Step 2: load MaximumTrainer.js (Qt 6.6 — defines window.createQtAppInstance)
+        log('Loading MaximumTrainer.js…');
         const appScript = document.createElement('script');
         appScript.src = 'MaximumTrainer.js';
-        appScript.onerror = showNotDeployed;
+        appScript.onerror = () => { log('ERROR: Failed to load MaximumTrainer.js'); showNotDeployed(); };
         appScript.onload = () => {
+          log('MaximumTrainer.js ready — starting QtLoader…');
 
           // Step 3: initialise with the Qt 6.6 QtLoader API
           QtLoader({
@@ -163,18 +170,20 @@
               entryFunction: window.createQtAppInstance,
               containerElements: [document.getElementById('qt-canvas')],
               onLoaded: () => {
+                log('Qt application loaded');
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('qt-canvas-wrapper').style.visibility = 'visible';
               },
               onExit: (exitData) => {
                 const code = exitData && exitData.code !== undefined ? ' (code ' + exitData.code + ')' : '';
+                log('Application exited' + code);
                 loadingStatus.textContent = 'Application exited' + code;
               },
             },
             // Emscripten module config — used for download progress
             moduleConfig: {
               setStatus: (msg) => {
-                if (msg) loadingStatus.textContent = msg;
+                if (msg) { log(msg); loadingStatus.textContent = msg; }
               },
               monitorRunDependencies: (left) => {
                 // Rough progress: dependencies count down from ~100 to 0
@@ -188,6 +197,7 @@
           }).then(instance => {
             window._qtInstance = instance;
           }).catch(err => {
+            log('ERROR: Failed to start: ' + err);
             loadingStatus.textContent = 'Failed to start: ' + err;
           });
         };
