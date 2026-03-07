@@ -222,3 +222,4 @@ You need Qt Linguist to open and generate a new language file (`.qm` file).
 ## TODO
 
 Project now going through new revisions, with plans to enhance as an open-source interval trainer for indoor cycling & indoor rowing.
+backlog and work items can be found [here](https://github.com/users/MaximumTrainer/projects/2/views/1)
