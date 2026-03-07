@@ -40,8 +40,6 @@ Main_WorkoutPage::Main_WorkoutPage(QWidget *parent) : QWidget(parent), ui(new Ui
 
     ui->setupUi(this);
 
-    gotAntStick = false;
-
     this->account = qApp->property("Account").value<Account*>();
     this->settings = qApp->property("User_Settings").value<Settings*>();
 
@@ -629,11 +627,7 @@ void Main_WorkoutPage::on_checkBox_clicked(bool checked)
 
 
 
-void Main_WorkoutPage::setHubStickFound(bool found) {
 
-    qDebug() << "Main_WorkoutPage::hubStickFound" << found;
-    gotAntStick = found;
-}
 
 
 //-------------------------------------------------------------------------

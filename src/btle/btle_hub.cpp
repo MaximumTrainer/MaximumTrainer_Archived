@@ -400,7 +400,7 @@ void BtleHub::parseHrMeasurement(const QByteArray &data)
     emit signal_hr(0, hr);
 }
 
-// CSC Measurement (0x2A5B) – mirrors ANT+ speed/cadence computation
+// CSC Measurement (0x2A5B) – speed/cadence computation
 // Byte 0: flags  bit0=wheel data present  bit1=crank data present
 // If wheel: bytes 1-4 cumulative wheel revs (uint32), bytes 5-6 last event time (uint16, 1/1024s)
 // If crank: bytes 7-8 (or 1-2) cumul crank revs (uint16), bytes 9-10 (or 3-4) last event time
@@ -450,7 +450,7 @@ void BtleHub::parseCscMeasurement(const QByteArray &data)
         return;
     }
 
-    // Cadence (RPM) – same rollover-safe math as ANT+ cadence_controller
+    // Cadence (RPM) – same rollover-safe math as speed/cadence controller
     if (crankPresent) {
         quint16 deltaCrankTime = crankTime - m_lastCrankEventTime; // rollover safe (uint16)
         quint16 deltaCrankRevs = crankRevs - m_lastCrankRevolutions;

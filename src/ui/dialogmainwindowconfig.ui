@@ -176,7 +176,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="page_ant">
+     <widget class="QWidget" name="page_connectivity">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="leftMargin">
         <number>0</number>
@@ -195,9 +195,9 @@
          <property name="currentIndex">
           <number>0</number>
          </property>
-         <widget class="QWidget" name="tab_ant">
+         <widget class="QWidget" name="tab_connectivity">
           <attribute name="title">
-           <string>ANT+</string>
+           <string>Connectivity</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <property name="topMargin">

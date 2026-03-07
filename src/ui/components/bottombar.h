@@ -23,12 +23,6 @@ public slots:
     void setGeneralMessage(const QString& text, int timeToDisplay);
     void removeGeneralMessage();
 
-    void aboutANT_Stick_Not_Found();
-
-
-    void updateHubStatus(int currentHubStarting);
-    void hubStickFound(int numberFound, QString descriptionSticks);
-
 
 
 private:

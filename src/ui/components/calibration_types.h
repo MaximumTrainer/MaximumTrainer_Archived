@@ -4,8 +4,8 @@
 /*
  * Standalone calibration type definitions.
  *
- * Previously defined in ANT-specific headers (BPS_pages.h, fec_controller.h).
- * Extracted here so the UI layer has no ANT+ dependency.
+ * Previously defined in protocol-specific headers (BPS_pages.h, fec_controller.h).
+ * Extracted here so the UI layer has no hardware-protocol dependency.
  */
 
 // Power-meter calibration request type (used by TopMenuWorkout)

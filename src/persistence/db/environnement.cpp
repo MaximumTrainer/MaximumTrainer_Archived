@@ -240,21 +240,6 @@ QString Environnement::getUrlSupport() {
 
 }
 
-QString  Environnement::getUrlSupportAntStick() {
-
-    Settings *settings = qApp->property("User_Settings").value<Settings*>();
-
-    if (settings->language == "en") {
-        return getURLEnvironnement() + urlSupportAntEn;
-    }
-    else if (settings->language == "fr") {
-        return getURLEnvironnement() + urlSupportAntFr;
-    }
-    else {
-        return getURLEnvironnement() + urlSupportAntEn;
-    }
-
-}
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 QString  Environnement::getURLGoogleMap() {
 

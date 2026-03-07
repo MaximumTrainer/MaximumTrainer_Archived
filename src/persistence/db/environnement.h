@@ -112,11 +112,9 @@ const static QString urlPlanFr = "plans-entrainement/insideMT";
 
 
 
-/// Help #AntStick
-const static QString urlSupportEn = "support/insideMT";  //support#ant-stick
+/// Help
+const static QString urlSupportEn = "support/insideMT";
 const static QString urlSupportFr = "aide/insideMT";
-const static QString urlSupportAntEn = "support/insideMT/#ant-stick-not-found";  //support#ant-stick
-const static QString urlSupportAntFr = "aide/insideMT/#cle-ant-non-trouvee";
 
 /// Download
 const static QString urlDownloadEn = "download-mt";
@@ -162,7 +160,6 @@ public:
     static QString getUrlPlans();
 
     static QString getUrlSupport();
-    static QString getUrlSupportAntStick();
 
 };
 
