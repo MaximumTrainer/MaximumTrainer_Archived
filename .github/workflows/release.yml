@@ -223,14 +223,16 @@ jobs:
 
     - name: Prepare application folder for MSI
       run: |
-        # Copy the full build output (exe + all DLLs) into the application/bin/ folder
-        # that AliceOh/CreateWindowsInstaller (and wix.json with bin/ payload paths) expects.
-        New-Item -ItemType Directory -Path "application\bin" -Force
-        Copy-Item "build\release\MaximumTrainer.exe" "application\bin\" -Force
+        # Copy the full build output (exe + all DLLs) into the bin/ folder at the
+        # workspace root. wix.json declares payload paths as bin/MaximumTrainer.exe
+        # and bin/*.dll; go-msi resolves those globs relative to the workspace root,
+        # so the staging directory must be bin/ (not application/bin/).
+        New-Item -ItemType Directory -Path "bin" -Force
+        Copy-Item "build\release\MaximumTrainer.exe" "bin\" -Force
         # Copy top-level DLLs (windeployqt + VLC-Qt + SFML runtime)
         $dlls = Get-ChildItem "build\release\*.dll" -ErrorAction SilentlyContinue
         if ($dlls) {
-          Copy-Item $dlls.FullName "application\bin\" -Force
+          Copy-Item $dlls.FullName "bin\" -Force
         } else {
           Write-Warning "No DLL files found in build\release\ -- installer will contain the exe only"
         }
