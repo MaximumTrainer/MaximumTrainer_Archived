@@ -11,19 +11,19 @@
 }
 
 :root {
-  --clr-bg:           #0f1117;
-  --clr-bg-alt:       #161b24;
-  --clr-surface:      #1e2534;
-  --clr-surface-high: #252d3d;
-  --clr-border:       #2e3a4e;
-  --clr-accent:       #e05f1e;
-  --clr-accent-light: #f07a38;
-  --clr-accent-glow:  rgba(224, 95, 30, 0.25);
-  --clr-text:         #d1d8e8;
-  --clr-text-muted:   #7a8aaa;
-  --clr-heading:      #eaf0ff;
-  --clr-link:         #6fb3f2;
-  --clr-code-bg:      #0d1116;
+  --clr-bg:           #121212;
+  --clr-bg-alt:       #1a1a1a;
+  --clr-surface:      #1e1e1e;
+  --clr-surface-high: #282828;
+  --clr-border:       #333333;
+  --clr-accent:       #2196f3;
+  --clr-accent-light: #42a5f5;
+  --clr-accent-glow:  rgba(33, 150, 243, 0.25);
+  --clr-text:         rgba(255, 255, 255, 0.87);
+  --clr-text-muted:   rgba(255, 255, 255, 0.60);
+  --clr-heading:      rgba(255, 255, 255, 0.95);
+  --clr-link:         #64b5f6;
+  --clr-code-bg:      #0a0a0a;
 
   --font-sans:  'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono:  'Consolas', 'JetBrains Mono', 'Fira Code', monospace;
@@ -188,6 +188,9 @@ code, pre {
 }
 .nav-logo img {
   display: block;
+  height: 36px;
+  width: auto;
+  filter: hue-rotate(195deg) saturate(1.3) brightness(1.1);
 }
 
 .nav-links {
@@ -234,8 +237,8 @@ code, pre {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(224, 95, 30, 0.18) 0%, transparent 70%),
-    linear-gradient(180deg, #0f1117 0%, #141822 100%);
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(33, 150, 243, 0.18) 0%, transparent 70%),
+    linear-gradient(180deg, #121212 0%, #161616 100%);
   z-index: 0;
 }
 
@@ -251,7 +254,7 @@ code, pre {
   object-fit: contain;
   margin-inline: auto;
   margin-bottom: 1.5rem;
-  filter: drop-shadow(0 0 18px var(--clr-accent-glow));
+  filter: drop-shadow(0 0 18px var(--clr-accent-glow)) hue-rotate(195deg) saturate(1.3) brightness(1.1);
 }
 
 .hero h1 {
@@ -735,4 +738,49 @@ code, pre {
   .gallery-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Coming Soon Bar ─────────────────────────────────────────────────────── */
+.coming-soon-bar {
+  background-color: var(--clr-accent);
+  color: #fff;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.55rem 1.5rem;
+  letter-spacing: 0.01em;
+  z-index: 99;
+}
+.coming-soon-bar strong {
+  font-weight: 700;
+}
+
+/* ── Coming Soon Badge (hero) ────────────────────────────────────────────── */
+.coming-soon-badge {
+  display: inline-block;
+  background-color: var(--clr-accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.28em 0.9em;
+  border-radius: 999px;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Disabled Buttons ────────────────────────────────────────────────────── */
+.btn.btn-disabled,
+button.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Footer logo tint ────────────────────────────────────────────────────── */
+.footer-logo img {
+  height: 28px;
+  width: auto;
+  filter: hue-rotate(195deg) saturate(1.3) brightness(1.1);
 }
