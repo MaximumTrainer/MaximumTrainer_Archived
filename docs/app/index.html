@@ -89,18 +89,17 @@
   <!-- WASM Loading Logger — inject before any other scripts so hooks are in place -->
   <script src="logger.js"></script>
 
-  <!-- Browser capability check -->
+  <!-- Browser compatibility warning (populated dynamically by the Bluetooth check) -->
   <div id="browser-warning">
     <div class="card">
-      <h2>Unsupported Browser</h2>
-      <p>
-        The browser version of Maximum Trainer requires <strong>WebBluetooth</strong>,
-        which is only supported in <strong>Chrome</strong> or <strong>Edge</strong>
-        (desktop, version 70+).
+      <h2>⚠️ Compatibility Warning</h2>
+      <p id="browser-warning-detail">
+        Web Bluetooth is required to connect to training hardware.
+        Please use Chrome, Edge, or Bluefy.
       </p>
       <p>
-        Please open this page in Chrome or Edge, or download the native app for
-        the best experience.
+        Download the native app for the best experience, or try a compatible
+        browser (Chrome / Edge desktop, version 70+).
       </p>
       <a href="..">← Back to site</a>
     </div>
@@ -122,12 +121,53 @@
   </div>
 
   <script>
-    // ── Check for WebBluetooth support ──────────────────────────────────
-    if (!navigator.bluetooth) {
-      document.getElementById('loading-screen').classList.add('hidden');
-      document.getElementById('browser-warning').style.display = 'flex';
-    } else {
-      // ── Qt 6.6 WebAssembly loader ────────────────────────────────────
+    // ── Web Bluetooth capability check ─────────────────────────────────────────
+    // Asynchronously verifies Web Bluetooth availability before loading any WASM
+    // assets — guards against unsupported browsers, non-secure contexts, and
+    // missing hardware.  The WASM binary is never fetched if the check fails.
+    async function checkBluetoothSupport() {
+      if (!navigator.bluetooth) {
+        return { supported: false, reason: 'api-missing' };
+      }
+      if (!window.isSecureContext) {
+        return { supported: false, reason: 'insecure-context' };
+      }
+      try {
+        if (typeof navigator.bluetooth.getAvailability === 'function') {
+          const available = await navigator.bluetooth.getAvailability();
+          if (!available) {
+            return { supported: false, reason: 'hardware-unavailable' };
+          }
+        }
+      } catch (e) {
+        // getAvailability may throw in restricted contexts; proceed optimistically
+        console.warn('navigator.bluetooth.getAvailability() failed:', e);
+      }
+      return { supported: true };
+    }
+
+    checkBluetoothSupport().then(result => {
+      if (!result.supported) {
+        document.getElementById('loading-screen').classList.add('hidden');
+        const detailEl = document.getElementById('browser-warning-detail');
+        if (result.reason === 'api-missing') {
+          detailEl.textContent =
+            'Web Bluetooth API is not available in this browser. ' +
+            'Please use Chrome or Edge (desktop, version 70+).';
+        } else if (result.reason === 'insecure-context') {
+          detailEl.textContent =
+            'Web Bluetooth requires a secure connection (HTTPS or localhost). ' +
+            'Please access this page via HTTPS.';
+        } else if (result.reason === 'hardware-unavailable') {
+          detailEl.textContent =
+            'No Bluetooth adapter was detected. ' +
+            'Please ensure Bluetooth is enabled on your device.';
+        }
+        document.getElementById('browser-warning').style.display = 'flex';
+        return;
+      }
+
+      // ── Bluetooth supported — load WASM assets ──────────────────────────────
       // Deployment layout (written by release.yml publish job):
       //   docs/app/qtloader.js        — Qt 6.6 loader (defines window.QtLoader)
       //   docs/app/MaximumTrainer.js  — Emscripten glue (defines window.createQtAppInstance)
@@ -204,7 +244,7 @@
         document.head.appendChild(appScript);
       };
       document.head.appendChild(loaderScript);
-    }
+    });
   </script>
 </body>
 </html>

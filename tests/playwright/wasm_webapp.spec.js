@@ -4,6 +4,21 @@ const { test, expect, request } = require('@playwright/test');
 const APP_URL = 'https://maximumtrainer.github.io/MaximumTrainer_Redux/app/';
 const BASE_URL = 'https://maximumtrainer.github.io/MaximumTrainer_Redux/app';
 
+// Helper: inject a full Web Bluetooth stub that passes the capability check
+async function stubBluetooth(page) {
+  await page.addInitScript(() => {
+    if (!navigator.bluetooth) {
+      Object.defineProperty(navigator, 'bluetooth', {
+        value: {
+          requestDevice: async () => { throw new Error('stub'); },
+          getAvailability: async () => true,
+        },
+        configurable: true,
+      });
+    }
+  });
+}
+
 // ── HTTP asset checks ──────────────────────────────────────────────────────
 test.describe('WASM assets are deployed', () => {
   test('qtloader.js returns 200', async ({ request }) => {
@@ -30,16 +45,9 @@ test.describe('WASM assets are deployed', () => {
 // ── Page-level checks ──────────────────────────────────────────────────────
 test.describe('WASM webapp page', () => {
   test('"not deployed" message is absent', async ({ page }) => {
-    // Inject a stub navigator.bluetooth so the page proceeds past the
+    // Inject a full stub navigator.bluetooth so the page proceeds past the
     // browser-capability guard and attempts to load the WASM assets.
-    await page.addInitScript(() => {
-      if (!navigator.bluetooth) {
-        Object.defineProperty(navigator, 'bluetooth', {
-          value: { requestDevice: async () => { throw new Error('stub'); } },
-          configurable: true,
-        });
-      }
-    });
+    await stubBluetooth(page);
 
     const errors = [];
     page.on('pageerror', err => errors.push(err.message));
@@ -66,14 +74,7 @@ test.describe('WASM webapp page', () => {
   });
 
   test('loading screen or Qt canvas is present', async ({ page }) => {
-    await page.addInitScript(() => {
-      if (!navigator.bluetooth) {
-        Object.defineProperty(navigator, 'bluetooth', {
-          value: { requestDevice: async () => { throw new Error('stub'); } },
-          configurable: true,
-        });
-      }
-    });
+    await stubBluetooth(page);
 
     await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
@@ -90,14 +91,7 @@ test.describe('WASM webapp page', () => {
   });
 
   test('WASM log overlay is present and has the copy button', async ({ page }) => {
-    await page.addInitScript(() => {
-      if (!navigator.bluetooth) {
-        Object.defineProperty(navigator, 'bluetooth', {
-          value: { requestDevice: async () => { throw new Error('stub'); } },
-          configurable: true,
-        });
-      }
-    });
+    await stubBluetooth(page);
 
     await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
 
@@ -120,5 +114,57 @@ test.describe('WASM webapp page', () => {
     const logLines = overlay.locator('div > div');
     const lineCount = await logLines.count();
     expect(lineCount, 'The log overlay should contain at least one log entry').toBeGreaterThan(0);
+  });
+});
+
+// ── Browser compatibility guard checks ────────────────────────────────────
+test.describe('Browser compatibility guard', () => {
+  test('compatibility warning is shown when getAvailability returns false', async ({ page }) => {
+    // Stub navigator.bluetooth with getAvailability returning false (hardware off)
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'bluetooth', {
+        value: {
+          requestDevice: async () => { throw new Error('stub'); },
+          getAvailability: async () => false,
+        },
+        configurable: true,
+      });
+    });
+
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+
+    // Compatibility warning must be visible
+    const warning = page.locator('#browser-warning');
+    await expect(warning).toBeVisible();
+
+    // Loading screen must be hidden
+    const loadingScreen = page.locator('#loading-screen');
+    await expect(loadingScreen).not.toBeVisible();
+
+    // The detail paragraph must contain the hardware-unavailable message
+    const detail = page.locator('#browser-warning-detail');
+    await expect(detail).toContainText('No Bluetooth adapter was detected');
+  });
+
+  test('compatibility warning is shown when navigator.bluetooth is absent', async ({ page }) => {
+    // Remove navigator.bluetooth to simulate an unsupported browser (e.g. Firefox)
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'bluetooth', {
+        value: undefined,
+        configurable: true,
+      });
+    });
+
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+
+    // Compatibility warning must be visible
+    const warning = page.locator('#browser-warning');
+    await expect(warning).toBeVisible();
+
+    // The detail paragraph must contain the api-missing message
+    const detail = page.locator('#browser-warning-detail');
+    await expect(detail).toContainText('Web Bluetooth API is not available');
   });
 });
