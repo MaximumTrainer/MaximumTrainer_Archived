@@ -232,7 +232,7 @@ jobs:
         if ($dlls) {
           Copy-Item $dlls.FullName "application\bin\" -Force
         } else {
-          Write-Warning "No DLL files found in build\release\ — installer will contain the exe only"
+          Write-Warning "No DLL files found in build\release\ -- installer will contain the exe only"
         }
         # The AliceOh/CreateWindowsInstaller action creates its own 'build/' directory
         # for the MSI output. Remove the existing build/ directory (we have already
