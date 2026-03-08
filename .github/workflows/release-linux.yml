@@ -1,0 +1,101 @@
+name: Release - Linux
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+
+  build_linux:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and system dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          qtwebengine5-dev \
+          qtconnectivity5-dev \
+          libqwt-qt5-dev \
+          libsfml-dev \
+          libvlc-dev \
+          libvlccore-dev \
+          libusb-1.0-0-dev \
+          cmake \
+          build-essential \
+          libfuse2 \
+          file
+
+    - name: Build and install VLC-Qt
+      run: |
+        cd /tmp
+        git clone --branch 1.1.1 --depth 1 https://github.com/vlc-qt/vlc-qt
+        cd vlc-qt
+        mkdir build && cd build
+        cmake .. \
+          -DQT_VERSION=5 \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig
+
+    - name: Build
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        qmake PowerVelo.pro "INCLUDEPATH+=/usr/local/include" "LIBS+=-L/usr/local/lib"
+        make -j$(nproc)
+      env:
+        QMAKEFEATURES: /usr/share/qt5/mkspecs/features
+
+    - name: Download linuxdeployqt
+      run: |
+        curl -Lo /usr/local/bin/linuxdeployqt \
+          "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+        chmod +x /usr/local/bin/linuxdeployqt
+
+    - name: Package AppImage
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin AppDir/usr/lib AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
+        cp build/release/MaximumTrainer AppDir/usr/bin/
+        # Desktop entry required by linuxdeployqt
+        cat > AppDir/usr/share/applications/maximumtrainer.desktop << 'EOF'
+        [Desktop Entry]
+        Name=Maximum Trainer
+        Exec=MaximumTrainer
+        Icon=maximumtrainer
+        Type=Application
+        Categories=Sports;
+        EOF
+        # Copy icon
+        if [ -f resources/images/main_icon.png ]; then
+          cp resources/images/main_icon.png AppDir/usr/share/icons/hicolor/256x256/apps/maximumtrainer.png
+        else
+          # Fallback: create a placeholder icon
+          touch AppDir/usr/share/icons/hicolor/256x256/apps/maximumtrainer.png
+        fi
+        linuxdeployqt AppDir/usr/share/applications/maximumtrainer.desktop \
+          -qmake=/usr/lib/qt5/bin/qmake \
+          -appimage \
+          -no-strip \
+          -extra-plugins=iconengines,imageformats
+        # linuxdeployqt names the AppImage after the desktop Name= entry + git hash + arch
+        # (e.g. Maximum_Trainer-<hash>-x86_64.AppImage), so use a wildcard to rename it
+        appimage=$(find . -maxdepth 1 -name "*.AppImage" | head -1)
+        if [ -z "$appimage" ]; then echo "Error: No AppImage found"; exit 1; fi
+        mv "$appimage" MaximumTrainer-linux-x86_64.AppImage
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-appimage
+        path: MaximumTrainer-linux-x86_64.AppImage

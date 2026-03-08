@@ -1,0 +1,59 @@
+name: Release - macOS
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+
+  build_mac:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+        modules: 'qtwebengine qtconnectivity qtwebchannel qtpositioning'
+
+    - name: Install SFML
+      run: brew install sfml
+
+    - name: Build and install QWT
+      run: |
+        brew uninstall qwt --force --ignore-dependencies 2>/dev/null || true
+        cd /tmp
+        curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
+        tar -xjf qwt.tar.bz2
+        cd qwt-6.2.0
+        sed -i.bak 's/QwtFramework//' qwtconfig.pri
+        qmake qwt.pro
+        make -j$(sysctl -n hw.logicalcpu)
+        sudo make install
+
+    - name: Build MaximumTrainer
+      run: |
+        qmake PowerVelo.pro \
+          "SFML_INSTALL=$(brew --prefix sfml)" \
+          "QWT_INSTALL=/usr/local/qwt-6.2.0"
+        make -j$(sysctl -n hw.logicalcpu)
+
+    - name: Package with macdeployqt
+      run: |
+        install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+        macdeployqt build/release/MaximumTrainer.app -dmg
+        mv build/release/MaximumTrainer.dmg MaximumTrainer-macos.dmg
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-dmg
+        path: MaximumTrainer-macos.dmg
