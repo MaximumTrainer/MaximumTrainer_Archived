@@ -236,10 +236,6 @@ jobs:
         } else {
           Write-Warning "No DLL files found in build\release\ -- installer will contain the exe only"
         }
-        # The AliceOh/CreateWindowsInstaller action creates its own 'build/' directory
-        # for the MSI output. Remove the existing build/ directory (we have already
-        # uploaded the zip artifact) so the action's fs.mkdirSync('build') succeeds.
-        Remove-Item -Path "build" -Recurse -Force
       shell: powershell
 
     - name: Install go-msi
@@ -265,14 +261,10 @@ jobs:
       shell: powershell
 
     - name: Build Windows Installer MSI from exe file
-      uses: AliceOh/CreateWindowsInstaller@1.0.0
-      with:
-        exefile: 'MaximumTrainer.exe'
-        version: ${{ steps.msi_version.outputs.version }}
-
-    - name: Rename MSI to release name
       run: |
-        Move-Item "build\MaximumTrainer.exe.msi" "MaximumTrainer-windows-x64.msi" -Force
+        $version = "${{ steps.msi_version.outputs.version }}"
+        Write-Host "Building MSI version $version"
+        go-msi make --msi MaximumTrainer-windows-x64.msi --version $version
       shell: powershell
 
     - name: Upload MSI artifact
