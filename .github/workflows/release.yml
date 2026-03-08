@@ -15,24 +15,28 @@ jobs:
   # ────────────────────────────────────── LINUX ──────────────────────────────────────
   build_linux:
     uses: ./.github/workflows/release-linux.yml
-    permissions: {}
+    permissions:
+      contents: read
 
   # ────────────────────────────────────── WINDOWS ────────────────────────────────────
   build_windows:
     uses: ./.github/workflows/release-windows.yml
-    permissions: {}
+    permissions:
+      contents: read
     with:
       tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
 
   # ────────────────────────────────────── MACOS ──────────────────────────────────────
   build_mac:
     uses: ./.github/workflows/release-mac.yml
-    permissions: {}
+    permissions:
+      contents: read
 
   # ────────────────────────────────────── WASM ──────────────────────────────────────
   build_wasm:
     uses: ./.github/workflows/release-wasm.yml
-    permissions: {}
+    permissions:
+      contents: read
     # WASM is a best-effort build; a failure here must not block the main-platform release
     continue-on-error: true
 
