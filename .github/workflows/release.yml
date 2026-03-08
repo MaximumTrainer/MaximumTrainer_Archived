@@ -37,8 +37,6 @@ jobs:
     uses: ./.github/workflows/release-wasm.yml
     permissions:
       contents: read
-    # WASM is a best-effort build; a failure here must not block the main-platform release
-    continue-on-error: true
 
   # ────────────────────────────────────── PUBLISH ────────────────────────────────────
   publish:
