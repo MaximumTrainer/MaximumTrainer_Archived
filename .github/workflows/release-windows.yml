@@ -176,6 +176,10 @@ jobs:
 
     - name: Build Windows Installer MSI from exe file
       run: |
+        # go-msi was installed as an MSI package in the previous step, which updates
+        # the machine-level registry PATH but not the current PowerShell session PATH.
+        # Refresh $env:Path from the registry so go-msi is found.
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
         $version = "${{ steps.msi_version.outputs.version }}"
         Write-Host "Building MSI version $version"
         go-msi make --msi MaximumTrainer-windows-x64.msi --version $version
