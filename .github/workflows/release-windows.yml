@@ -162,7 +162,11 @@ jobs:
                             ForEach-Object { "bin/$($_.Name)" })
         $allItems = @("bin/MaximumTrainer.exe") + $dlls
         $wixJson.files.items = $allItems
-        $wixJson | ConvertTo-Json -Depth 10 | Set-Content wix.json -Encoding UTF8
+        # Write without BOM: PowerShell 5.1's -Encoding UTF8 adds a UTF-8 BOM which
+        # Go's encoding/json rejects with "invalid character 'ï'".  Use the .NET
+        # UTF8Encoding constructor with emitBOM=false to avoid this.
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+        [System.IO.File]::WriteAllText((Join-Path (Get-Location).Path "wix.json"), ($wixJson | ConvertTo-Json -Depth 10), $utf8NoBom)
         Write-Host "Updated wix.json with $($dlls.Count) DLL(s):"
         $dlls | ForEach-Object { Write-Host "  $_" }
       shell: powershell
