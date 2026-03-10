@@ -64,6 +64,41 @@ jobs:
         path: build/
 
   # ──────────────────────────────────────────────────────────────────────────
+  # Logger Unit Test (Linux)
+  #
+  # Builds and runs the Logger unit test suite (tests/logger/) to verify that
+  # the cross-platform logging framework filters levels correctly, writes to
+  # file sinks, routes Qt messages, and round-trips configuration.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_logger:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          build-essential
+
+    - name: Build logger unit tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        mkdir -p build/tests
+        cd tests/logger
+        qmake logger_tests.pro
+        make -j$(nproc)
+
+    - name: Run logger unit tests
+      run: |
+        ./build/tests/logger_tests -v2
+
+  # ──────────────────────────────────────────────────────────────────────────
   # BTLE Integration Test (Linux)
   #
   # Runs SimulatorHub in a Qt window under Xvfb, takes a screenshot as
