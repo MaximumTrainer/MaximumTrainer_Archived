@@ -116,6 +116,22 @@ jobs:
     - name: Build
       run: nmake
 
+    - name: Build runtime validation test
+      run: |
+        New-Item -ItemType Directory -Force -Path build\tests | Out-Null
+        Set-Location tests\integration
+        qmake runtime_validation_tests.pro
+        nmake
+      shell: powershell
+
+    - name: Deploy Qt for test binary
+      run: |
+        & "$env:QTDIR\bin\windeployqt.exe" --release `
+            --no-translations `
+            --no-system-d3d-compiler `
+            build\tests\runtime_validation_tests.exe
+      shell: powershell
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -135,33 +151,13 @@ jobs:
     needs: build_windows
     permissions:
       contents: read
-    env:
-      QT_HOME: C:\Qt
 
     steps:
-    - name: MSVC Environment Setup
-      uses: ilammy/msvc-dev-cmd@v1
-
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Install Qt (with Bluetooth)
-      uses: jurplel/install-qt-action@v3
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
       with:
-        version: '5.15.2'
-        dir: ${{ env.QT_HOME }}
-
-    - name: Set QTDIR
-      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
-      shell: powershell
-
-    - name: Build runtime validation test
-      run: |
-        New-Item -ItemType Directory -Force -Path build\tests | Out-Null
-        Set-Location tests\integration
-        qmake runtime_validation_tests.pro
-        nmake
-      shell: powershell
+        name: windows
+        path: build
 
     - name: Run runtime validation test
       run: .\build\tests\runtime_validation_tests.exe -v2
