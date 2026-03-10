@@ -1,7 +1,10 @@
 #include "mainwindow.h"
 
 #include <QDebug>
-
+#include <QMessageBox>
+#ifdef Q_OS_WIN
+#include <QOperatingSystemVersion>
+#endif
 
 #include "z_stylesheet.h"
 #include "dialoglogin.h"
@@ -18,6 +21,20 @@ int main(int argc, char *argv[]) {
 
 
     QApplication app(argc, argv);
+
+#ifdef Q_OS_WIN
+    // Windows 10 version 1703 (Creators Update, build 15063) is the minimum
+    // required for the WinRT Bluetooth LE APIs used by Qt Bluetooth.
+    if (QOperatingSystemVersion::current() <
+            QOperatingSystemVersion(QOperatingSystemVersion::Windows, 10, 0, 15063)) {
+        QMessageBox::critical(nullptr,
+            QObject::tr("Unsupported Windows Version"),
+            QObject::tr("MaximumTrainer requires Windows 10 version 1703 (Creators Update) or later.\n"
+                        "Windows 7, 8, and 8.1 are not supported (missing WinRT Bluetooth LE APIs).\n\n"
+                        "Please upgrade your operating system."));
+        return 1;
+    }
+#endif
 
 
     //initialize global object (Account, Settings, SoundPlayer and QNetworkAccessManager)
