@@ -177,6 +177,15 @@ test.describe('BLE GATT ready callback', () => {
       { timeout: 10000 },
     );
 
+    // Once the app is initialized, explicitly trigger the BLE connect flow
+    await page.waitForFunction(
+      () => typeof window.js_scanAndConnect === 'function',
+      { timeout: 15000 },
+    );
+    await page.evaluate(() => {
+      // Simulate the user action that starts a BLE scan/connect
+      window.js_scanAndConnect();
+    });
     // No [MT] BLE error messages should have been emitted
     const bleErrors = consoleMessages.filter(
       (m) => m.type === 'error' && m.text.includes('[MT]'),
