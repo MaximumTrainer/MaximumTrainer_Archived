@@ -83,6 +83,45 @@
       width: 100%; height: 100%;
       display: block;
     }
+
+    /* ── BLE reconnect overlay ──────────────────────────────────────── */
+    #ble-reconnect-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      align-items: center; justify-content: center;
+      background: rgba(0, 0, 0, 0.72);
+      z-index: 300;
+      padding: 2rem;
+      text-align: center;
+    }
+    #ble-reconnect-box {
+      max-width: 400px;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 12px;
+      padding: 2rem;
+    }
+    #ble-reconnect-box h2 { font-size: 1.25rem; margin-bottom: 0.75rem; }
+    #ble-reconnect-box p  { color: #aaa; line-height: 1.6; margin-bottom: 1.25rem; }
+    #ble-reconnect-btn {
+      display: inline-block;
+      padding: 0.65rem 1.6rem;
+      background: #e05a00; color: #fff;
+      border: none; border-radius: 6px;
+      font-size: 1rem; font-weight: 600;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    #ble-reconnect-btn:hover { background: #c44d00; }
+    #ble-reconnect-dismiss {
+      display: inline-block;
+      padding: 0.65rem 1.2rem;
+      background: transparent; color: #888;
+      border: 1px solid #555; border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    #ble-reconnect-dismiss:hover { color: #ccc; border-color: #888; }
   </style>
 </head>
 <body>
@@ -118,6 +157,23 @@
   <!-- Qt Wasm canvas -->
   <div id="qt-canvas-wrapper">
     <canvas id="qt-canvas" oncontextmenu="event.preventDefault()"></canvas>
+  </div>
+
+  <!-- BLE reconnect overlay — shown by webbluetooth_bridge.cpp JS when the
+       trainer disconnects mid-workout and auto-reconnect is exhausted.
+       The Reconnect button calls Module._bleReconnectRequestC() which routes
+       to BtleHubWasm::scanForDevice() (user-gesture context required). -->
+  <div id="ble-reconnect-overlay">
+    <div id="ble-reconnect-box">
+      <h2>🔌 Trainer Disconnected</h2>
+      <p>
+        Your Bluetooth trainer has disconnected.<br>
+        Press <strong>Reconnect</strong> to re-open the device picker and
+        reconnect your trainer.
+      </p>
+      <button id="ble-reconnect-btn">Reconnect</button>
+      <button id="ble-reconnect-dismiss">Continue without trainer</button>
+    </div>
   </div>
 
   <script>
@@ -244,6 +300,19 @@
         document.head.appendChild(appScript);
       };
       document.head.appendChild(loaderScript);
+    });
+  </script>
+
+  <!-- Dismiss handler for the BLE reconnect overlay (no user-gesture concern:
+       dismissing just hides the overlay without triggering BLE operations). -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var dismissBtn = document.getElementById('ble-reconnect-dismiss');
+      if (dismissBtn) {
+        dismissBtn.addEventListener('click', function() {
+          document.getElementById('ble-reconnect-overlay').style.display = 'none';
+        });
+      }
     });
   </script>
 </body>
