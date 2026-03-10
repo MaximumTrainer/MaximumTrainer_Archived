@@ -136,9 +136,9 @@ jobs:
     - name: Prepare application folder for MSI
       run: |
         # Copy the full build output (exe + all DLLs) into the bin/ folder at the
-        # workspace root. wix.json declares payload paths as bin/MaximumTrainer.exe
-        # and bin/*.dll; go-msi resolves those globs relative to the workspace root,
-        # so the staging directory must be bin/ (not application/bin/).
+        # workspace root. A subsequent step rewrites wix.json to list each DLL
+        # explicitly (WiX candle.exe rejects wildcard Source attributes), so the
+        # staging directory must be bin/ so the paths resolve correctly.
         New-Item -ItemType Directory -Path "bin" -Force
         Copy-Item "build\release\MaximumTrainer.exe" "bin\" -Force
         # Copy top-level DLLs (windeployqt + VLC-Qt + SFML runtime)
@@ -148,6 +148,23 @@ jobs:
         } else {
           Write-Warning "No DLL files found in build\release\ -- installer will contain the exe only"
         }
+      shell: powershell
+
+    - name: Rewrite wix.json with explicit DLL entries
+      run: |
+        # go-msi passes the items in wix.json's files.items verbatim as WiX
+        # File/@Source attributes.  WiX (candle.exe) does not allow wildcards
+        # in that attribute, so "bin/*.dll" is illegal.  Enumerate the actual
+        # DLL files that were staged into bin/ and rewrite wix.json with
+        # explicit paths before go-msi is invoked.
+        $wixJson = Get-Content wix.json -Raw | ConvertFrom-Json
+        $dlls = Get-ChildItem "bin\*.dll" -ErrorAction SilentlyContinue |
+                    ForEach-Object { "bin/$($_.Name)" }
+        $allItems = @("bin/MaximumTrainer.exe") + @($dlls)
+        $wixJson.files.items = $allItems
+        $wixJson | ConvertTo-Json -Depth 10 | Set-Content wix.json -Encoding UTF8
+        Write-Host "Updated wix.json with $($dlls.Count) DLL(s):"
+        $dlls | ForEach-Object { Write-Host "  $_" }
       shell: powershell
 
     - name: Install go-msi
