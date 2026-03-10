@@ -101,6 +101,7 @@ EM_JS(void, js_scanAndConnect, (), {
             }
 
             console.log('[MT] BLE connected and notifications started');
+            js_requestFtmsControl();
         } catch (err) {
             console.error('[MT] WebBluetooth error:', err);
         }
@@ -114,14 +115,26 @@ EM_JS(void, js_disconnect, (), {
     }
 });
 
+// Send FTMS opcode 0x00 (Request Control) to the FTMS Control Point (0x2AD9).
+// The FTMS spec requires this handshake before any training-load commands.
+// Some trainers (e.g. Tacx NEO) silently reject Set Target Power (0x05) and
+// Set Indoor Bike Simulation (0x11) without it.  Called automatically at the
+// end of js_scanAndConnect() after all notification subscriptions are in place.
+EM_JS(void, js_requestFtmsControl, (), {
+    (async function() {
+        if (!window._mtBleDevice || !window._mtBleDevice.gatt.connected) return;
+        try {
+            const server = window._mtBleDevice.gatt;
+            const service = await server.getPrimaryService(0x1826);
+            const ctrl = await service.getCharacteristic(0x2AD9);
+            await ctrl.writeValueWithResponse(new Uint8Array([0x00]));
+        } catch (e) {
+            console.warn('[MT] FTMS Request Control failed (service 0x1826 or characteristic 0x2AD9 unavailable):', e.name || e);
+        }
+    })();
+});
+
 // Send raw bytes to a FTMS control point characteristic (0x2AD9)
-// TODO(Gap 6): The FTMS spec requires opcode 0x00 (Request Control) to be
-// sent to 0x2AD9 before any Set Target Power (0x05) or Indoor Bike Simulation
-// (0x11) commands.  BtleHub (desktop) calls requestFtmsControl() during
-// service discovery.  Add a js_requestFtmsControl() EM_JS helper that writes
-// opcode 0x00 once after connect, and call it from scanForDevice() (or from
-// the JS async connect callback once Gap 2 is resolved).  Without this,
-// trainers such as Tacx NEO silently reject ERG commands.
 EM_JS(void, js_sendFtmsCommand, (const uint8_t *dataPtr, int dataLen), {
     (async function() {
         if (!window._mtBleDevice || !window._mtBleDevice.gatt.connected) return;
@@ -173,6 +186,11 @@ void sendFtmsSetTargetPower(int watts)
     int16_t power = static_cast<int16_t>(watts);
     std::memcpy(&cmd[1], &power, 2);
     js_sendFtmsCommand(cmd, sizeof(cmd));
+}
+
+void requestFtmsControl()
+{
+    js_requestFtmsControl();
 }
 
 } // namespace WebBluetoothBridge
