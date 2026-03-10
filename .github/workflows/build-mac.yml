@@ -1,0 +1,67 @@
+name: Build - macOS
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+
+  build_mac:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+        modules: 'qtwebengine qtconnectivity qtwebchannel qtpositioning'
+
+    - name: Install SFML
+      run: brew install sfml
+
+    - name: Build and install QWT
+      run: |
+        # Remove any pre-installed Homebrew qwt that could shadow our headers
+        brew uninstall qwt --force --ignore-dependencies 2>/dev/null || true
+        cd /tmp
+        curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
+        tar -xjf qwt.tar.bz2
+        cd qwt-6.2.0
+        sed -i.bak 's/QwtFramework//' qwtconfig.pri
+        qmake qwt.pro
+        make -j$(sysctl -n hw.logicalcpu)
+        sudo make install
+
+    - name: Create Makefile
+      run: |
+        qmake PowerVelo.pro \
+          "SFML_INSTALL=$(brew --prefix sfml)" \
+          "QWT_INSTALL=/usr/local/qwt-6.2.0"
+
+    - name: Diagnose QWT installation
+      run: |
+        echo "=== All qwt_plot.h on system ==="
+        find /opt/homebrew /usr/local -name "qwt_plot.h" 2>/dev/null || true
+        echo "=== Installed qwtconfig.pri ==="
+        cat /usr/local/qwt-6.2.0/features/qwtconfig.pri 2>/dev/null || true
+
+    - name: Run MakeFile
+      run: make
+
+    - name: Bind rpath for Qt frameworks
+      run: |
+        install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+
+    - name: upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos
+        path: build/

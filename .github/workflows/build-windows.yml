@@ -1,0 +1,123 @@
+name: Build - Windows
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+
+  build_windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      # Qt installation root - install-qt-action places Qt under $QT_HOME\Qt\$version\$arch.
+      # For local Windows builds, set QT_HOME to the parent of your Qt installation
+      # (e.g. C:\ if Qt is at C:\Qt\5.15.2\msvc2019_64).
+      QT_HOME: C:\Qt
+
+    steps:
+    - name: MSVC Environment Setup
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        modules: 'qtwebengine'
+        dir: ${{ env.QT_HOME }}
+
+    - name: Set QTDIR
+      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Write PowerShell helpers
+      run: |
+        @'
+        function Invoke-WebRequestWithRetry {
+          param([string]$Uri, [string]$OutFile, [int]$MaxAttempts = 5, [int]$BackoffSeconds = 5)
+          for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+            try {
+              Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+              return
+            } catch {
+              if ($attempt -eq $MaxAttempts) { throw }
+              Write-Host "Attempt $attempt failed: $_. Retrying in $BackoffSeconds seconds..."
+              Start-Sleep -Seconds $BackoffSeconds
+              $BackoffSeconds *= 2
+            }
+          }
+        }
+        '@ | Set-Content C:\helpers.ps1
+      shell: powershell
+
+    - name: Download and install VLC-Qt
+      # Using 1.1.0 as it is the last release with pre-built Windows MSVC binaries
+      run: |
+        . C:\helpers.ps1
+        Invoke-WebRequestWithRetry -Uri "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_win64_msvc2015.7z" -OutFile "$env:TEMP\vlcqt.7z"
+        # Archive extracts directly to bin/, include/, lib/ with no wrapper dir
+        & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt"
+        $vlcqtInstall = "C:/vlcqt"
+        echo "VLCQT_DIR=$vlcqtInstall" >> $env:GITHUB_ENV
+        Write-Host "=== VLC-Qt lib files ==="
+        Get-ChildItem "C:\vlcqt\include" -Filter "*.lib"
+      shell: powershell
+
+    - name: Download and install SFML
+      run: |
+        curl.exe -L -o "$env:TEMP\sfml.zip" "https://github.com/SFML/SFML/releases/download/2.6.1/SFML-2.6.1-windows-vc17-64-bit.zip"
+        Expand-Archive -Path "$env:TEMP\sfml.zip" -DestinationPath "C:\sfml"
+      shell: powershell
+
+    - name: Build QWT
+      run: |
+        # Install QWT to a stable user-profile directory that works both locally
+        # and in CI - avoids path issues with workspace-relative paths
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtInstallDirFwd = $qwtInstallDir -replace '\\', '/'
+        Set-Location ..
+        # Use curl.exe -L to follow SourceForge redirects reliably
+        curl.exe -L -o "$env:TEMP\qwt.tar.bz2" "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
+        7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
+        7z x "$env:TEMP\qwt.tar" -o"." -y
+        Rename-Item "qwt-6.2.0" "qwt-src"
+        Set-Location "qwt-src"
+        # Patch every QWT_INSTALL_PREFIX assignment to use the new path
+        (Get-Content "qwtconfig.pri") | ForEach-Object {
+            if ($_ -match 'QWT_INSTALL_PREFIX\s*=') {
+                $_ -replace '(QWT_INSTALL_PREFIX\s*=\s*).*', "`$1$qwtInstallDirFwd"
+            } else { $_ }
+        } | Set-Content "qwtconfig.pri"
+        qmake qwt.pro
+        nmake
+        nmake install
+      shell: powershell
+
+    - name: Create Makefile
+      run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtInstallDirFwd = $qwtInstallDir -replace '\\','/'
+        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
+        $sfmlDirFwd = $sfmlDir -replace '\\','/'
+        $env:QMAKEFEATURES = "$qwtInstallDir\features"
+        qmake PowerVelo.pro `
+          "VLCQT_INSTALL=$($env:VLCQT_DIR -replace '\\','/')" `
+          "SFML_INSTALL=$sfmlDirFwd"
+        Write-Host "=== VLCQt lines in Makefile.Release ==="
+        if (Test-Path Makefile.Release) {
+          Select-String -Path Makefile.Release -Pattern "VLCQt|vlcqt" | Select-Object -First 10
+        }
+      shell: powershell
+
+    - name: Build
+      run: nmake
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows
+        path: build\
