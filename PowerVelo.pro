@@ -177,6 +177,14 @@ win32:!wasm_emscripten {
 
 macx:!wasm_emscripten {
 
+    # Embed the Info.plist so macOS 12+ grants CoreBluetooth access
+    # (NSBluetoothAlwaysUsageDescription is required; without it BLE scanning
+    # silently returns an empty device list on Monterey and later).
+    QMAKE_INFO_PLIST = $$PWD/mac/Info.plist
+
+    # Bluetooth entitlement required for App Store distribution
+    QMAKE_CODE_SIGN_ENTITLEMENTS = $$PWD/mac/MaximumTrainer.entitlements
+
     # VLC-Qt (optional; enable by passing VLCQT_INSTALL=... to qmake)
     !isEmpty(VLCQT_INSTALL) {
         DEFINES += GC_HAVE_VLCQT
