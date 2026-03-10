@@ -64,7 +64,7 @@ jobs:
         $vlcqtInstall = "C:/vlcqt"
         echo "VLCQT_DIR=$vlcqtInstall" >> $env:GITHUB_ENV
         Write-Host "=== VLC-Qt lib files ==="
-        Get-ChildItem "C:\vlcqt\include" -Filter "*.lib"
+        Get-ChildItem "C:\vlcqt\lib" -Filter "*.lib"
       shell: powershell
 
     - name: Download and install SFML
