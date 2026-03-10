@@ -128,6 +128,11 @@ signals:
     void F7playPause();
     void F8next();
 
+    // Emitted when the user requests a reconnect after a BLE disconnection.
+    // Connect to BtleHub::scanForDevice() (WASM) or BtleHub::connectToDevice()
+    // (desktop) in MainWindow::executeWorkout().
+    void reconnectDevice();
+
 
 
 public slots:
@@ -158,6 +163,10 @@ public slots:
     void OxygenValueChanged(int userID, double, double);
 
     void start_or_pause_workout();
+
+    // Invoked when the BLE hub emits connectionError() — on WASM the DOM overlay
+    // already shows the Reconnect button; this slot logs and pauses the workout.
+    void onBleConnectionError(const QString &errorString);
 
     void ignoreClickPlot();
 

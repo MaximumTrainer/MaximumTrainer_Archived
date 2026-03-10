@@ -14,7 +14,6 @@
  */
 
 #include <QObject>
-#include <QTimer>
 
 class BtleHubWasm : public QObject
 {
@@ -63,6 +62,10 @@ public slots:
 private:
     void onBleNotification(quint16 uuid16, const QByteArray &data);
 
+    // Invoked by the WebBluetoothBridge callback when an unexpected GATT
+    // disconnection occurs and all JS auto-reconnect attempts are exhausted.
+    void onDisconnectedFromBridge();
+
     void parseHrMeasurement(const QByteArray &data);
     void parseCscMeasurement(const QByteArray &data);
     void parsePowerMeasurement(const QByteArray &data);
@@ -70,6 +73,7 @@ private:
     void parseMoxyMeasurement(const QByteArray &data);
 
     bool   m_connected         = false;
+    bool   m_userDisconnect    = false; // true when disconnectFromDevice() was called intentionally
     int    m_wheelCircMm       = 2100;
 
     quint32 m_lastWheelRevs    = 0;

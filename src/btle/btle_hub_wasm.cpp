@@ -12,6 +12,17 @@ BtleHubWasm::BtleHubWasm(QObject *parent) : QObject(parent)
         [this](quint16 uuid16, const QByteArray &data) {
             onBleNotification(uuid16, data);
         });
+
+    WebBluetoothBridge::setDisconnectedCallback(
+        [this]() {
+            onDisconnectedFromBridge();
+        });
+
+    WebBluetoothBridge::setReconnectRequestCallback(
+        [this]() {
+            m_userDisconnect = false;
+            scanForDevice();
+        });
 }
 
 BtleHubWasm::~BtleHubWasm()
@@ -27,6 +38,7 @@ void BtleHubWasm::scanForDevice()
     // ERG commands sent immediately after deviceConnected() may be dropped.
     // Fix: route a callback from JS back into C++ (via bleNotifyC or a separate
     // "connected" EM_JS callback) and defer these two signals until that fires.
+    m_userDisconnect = false;
     WebBluetoothBridge::scanForDevices();
     // requestFtmsControl() is called automatically inside js_scanAndConnect()
     // after the async GATT connection and subscriptions are established.
@@ -40,14 +52,10 @@ void BtleHubWasm::scanForDevice()
 
 void BtleHubWasm::disconnectFromDevice()
 {
+    m_userDisconnect = true;
     WebBluetoothBridge::disconnectDevice();
     m_connected = false;
     emit deviceDisconnected();
-    // TODO(Gap 1): No auto-reconnection logic here.  BtleHub (desktop) retries
-    // up to MAX_RECONNECT_ATTEMPTS times at RECONNECT_INTERVAL_MS.  On WASM
-    // the browser owns the GATT lifecycle; we should at minimum emit
-    // connectionError() and show the user a "Reconnect" prompt so they can
-    // trigger navigator.bluetooth.requestDevice() again via a user gesture.
 }
 
 bool BtleHubWasm::isConnected() const { return m_connected; }
@@ -67,6 +75,22 @@ void BtleHubWasm::setSlope(int /*antID*/, double grade)
 void BtleHubWasm::stopDecodingMsg()
 {
     disconnectFromDevice();
+}
+
+void BtleHubWasm::onDisconnectedFromBridge()
+{
+    // Invoked by the JS layer when gattserverdisconnected fires and all
+    // automatic reconnect attempts (3 × 5 s = 15 s) have been exhausted.
+    // Intentional disconnects (via disconnectFromDevice()) set m_userDisconnect
+    // and are ignored here.
+    if (m_userDisconnect)
+        return;
+
+    qDebug() << "[BtleHubWasm] Unexpected disconnect – auto-reconnect exhausted";
+    m_connected = false;
+    emit deviceDisconnected();
+    emit connectionError(tr("Bluetooth trainer disconnected. "
+                            "Press Reconnect to reconnect your trainer."));
 }
 
 void BtleHubWasm::simulateNotification(quint16 characteristicUuid, const QByteArray &data)

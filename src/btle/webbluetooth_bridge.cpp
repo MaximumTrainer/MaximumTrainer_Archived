@@ -18,9 +18,11 @@
 #include <cstring>
 
 // ─── Internal state ──────────────────────────────────────────────────────────
-static BleNotificationCallback g_notificationCallback;
+static BleNotificationCallback     g_notificationCallback;
+static BleDisconnectedCallback     g_disconnectedCallback;
+static BleReconnectRequestCallback g_reconnectRequestCallback;
 
-// ─── JS callback entry point (called from JS via Module._bleNotify) ──────────
+// ─── JS callback entry points (called from JS via Module._ble*C) ─────────────
 extern "C" {
 
 // Called from JavaScript when a GATT characteristic value changes.
@@ -36,6 +38,25 @@ void bleNotifyC(int uuid16, const uint8_t *dataPtr, int dataLen)
     }
 }
 
+// Called from JavaScript when an unexpected GATT disconnect occurs and all
+// automatic reconnect attempts have been exhausted.
+EMSCRIPTEN_KEEPALIVE
+void bleDisconnectedC()
+{
+    if (g_disconnectedCallback)
+        g_disconnectedCallback();
+}
+
+// Called from JavaScript when the user clicks the Reconnect button in the
+// DOM overlay.  Runs in a user-gesture context, so it is safe to call
+// scanForDevices() (which triggers navigator.bluetooth.requestDevice()).
+EMSCRIPTEN_KEEPALIVE
+void bleReconnectRequestC()
+{
+    if (g_reconnectRequestCallback)
+        g_reconnectRequestCallback();
+}
+
 } // extern "C"
 
 // ─── JavaScript helpers ───────────────────────────────────────────────────────
@@ -43,36 +64,29 @@ void bleNotifyC(int uuid16, const uint8_t *dataPtr, int dataLen)
 // Scan for a BLE device, connect, discover services, and start notifications
 // on the Heart Rate (0x180D), Cycling Power (0x1818), CSC (0x1816), and FTMS
 // (0x1826) characteristics.
+//
+// Auto-reconnect strategy:
+//   On an unexpected gattserverdisconnected event the JS layer attempts
+//   device.gatt.connect() up to MAX_RECONNECT_ATTEMPTS times at
+//   RECONNECT_INTERVAL_MS intervals (no user gesture needed because the
+//   browser already knows the device).
+//   If all attempts fail the #ble-reconnect-overlay DOM element is shown so
+//   the user can press "Reconnect" (user-gesture → bleReconnectRequestC →
+//   BtleHubWasm::scanForDevice()), and bleDisconnectedC() is called to
+//   notify C++.
 EM_JS(void, js_scanAndConnect, (), {
     (async function() {
-        try {
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [
-                    { services: [0x1826] }, // FTMS
-                    { services: [0x1818] }, // Cycling Power
-                    { services: [0x1816] }, // CSC
-                    { services: [0x180D] }, // Heart Rate
-                    { services: [0xAAB0] }  // Moxy Muscle Oxygen
-                ],
-                optionalServices: [0x1826, 0x1818, 0x1816, 0x180D, 0xAAB0]
-            });
+        // ── BLE profile: service UUID → characteristic UUIDs ──────────────
+        const profileMap = {
+            0x180D: [0x2A37],   // HR Measurement
+            0x1818: [0x2A63],   // Cycling Power Measurement
+            0x1816: [0x2A5B],   // CSC Measurement
+            0x1826: [0x2AD2],   // Indoor Bike Data
+            0xAAB0: [0xAAB2]    // Moxy Muscle Oxygen Measurement
+        };
 
-            window._mtBleDevice = device;
-            device.addEventListener('gattserverdisconnected', function() {
-                console.log('[MT] BLE device disconnected');
-            });
-
-            const server = await device.gatt.connect();
-
-            // Map of service UUID → array of characteristic UUIDs to subscribe to
-            const profileMap = {
-                0x180D: [0x2A37],       // HR Measurement
-                0x1818: [0x2A63],       // Cycling Power Measurement
-                0x1816: [0x2A5B],       // CSC Measurement
-                0x1826: [0x2AD2],       // Indoor Bike Data
-                0xAAB0: [0xAAB2]        // Moxy Muscle Oxygen Measurement
-            };
-
+        // ── Helper: subscribe to all characteristics on a connected server ─
+        async function subscribeAll(server) {
             for (const [svcUuid, charUuids] of Object.entries(profileMap)) {
                 let service;
                 try {
@@ -99,6 +113,83 @@ EM_JS(void, js_scanAndConnect, (), {
                     });
                 }
             }
+        }
+
+        // ── Helper: show the reconnect overlay ────────────────────────────
+        function showReconnectOverlay() {
+            const overlay = document.getElementById('ble-reconnect-overlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        // ── Helper: hide the reconnect overlay ───────────────────────────
+        function hideReconnectOverlay() {
+            const overlay = document.getElementById('ble-reconnect-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        // ── Wire the Reconnect button ─────────────────────────────────────
+        // This must be done once after Module is ready (i.e., after scanAndConnect
+        // is first called) so that Module._bleReconnectRequestC is accessible.
+        const reconnectBtn = document.getElementById('ble-reconnect-btn');
+        if (reconnectBtn && !reconnectBtn._mtWired) {
+            reconnectBtn._mtWired = true;
+            reconnectBtn.addEventListener('click', function() {
+                hideReconnectOverlay();
+                Module._bleReconnectRequestC();
+            });
+        }
+
+        // ── auto-reconnect parameters ─────────────────────────────────────
+        const MAX_RECONNECT_ATTEMPTS = 3;
+        const RECONNECT_INTERVAL_MS  = 5000;
+
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [
+                    { services: [0x1826] }, // FTMS
+                    { services: [0x1818] }, // Cycling Power
+                    { services: [0x1816] }, // CSC
+                    { services: [0x180D] }, // Heart Rate
+                    { services: [0xAAB0] }  // Moxy Muscle Oxygen
+                ],
+                optionalServices: [0x1826, 0x1818, 0x1816, 0x180D, 0xAAB0]
+            });
+
+            window._mtBleDevice = device;
+
+            // ── gattserverdisconnected: auto-reconnect loop ───────────────
+            device.addEventListener('gattserverdisconnected', function() {
+                console.log('[MT] BLE device disconnected, attempting auto-reconnect...');
+                var attempts = 0;
+
+                function tryReconnect() {
+                    attempts++;
+                    console.log('[MT] BLE reconnect attempt ' + attempts + '/' + MAX_RECONNECT_ATTEMPTS);
+                    device.gatt.connect()
+                        .then(function(server) {
+                            return subscribeAll(server).then(function() {
+                                console.log('[MT] BLE auto-reconnected (attempt ' + attempts + ')');
+                                hideReconnectOverlay();
+                            });
+                        })
+                        .catch(function(e) {
+                            console.warn('[MT] BLE reconnect attempt ' + attempts + ' failed:', e);
+                            if (attempts < MAX_RECONNECT_ATTEMPTS) {
+                                setTimeout(tryReconnect, RECONNECT_INTERVAL_MS);
+                            } else {
+                                console.error('[MT] BLE auto-reconnect exhausted after ' + MAX_RECONNECT_ATTEMPTS + ' attempts');
+                                showReconnectOverlay();
+                                Module._bleDisconnectedC();
+                            }
+                        });
+                }
+
+                // Small delay before the first attempt to let the OS settle
+                setTimeout(tryReconnect, 1000);
+            });
+
+            const server = await device.gatt.connect();
+            await subscribeAll(server);
 
             console.log('[MT] BLE connected and notifications started');
             js_requestFtmsControl();
@@ -157,6 +248,16 @@ namespace WebBluetoothBridge {
 void setNotificationCallback(BleNotificationCallback cb)
 {
     g_notificationCallback = std::move(cb);
+}
+
+void setDisconnectedCallback(BleDisconnectedCallback cb)
+{
+    g_disconnectedCallback = std::move(cb);
+}
+
+void setReconnectRequestCallback(BleReconnectRequestCallback cb)
+{
+    g_reconnectRequestCallback = std::move(cb);
 }
 
 void scanForDevices()

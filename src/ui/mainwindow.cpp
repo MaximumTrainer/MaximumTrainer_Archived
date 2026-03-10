@@ -1305,9 +1305,21 @@ void MainWindow::executeWorkout(Workout workout) {
     connect(btleHub, SIGNAL(signal_power(int,int)),            &w, SLOT(PowerDataReceived(int,int)));
     connect(btleHub, SIGNAL(signal_oxygen(int,double,double)), &w, SLOT(OxygenValueChanged(int,double,double)));
 
+    // Surface BLE disconnections mid-workout so WorkoutDialog can pause and
+    // the user sees the DOM reconnect overlay (WASM) or a status message.
+    connect(btleHub, &BtleHub::connectionError, &w, &WorkoutDialog::onBleConnectionError);
+
     connect(&w, SIGNAL(setLoad(int,double)),  btleHub, SLOT(setLoad(int,double)));
     connect(&w, SIGNAL(setSlope(int,double)), btleHub, SLOT(setSlope(int,double)));
     connect(&w, SIGNAL(stopDecodingMsgHub()), btleHub, SLOT(stopDecodingMsg()));
+
+#ifdef Q_OS_WASM
+    // On WASM, BtleHub is aliased to BtleHubWasm which exposes scanForDevice().
+    // The DOM overlay's Reconnect button routes through bleReconnectRequestC →
+    // BtleHubWasm::scanForDevice(), but WorkoutDialog can also emit reconnectDevice()
+    // if needed from Qt-side logic.
+    connect(&w, &WorkoutDialog::reconnectDevice, btleHub, &BtleHub::scanForDevice);
+#endif
 
     connect(&w, SIGNAL(fitFileReady(QString, QString, QString)), this, SLOT(checkToUploadFile(QString,QString,QString)));
     connect(&w, SIGNAL(ftp_lthr_changed()), this, SLOT(updateZoneInterface()));
