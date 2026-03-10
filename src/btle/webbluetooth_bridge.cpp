@@ -94,6 +94,7 @@ EM_JS(void, js_scanAndConnect, (), {
                 } catch (e) {
                     continue; // service not present on this device
                 }
+
                 for (const charUuid of charUuids) {
                     let characteristic;
                     try {

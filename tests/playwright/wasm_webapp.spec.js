@@ -18,6 +18,8 @@ async function stubBluetooth(page) {
     }
   });
 }
+
+// ── HTTP asset checks ──────────────────────────────────────────────────────
 test.describe('WASM assets are deployed', () => {
   test('qtloader.js returns 200', async ({ request }) => {
     const res = await request.get(`${BASE_URL}/qtloader.js`);
