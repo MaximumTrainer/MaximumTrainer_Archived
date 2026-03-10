@@ -158,9 +158,9 @@ jobs:
         # DLL files that were staged into bin/ and rewrite wix.json with
         # explicit paths before go-msi is invoked.
         $wixJson = Get-Content wix.json -Raw | ConvertFrom-Json
-        $dlls = Get-ChildItem "bin\*.dll" -ErrorAction SilentlyContinue |
-                    ForEach-Object { "bin/$($_.Name)" }
-        $allItems = @("bin/MaximumTrainer.exe") + @($dlls)
+        [string[]]$dlls = @(Get-ChildItem "bin\*.dll" -ErrorAction SilentlyContinue |
+                            ForEach-Object { "bin/$($_.Name)" })
+        $allItems = @("bin/MaximumTrainer.exe") + $dlls
         $wixJson.files.items = $allItems
         $wixJson | ConvertTo-Json -Depth 10 | Set-Content wix.json -Encoding UTF8
         Write-Host "Updated wix.json with $($dlls.Count) DLL(s):"
