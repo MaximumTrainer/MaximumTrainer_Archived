@@ -28,6 +28,11 @@ void BtleHubWasm::scanForDevice()
     // Fix: route a callback from JS back into C++ (via bleNotifyC or a separate
     // "connected" EM_JS callback) and defer these two signals until that fires.
     WebBluetoothBridge::scanForDevices();
+    // requestFtmsControl() is called automatically inside js_scanAndConnect()
+    // after the async GATT connection and subscriptions are established.
+    // WebBluetoothBridge::requestFtmsControl() is exposed here for explicit
+    // use once Gap 2 is resolved and the call can be deferred to after the
+    // real deviceConnected signal fires.
     m_connected = true;
     emit deviceConnected();
     emit serviceDiscoveryFinished();
