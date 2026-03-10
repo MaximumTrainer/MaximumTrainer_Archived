@@ -249,3 +249,59 @@ test.describe('Browser compatibility guard', () => {
     await expect(detail).toContainText('Web Bluetooth API is not available');
   });
 });
+
+// ── BLE reconnect overlay checks ──────────────────────────────────────────
+test.describe('BLE reconnect overlay', () => {
+  test('reconnect overlay is present in the DOM and hidden by default', async ({ page }) => {
+    await stubBluetooth(page);
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+
+    // The overlay element must exist in the DOM
+    const overlay = page.locator('#ble-reconnect-overlay');
+    await expect(overlay).toHaveCount(1);
+
+    // It must be hidden by default (display:none)
+    const isVisible = await overlay.isVisible();
+    expect(isVisible, '#ble-reconnect-overlay should be hidden by default').toBe(false);
+  });
+
+  test('reconnect overlay contains a Reconnect button', async ({ page }) => {
+    await stubBluetooth(page);
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+
+    const btn = page.locator('#ble-reconnect-btn');
+    await expect(btn).toHaveCount(1);
+    await expect(btn).toHaveText(/Reconnect/i);
+  });
+
+  test('reconnect overlay contains a dismiss button', async ({ page }) => {
+    await stubBluetooth(page);
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+
+    const dismissBtn = page.locator('#ble-reconnect-dismiss');
+    await expect(dismissBtn).toHaveCount(1);
+  });
+
+  test('overlay becomes visible when shown programmatically and dismiss hides it', async ({ page }) => {
+    await stubBluetooth(page);
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+
+    // Show the overlay by setting display to flex (simulates what the JS
+    // gattserverdisconnected handler does when auto-reconnect is exhausted)
+    await page.evaluate(() => {
+      const overlay = document.getElementById('ble-reconnect-overlay');
+      if (overlay) overlay.style.display = 'flex';
+    });
+
+    const overlay = page.locator('#ble-reconnect-overlay');
+    await expect(overlay).toBeVisible({ timeout: 2000 });
+
+    // Reconnect and dismiss buttons must be visible inside the overlay
+    await expect(page.locator('#ble-reconnect-btn')).toBeVisible();
+    await expect(page.locator('#ble-reconnect-dismiss')).toBeVisible();
+
+    // Clicking dismiss must hide the overlay
+    await page.click('#ble-reconnect-dismiss');
+    await expect(overlay).not.toBeVisible();
+  });
+});

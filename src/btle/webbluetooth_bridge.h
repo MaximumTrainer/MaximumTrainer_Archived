@@ -67,6 +67,12 @@ void sendFtmsSetIndoorBikeSimulation(int grade100);
 // watts is the target power in whole watts.
 void sendFtmsSetTargetPower(int watts);
 
+// Send FTMS opcode 0x00 (Request Control) to characteristic 0x2AD9.
+// Must be called once after GATT connection is established, before any
+// Set Target Power (0x05) or Indoor Bike Simulation (0x11) commands.
+// This is called automatically inside scanForDevices() after connection.
+void requestFtmsControl();
+
 } // namespace WebBluetoothBridge
 
 #endif // WEBBLUETOOTH_BRIDGE_H

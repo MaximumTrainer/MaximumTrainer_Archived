@@ -108,6 +108,75 @@ Completed workout data is saved as a FIT activity file and can be uploaded to **
 | Linux | App running on Ubuntu — proof of cross-platform build |
 | Device Manager | BTLE scanner with multiple sensors connected |
 
+## Linux — Bluetooth Setup
+
+Before running MaximumTrainer on Linux, ensure the following prerequisites are met:
+
+### 1 — BlueZ daemon
+
+BlueZ is the Linux Bluetooth stack. Install it and make sure the daemon starts automatically:
+
+```bash
+sudo apt-get install -y bluez
+sudo systemctl enable --now bluetooth
+```
+
+Verify the daemon is active:
+
+```bash
+sudo systemctl status bluetooth
+```
+
+### 2 — Add your user to the `bluetooth` group
+
+If the BLE device scanner shows an empty list and no error, the most common cause is that your account is not in the `bluetooth` group:
+
+```bash
+sudo usermod -aG bluetooth $USER
+```
+
+> **Important:** Group changes take effect only after you **log out and back in** (or reboot). You can apply the change to the current shell session immediately — without logging out — by running:
+> ```bash
+> newgrp bluetooth
+> ```
+
+### 3 — Confirm your adapter supports Bluetooth LE (4.0+)
+
+MaximumTrainer requires a Bluetooth 4.0 or newer adapter to communicate with BLE sensors and trainers. Check your adapter:
+
+```bash
+hciconfig -a
+```
+
+Look for `LMP Version: 6` (BT 4.0) or higher in the output. If `hciconfig` is not available, use:
+
+```bash
+bluetoothctl show
+```
+
+### 4 — Verify required kernel modules are loaded
+
+The following kernel modules must be loaded:
+
+| Module | Purpose |
+|--------|---------|
+| `bluetooth` | Core BLE/Bluetooth stack |
+| `hci_uart` | UART-attached adapters (most USB dongles) |
+| `btusb` | USB Bluetooth adapters |
+
+Check and load if needed:
+
+```bash
+lsmod | grep -E "bluetooth|hci_uart|btusb"
+# If missing, load manually:
+sudo modprobe bluetooth
+sudo modprobe btusb
+```
+
+On most modern distributions (Ubuntu 20.04+, Fedora 36+) these modules load automatically when a Bluetooth adapter is detected.
+
+---
+
 ## Building
 
 All three platforms are built and tested automatically via GitHub Actions CI (see `.github/workflows/build.yml`). Use `PowerVelo.pro` with `qmake` and a standard C++ compiler.
@@ -121,6 +190,13 @@ All three platforms are built and tested automatically via GitHub Actions CI (se
 | QWT | 6.2.0 | all | Plotting widgets (built from source) |
 | VLC-Qt | 1.1.0 (Win) · 1.1.1 from source (Linux) | Windows · Linux | Internet radio / video player |
 | SFML | 2.6.1 (Win) · system package (Linux/macOS) | all | Audio feedback |
+
+## Windows — Requirements
+
+- **Windows 10 version 1703 (Creators Update) or later is required.**
+  Windows 7, 8, and 8.1 are not supported (missing WinRT BLE APIs).
+- A Bluetooth 4.0+ adapter with a WDM-compatible driver.
+- No special permissions or manifest entries are needed.
 
 ### Windows
 

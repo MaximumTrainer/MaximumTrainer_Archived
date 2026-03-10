@@ -68,34 +68,17 @@ void bleConnectionErrorC(const char *msg)
 // Module._bleConnectionErrorC() with a UTF-8 error string.
 EM_JS(void, js_scanAndConnect, (), {
     (async function() {
-        try {
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [
-                    { services: [0x1826] }, // FTMS
-                    { services: [0x1818] }, // Cycling Power
-                    { services: [0x1816] }, // CSC
-                    { services: [0x180D] }, // Heart Rate
-                    { services: [0xAAB0] }  // Moxy Muscle Oxygen
-                ],
-                optionalServices: [0x1826, 0x1818, 0x1816, 0x180D, 0xAAB0]
-            });
+        // ── BLE profile: service UUID → characteristic UUIDs ──────────────
+        const profileMap = {
+            0x180D: [0x2A37],   // HR Measurement
+            0x1818: [0x2A63],   // Cycling Power Measurement
+            0x1816: [0x2A5B],   // CSC Measurement
+            0x1826: [0x2AD2],   // Indoor Bike Data
+            0xAAB0: [0xAAB2]    // Moxy Muscle Oxygen Measurement
+        };
 
-            window._mtBleDevice = device;
-            device.addEventListener('gattserverdisconnected', function() {
-                console.log('[MT] BLE device disconnected');
-            });
-
-            const server = await device.gatt.connect();
-
-            // Map of service UUID → array of characteristic UUIDs to subscribe to
-            const profileMap = {
-                0x180D: [0x2A37],       // HR Measurement
-                0x1818: [0x2A63],       // Cycling Power Measurement
-                0x1816: [0x2A5B],       // CSC Measurement
-                0x1826: [0x2AD2],       // Indoor Bike Data
-                0xAAB0: [0xAAB2]        // Moxy Muscle Oxygen Measurement
-            };
-
+        // ── Helper: subscribe to all characteristics on a connected server ─
+        async function subscribeAll(server) {
             for (const [svcUuid, charUuids] of Object.entries(profileMap)) {
                 let service;
                 try {
@@ -122,6 +105,83 @@ EM_JS(void, js_scanAndConnect, (), {
                     });
                 }
             }
+        }
+
+        // ── Helper: show the reconnect overlay ────────────────────────────
+        function showReconnectOverlay() {
+            const overlay = document.getElementById('ble-reconnect-overlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        // ── Helper: hide the reconnect overlay ───────────────────────────
+        function hideReconnectOverlay() {
+            const overlay = document.getElementById('ble-reconnect-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        // ── Wire the Reconnect button ─────────────────────────────────────
+        // This must be done once after Module is ready (i.e., after scanAndConnect
+        // is first called) so that Module._bleReconnectRequestC is accessible.
+        const reconnectBtn = document.getElementById('ble-reconnect-btn');
+        if (reconnectBtn && !reconnectBtn._mtWired) {
+            reconnectBtn._mtWired = true;
+            reconnectBtn.addEventListener('click', function() {
+                hideReconnectOverlay();
+                Module._bleReconnectRequestC();
+            });
+        }
+
+        // ── auto-reconnect parameters ─────────────────────────────────────
+        const MAX_RECONNECT_ATTEMPTS = 3;
+        const RECONNECT_INTERVAL_MS  = 5000;
+
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [
+                    { services: [0x1826] }, // FTMS
+                    { services: [0x1818] }, // Cycling Power
+                    { services: [0x1816] }, // CSC
+                    { services: [0x180D] }, // Heart Rate
+                    { services: [0xAAB0] }  // Moxy Muscle Oxygen
+                ],
+                optionalServices: [0x1826, 0x1818, 0x1816, 0x180D, 0xAAB0]
+            });
+
+            window._mtBleDevice = device;
+
+            // ── gattserverdisconnected: auto-reconnect loop ───────────────
+            device.addEventListener('gattserverdisconnected', function() {
+                console.log('[MT] BLE device disconnected, attempting auto-reconnect...');
+                var attempts = 0;
+
+                function tryReconnect() {
+                    attempts++;
+                    console.log('[MT] BLE reconnect attempt ' + attempts + '/' + MAX_RECONNECT_ATTEMPTS);
+                    device.gatt.connect()
+                        .then(function(server) {
+                            return subscribeAll(server).then(function() {
+                                console.log('[MT] BLE auto-reconnected (attempt ' + attempts + ')');
+                                hideReconnectOverlay();
+                            });
+                        })
+                        .catch(function(e) {
+                            console.warn('[MT] BLE reconnect attempt ' + attempts + ' failed:', e);
+                            if (attempts < MAX_RECONNECT_ATTEMPTS) {
+                                setTimeout(tryReconnect, RECONNECT_INTERVAL_MS);
+                            } else {
+                                console.error('[MT] BLE auto-reconnect exhausted after ' + MAX_RECONNECT_ATTEMPTS + ' attempts');
+                                showReconnectOverlay();
+                                Module._bleDisconnectedC();
+                            }
+                        });
+                }
+
+                // Small delay before the first attempt to let the OS settle
+                setTimeout(tryReconnect, 1000);
+            });
+
+            const server = await device.gatt.connect();
+            await subscribeAll(server);
 
             console.log('[MT] BLE connected and notifications started');
             // Notify C++ that GATT is fully ready — deferred from scanForDevice()
@@ -150,14 +210,26 @@ EM_JS(void, js_disconnect, (), {
     }
 });
 
+// Send FTMS opcode 0x00 (Request Control) to the FTMS Control Point (0x2AD9).
+// The FTMS spec requires this handshake before any training-load commands.
+// Some trainers (e.g. Tacx NEO) silently reject Set Target Power (0x05) and
+// Set Indoor Bike Simulation (0x11) without it.  Called automatically at the
+// end of js_scanAndConnect() after all notification subscriptions are in place.
+EM_JS(void, js_requestFtmsControl, (), {
+    (async function() {
+        if (!window._mtBleDevice || !window._mtBleDevice.gatt.connected) return;
+        try {
+            const server = window._mtBleDevice.gatt;
+            const service = await server.getPrimaryService(0x1826);
+            const ctrl = await service.getCharacteristic(0x2AD9);
+            await ctrl.writeValueWithResponse(new Uint8Array([0x00]));
+        } catch (e) {
+            console.warn('[MT] FTMS Request Control failed (service 0x1826 or characteristic 0x2AD9 unavailable):', e.name || e);
+        }
+    })();
+});
+
 // Send raw bytes to a FTMS control point characteristic (0x2AD9)
-// TODO(Gap 6): The FTMS spec requires opcode 0x00 (Request Control) to be
-// sent to 0x2AD9 before any Set Target Power (0x05) or Indoor Bike Simulation
-// (0x11) commands.  BtleHub (desktop) calls requestFtmsControl() during
-// service discovery.  Add a js_requestFtmsControl() EM_JS helper that writes
-// opcode 0x00 once after connect, and call it from scanForDevice() (or from
-// the JS async connect callback once Gap 2 is resolved).  Without this,
-// trainers such as Tacx NEO silently reject ERG commands.
 EM_JS(void, js_sendFtmsCommand, (const uint8_t *dataPtr, int dataLen), {
     (async function() {
         if (!window._mtBleDevice || !window._mtBleDevice.gatt.connected) return;
@@ -219,6 +291,11 @@ void sendFtmsSetTargetPower(int watts)
     int16_t power = static_cast<int16_t>(watts);
     std::memcpy(&cmd[1], &power, 2);
     js_sendFtmsCommand(cmd, sizeof(cmd));
+}
+
+void requestFtmsControl()
+{
+    js_requestFtmsControl();
 }
 
 } // namespace WebBluetoothBridge

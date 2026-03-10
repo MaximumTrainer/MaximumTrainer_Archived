@@ -1565,6 +1565,17 @@ void WorkoutDialog::workoutOver() {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+void WorkoutDialog::onBleConnectionError(const QString &errorString)
+{
+    // On WASM the DOM overlay (#ble-reconnect-overlay) already provides the
+    // Reconnect button; this slot handles the C++-side notification.
+    // Pause the workout so the rider is not penalised while reconnecting.
+    qWarning() << "[WorkoutDialog] BLE connection error:" << errorString;
+    if (isWorkoutStarted && !isWorkoutPaused) {
+        start_or_pause_workout(); // pause
+    }
+}
+
 void WorkoutDialog::start_or_pause_workout() {
 
 
