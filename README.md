@@ -122,6 +122,13 @@ All three platforms are built and tested automatically via GitHub Actions CI (se
 | VLC-Qt | 1.1.0 (Win) · 1.1.1 from source (Linux) | Windows · Linux | Internet radio / video player |
 | SFML | 2.6.1 (Win) · system package (Linux/macOS) | all | Audio feedback |
 
+## Windows — Requirements
+
+- **Windows 10 version 1703 (Creators Update) or later is required.**
+  Windows 7, 8, and 8.1 are not supported (missing WinRT BLE APIs).
+- A Bluetooth 4.0+ adapter with a WDM-compatible driver.
+- No special permissions or manifest entries are needed.
+
 ### Windows
 
 **Required tools:** Qt 5.15.2 (msvc2019_64), Visual Studio 2019+ (MSVC), 7-Zip
