@@ -18,9 +18,11 @@
 #include <cstring>
 
 // ─── Internal state ──────────────────────────────────────────────────────────
-static BleNotificationCallback g_notificationCallback;
+static BleNotificationCallback    g_notificationCallback;
+static BleConnectedCallback       g_connectedCallback;
+static BleConnectionErrorCallback g_connectionErrorCallback;
 
-// ─── JS callback entry point (called from JS via Module._bleNotify) ──────────
+// ─── JS callback entry points (called from JS via Module._ble*C) ─────────────
 extern "C" {
 
 // Called from JavaScript when a GATT characteristic value changes.
@@ -36,13 +38,34 @@ void bleNotifyC(int uuid16, const uint8_t *dataPtr, int dataLen)
     }
 }
 
+// Called from JavaScript once GATT connection and all notifications are ready.
+EMSCRIPTEN_KEEPALIVE
+void bleConnectedC()
+{
+    if (g_connectedCallback) {
+        g_connectedCallback();
+    }
+}
+
+// Called from JavaScript when the GATT connection attempt fails.
+// msg – null-terminated UTF-8 error string
+EMSCRIPTEN_KEEPALIVE
+void bleConnectionErrorC(const char *msg)
+{
+    if (g_connectionErrorCallback) {
+        g_connectionErrorCallback(QString::fromUtf8(msg));
+    }
+}
+
 } // extern "C"
 
 // ─── JavaScript helpers ───────────────────────────────────────────────────────
 
 // Scan for a BLE device, connect, discover services, and start notifications
 // on the Heart Rate (0x180D), Cycling Power (0x1818), CSC (0x1816), and FTMS
-// (0x1826) characteristics.
+// (0x1826) characteristics.  On success, calls Module._bleConnectedC() to
+// signal C++ that GATT is fully ready.  On failure, calls
+// Module._bleConnectionErrorC() with a UTF-8 error string.
 EM_JS(void, js_scanAndConnect, (), {
     (async function() {
         try {
@@ -101,8 +124,21 @@ EM_JS(void, js_scanAndConnect, (), {
             }
 
             console.log('[MT] BLE connected and notifications started');
+            // Notify C++ that GATT is fully ready — deferred from scanForDevice()
+            Module._bleConnectedC();
         } catch (err) {
             console.error('[MT] WebBluetooth error:', err);
+            // Encode the error message as a null-terminated UTF-8 string and
+            // pass it to C++ so connectionError() can be emitted.
+            // bleConnectionErrorC calls QString::fromUtf8() which performs a
+            // deep copy before returning, so freeing errPtr immediately is safe.
+            const errMsg = (err && err.message) ? String(err.message) : String(err);
+            const encoder = new TextEncoder();
+            const encoded = encoder.encode(errMsg + '\0');
+            const errPtr = Module._malloc(encoded.length);
+            Module.HEAPU8.set(encoded, errPtr);
+            Module._bleConnectionErrorC(errPtr);
+            Module._free(errPtr);
         }
     })();
 });
@@ -144,6 +180,16 @@ namespace WebBluetoothBridge {
 void setNotificationCallback(BleNotificationCallback cb)
 {
     g_notificationCallback = std::move(cb);
+}
+
+void setConnectedCallback(BleConnectedCallback cb)
+{
+    g_connectedCallback = std::move(cb);
+}
+
+void setConnectionErrorCallback(BleConnectionErrorCallback cb)
+{
+    g_connectionErrorCallback = std::move(cb);
 }
 
 void scanForDevices()

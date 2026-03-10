@@ -12,6 +12,22 @@ BtleHubWasm::BtleHubWasm(QObject *parent) : QObject(parent)
         [this](quint16 uuid16, const QByteArray &data) {
             onBleNotification(uuid16, data);
         });
+
+    // Emit deviceConnected / serviceDiscoveryFinished only once the async
+    // js_scanAndConnect has finished connecting and subscribing to all
+    // notifications (Gap 2 fix).
+    WebBluetoothBridge::setConnectedCallback(
+        [this]() {
+            m_connected = true;
+            emit deviceConnected();
+            emit serviceDiscoveryFinished();
+        });
+
+    WebBluetoothBridge::setConnectionErrorCallback(
+        [this](const QString &errorString) {
+            m_connected = false;
+            emit connectionError(errorString);
+        });
 }
 
 BtleHubWasm::~BtleHubWasm()
@@ -21,16 +37,10 @@ BtleHubWasm::~BtleHubWasm()
 
 void BtleHubWasm::scanForDevice()
 {
-    // TODO(Gap 2): deviceConnected / serviceDiscoveryFinished are emitted here
-    // synchronously, but js_scanAndConnect() is fully async — GATT connection
-    // and service subscription happen later in the browser's microtask queue.
-    // ERG commands sent immediately after deviceConnected() may be dropped.
-    // Fix: route a callback from JS back into C++ (via bleNotifyC or a separate
-    // "connected" EM_JS callback) and defer these two signals until that fires.
     WebBluetoothBridge::scanForDevices();
-    m_connected = true;
-    emit deviceConnected();
-    emit serviceDiscoveryFinished();
+    // deviceConnected() and serviceDiscoveryFinished() are deferred to the
+    // bleConnectedC callback, which fires only after js_scanAndConnect has
+    // successfully connected and subscribed to all characteristics (Gap 2 fix).
 }
 
 void BtleHubWasm::disconnectFromDevice()

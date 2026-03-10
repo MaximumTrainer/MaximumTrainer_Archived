@@ -29,15 +29,31 @@
 // uuid16 is the 16-bit BT SIG UUID; data is the raw characteristic bytes.
 using BleNotificationCallback = std::function<void(quint16 uuid16, const QByteArray &data)>;
 
+// C++ callback type invoked by JS once the GATT connection and all
+// characteristic notifications are fully set up and ready.
+using BleConnectedCallback = std::function<void()>;
+
+// C++ callback type invoked by JS when the GATT connection attempt fails.
+// errorString contains a human-readable description of the failure.
+using BleConnectionErrorCallback = std::function<void(const QString &errorString)>;
+
 namespace WebBluetoothBridge {
 
 // Register the C++ callback that JS will invoke on each notification.
 // Must be called before scanForDevices().
 void setNotificationCallback(BleNotificationCallback cb);
 
+// Register the C++ callback invoked once GATT connection and all
+// characteristic notifications are fully ready.
+void setConnectedCallback(BleConnectedCallback cb);
+
+// Register the C++ callback invoked if the GATT connection attempt fails.
+void setConnectionErrorCallback(BleConnectionErrorCallback cb);
+
 // Trigger navigator.bluetooth.requestDevice() – must be called from a
 // user-initiated slot (button click, etc.) to satisfy browser security policy.
-// On success, automatically connects and starts notifications.
+// On success, automatically connects and starts notifications, then fires
+// the connected callback registered with setConnectedCallback().
 void scanForDevices();
 
 // Disconnect from the currently connected GATT device (if any).

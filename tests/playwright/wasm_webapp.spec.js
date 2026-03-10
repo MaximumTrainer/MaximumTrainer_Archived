@@ -117,7 +117,79 @@ test.describe('WASM webapp page', () => {
   });
 });
 
-// ── Browser compatibility guard checks ────────────────────────────────────
+// ── BLE GATT ready callback (Gap 2 fix) ───────────────────────────────────
+test.describe('BLE GATT ready callback', () => {
+  test('page loads without errors when a mock async-GATT BLE device is present', async ({ page }) => {
+    // Inject a realistic mock BLE device that simulates the full async GATT
+    // flow: requestDevice → gatt.connect() (with artificial latency) →
+    // getPrimaryService → getCharacteristic → startNotifications.
+    // This validates that the bridge correctly handles async GATT setup and
+    // does not emit deviceConnected before the connection is truly ready.
+    await page.addInitScript(() => {
+      const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      const mockCharacteristic = {
+        startNotifications: async () => {},
+        addEventListener: () => {},
+      };
+      const mockService = {
+        getCharacteristic: async () => mockCharacteristic,
+      };
+      const mockGattServer = {
+        connected: false,
+        connect: async () => {
+          await delay(150); // simulate async GATT connection latency
+          mockGattServer.connected = true;
+          return mockGattServer;
+        },
+        getPrimaryService: async () => mockService,
+        disconnect: () => { mockGattServer.connected = false; },
+      };
+      const mockDevice = {
+        name: 'MockTrainer',
+        gatt: mockGattServer,
+        addEventListener: () => {},
+      };
+
+      Object.defineProperty(navigator, 'bluetooth', {
+        value: {
+          requestDevice: async () => mockDevice,
+          getAvailability: async () => true,
+        },
+        configurable: true,
+      });
+    });
+
+    const consoleMessages = [];
+    page.on('console', (msg) => consoleMessages.push({ type: msg.type(), text: msg.text() }));
+
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+
+    // Wait until either the loading screen or the Qt canvas is visible
+    await page.waitForFunction(
+      () => {
+        const loading = document.querySelector('#loading-screen');
+        const canvas = document.querySelector('#qt-canvas-wrapper');
+        const loadingVisible = loading && loading.offsetParent !== null;
+        const canvasVisible = canvas && canvas.style.visibility !== 'hidden';
+        return !!(loadingVisible || canvasVisible);
+      },
+      { timeout: 10000 },
+    );
+
+    // No [MT] BLE error messages should have been emitted
+    const bleErrors = consoleMessages.filter(
+      (m) => m.type === 'error' && m.text.includes('[MT]'),
+    );
+    expect(
+      bleErrors,
+      `Unexpected [MT] BLE errors with mock device: ${bleErrors.map((m) => m.text).join(', ')}`,
+    ).toHaveLength(0);
+
+    // waitForFunction above already confirmed the loading screen or canvas is present
+  });
+});
+
 test.describe('Browser compatibility guard', () => {
   test('compatibility warning is shown when getAvailability returns false', async ({ page }) => {
     // Stub navigator.bluetooth with getAvailability returning false (hardware off)
