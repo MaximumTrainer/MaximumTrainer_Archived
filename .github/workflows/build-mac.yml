@@ -56,6 +56,13 @@ jobs:
     - name: Run MakeFile
       run: make
 
+    - name: Build runtime validation test
+      run: |
+        mkdir -p build/tests
+        cd tests/integration
+        qmake runtime_validation_tests.pro
+        make -j$(sysctl -n hw.logicalcpu)
+
     - name: Bind rpath for Qt frameworks
       run: |
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
@@ -81,9 +88,6 @@ jobs:
       contents: read
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
     - name: Install Qt (with Bluetooth)
       uses: jurplel/install-qt-action@v3
       with:
@@ -93,12 +97,14 @@ jobs:
         arch: 'clang_64'
         modules: 'qtconnectivity'
 
-    - name: Build runtime validation test
-      run: |
-        mkdir -p build/tests
-        cd tests/integration
-        qmake runtime_validation_tests.pro
-        make -j$(sysctl -n hw.logicalcpu)
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/runtime_validation_tests
 
     - name: Run runtime validation test
       run: ./build/tests/runtime_validation_tests -v2
