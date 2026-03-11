@@ -2,6 +2,7 @@ INCLUDEPATH += $$PWD
 DEPENDPATH += $$PWD
 
 SOURCES += $$PWD/main.cpp\
+    $$PWD/logger.cpp \
     $$PWD/util.cpp \
     $$PWD/globalvars.cpp \
     $$PWD/simplecrypt.cpp \
@@ -23,6 +24,7 @@ HEADERS += $$PWD/myvlcplayer.h
 
 
 HEADERS += $$PWD/util.h \
+    $$PWD/logger.h \
     $$PWD/soundplayer.h \
     $$PWD/globalvars.h \
     $$PWD/simplecrypt.h \

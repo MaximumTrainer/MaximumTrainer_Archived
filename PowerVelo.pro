@@ -53,8 +53,9 @@ contains(QMAKE_PLATFORM, wasm) | wasm_emscripten | wasm_emscripten_singlethread 
 }
 # ────────────────────────────────────────────────────────────────────────────
 
-# For Release, disable QDebug for performance
-DEFINES += QT_NO_DEBUG_OUTPUT
+# QT_NO_DEBUG_OUTPUT was removed: the Logger message handler now controls
+# verbosity at runtime, including qDebug() messages.  The default runtime
+# level (Info) discards debug messages in production without a recompile.
 
 TARGET = MaximumTrainer
 TEMPLATE = app

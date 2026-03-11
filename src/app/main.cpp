@@ -9,6 +9,7 @@
 #include "z_stylesheet.h"
 #include "dialoglogin.h"
 #include "globalvars.h"
+#include "logger.h"
 
 #ifdef GC_HAVE_VLCQT
 #include "myvlcplayer.h"
@@ -19,6 +20,11 @@
 
 int main(int argc, char *argv[]) {
 
+    // Install the Logger as the Qt message handler as early as possible so
+    // that qWarning() / qCritical() calls from Qt internals and third-party
+    // libraries are captured.  Default log level is Info; loadConfig() below
+    // will override it from QSettings once the application identity is set.
+    Logger::install();
 
     QApplication app(argc, argv);
 
@@ -39,6 +45,13 @@ int main(int argc, char *argv[]) {
 
     //initialize global object (Account, Settings, SoundPlayer and QNetworkAccessManager)
     GlobalVars myVars;
+
+    // Now that the application identity has been established by GlobalVars
+    // (org "Max++ inc.", app "MaximumTrainer"), load logging preferences from
+    // QSettings so the user's level / file-path choices take effect for the
+    // rest of the session.
+    Logger::instance().loadConfig();
+    LOG_INFO("main", QStringLiteral("MaximumTrainer starting"));
 
 //    MyVlcPlayer player;
 //    player.setMinimumSize(QSize(500,300));
