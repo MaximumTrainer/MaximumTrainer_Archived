@@ -4,14 +4,14 @@ on:
   workflow_call:
     inputs:
       tag_name:
-        description: 'Release tag (e.g. v1.0.0) — used to derive the MSI version number'
+        description: 'Release tag (e.g. v1.0.0) ÔÇö used to derive the MSI version number'
         required: false
         type: string
         default: ''
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag (e.g. v1.0.0) — used to derive the MSI version number'
+        description: 'Release tag (e.g. v1.0.0) ÔÇö used to derive the MSI version number'
         required: false
 
 jobs:
@@ -159,41 +159,42 @@ jobs:
         # Dynamically generate MaximumTrainer.wxs with the version from the tag.
         # The AppComponents component group is populated by the heat.exe harvest step.
         $version = "${{ steps.msi_version.outputs.version }}"
-        $wxs = @"
-<?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="MaximumTrainer" Language="1033" Version="$version"
-           Manufacturer="MaximumTrainer Team"
-           UpgradeCode="B076B8C4-CC65-4286-90F3-B34DA237EFAD">
-    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-    <MediaTemplate EmbedCab="yes" />
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFiles64Folder">
-        <Directory Id="APPLICATIONROOTDIRECTORY" Name="MaximumTrainer" />
-      </Directory>
-      <Directory Id="ProgramMenuFolder">
-        <Directory Id="AppProgramsFolder" Name="MaximumTrainer" />
-      </Directory>
-    </Directory>
-    <DirectoryRef Id="AppProgramsFolder">
-      <Component Id="ApplicationShortcut" Guid="*">
-        <Shortcut Id="StartMenuShortcut" Name="MaximumTrainer"
-                  Description="Cycling and Rowing Training Application"
-                  Target="[APPLICATIONROOTDIRECTORY]MaximumTrainer.exe"
-                  WorkingDirectory="APPLICATIONROOTDIRECTORY" />
-        <RemoveFolder Id="AppProgramsFolder_Remove" Directory="AppProgramsFolder" On="uninstall" />
-        <RegistryValue Root="HKLM" Key="Software\MaximumTrainer" Name="installed"
-                       Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-    </DirectoryRef>
-    <Feature Id="ProductFeature" Title="MaximumTrainer" Level="1">
-      <ComponentGroupRef Id="AppComponents" />
-      <ComponentRef Id="ApplicationShortcut" />
-    </Feature>
-  </Product>
-</Wix>
-"@
+        $lines = @(
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">',
+            "  <Product Id=""*"" Name=""MaximumTrainer"" Language=""1033"" Version=""$version""",
+            '           Manufacturer="MaximumTrainer Team"',
+            '           UpgradeCode="B076B8C4-CC65-4286-90F3-B34DA237EFAD">',
+            '    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />',
+            '    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />',
+            '    <MediaTemplate EmbedCab="yes" />',
+            '    <Directory Id="TARGETDIR" Name="SourceDir">',
+            '      <Directory Id="ProgramFiles64Folder">',
+            '        <Directory Id="APPLICATIONROOTDIRECTORY" Name="MaximumTrainer" />',
+            '      </Directory>',
+            '      <Directory Id="ProgramMenuFolder">',
+            '        <Directory Id="AppProgramsFolder" Name="MaximumTrainer" />',
+            '      </Directory>',
+            '    </Directory>',
+            '    <DirectoryRef Id="AppProgramsFolder">',
+            '      <Component Id="ApplicationShortcut" Guid="*">',
+            '        <Shortcut Id="StartMenuShortcut" Name="MaximumTrainer"',
+            '                  Description="Cycling and Rowing Training Application"',
+            '                  Target="[APPLICATIONROOTDIRECTORY]MaximumTrainer.exe"',
+            '                  WorkingDirectory="APPLICATIONROOTDIRECTORY" />',
+            '        <RemoveFolder Id="AppProgramsFolder_Remove" Directory="AppProgramsFolder" On="uninstall" />',
+            '        <RegistryValue Root="HKLM" Key="Software\MaximumTrainer" Name="installed"',
+            '                       Type="integer" Value="1" KeyPath="yes" />',
+            '      </Component>',
+            '    </DirectoryRef>',
+            '    <Feature Id="ProductFeature" Title="MaximumTrainer" Level="1">',
+            '      <ComponentGroupRef Id="AppComponents" />',
+            '      <ComponentRef Id="ApplicationShortcut" />',
+            '    </Feature>',
+            '  </Product>',
+            '</Wix>'
+        )
+        $wxs = $lines -join "`n"
         $utf8NoBom = New-Object System.Text.UTF8Encoding $false
         [System.IO.File]::WriteAllText(
           (Join-Path (Get-Location).Path "MaximumTrainer.wxs"), $wxs, $utf8NoBom)
@@ -252,14 +253,14 @@ jobs:
         name: windows-msi
         path: MaximumTrainer-windows-x64.msi
 
-  # ──────────────────────────────────────────────────────────────────────────
-  # Runtime Validation – Windows (release quality gate)
+  # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  # Runtime Validation ÔÇô Windows (release quality gate)
   #
   # Verifies that the application UI initialises to a "Ready" state on Windows:
-  #   • Bluetooth stack is queryable (API returns "Not Found", not "Unsupported")
-  #   • All four sensor channels carry realistic values within 10 seconds
-  #   • A labelled 1280×720 screenshot is captured as visual build evidence
-  # ──────────────────────────────────────────────────────────────────────────
+  #   ÔÇó Bluetooth stack is queryable (API returns "Not Found", not "Unsupported")
+  #   ÔÇó All four sensor channels carry realistic values within 10 seconds
+  #   ÔÇó A labelled 1280├ù720 screenshot is captured as visual build evidence
+  # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
   test_runtime_validation:
     runs-on: windows-latest
     needs: build_windows
