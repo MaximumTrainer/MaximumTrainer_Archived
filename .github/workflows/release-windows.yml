@@ -133,48 +133,6 @@ jobs:
         name: windows-zip
         path: MaximumTrainer-windows-x64.zip
 
-    - name: Prepare application folder for MSI
-      run: |
-        # Copy the full build output (exe + all DLLs) into the bin/ folder at the
-        # workspace root. A subsequent step rewrites wix.json to list each DLL
-        # explicitly (WiX candle.exe rejects wildcard Source attributes), so the
-        # staging directory must be bin/ so the paths resolve correctly.
-        New-Item -ItemType Directory -Path "bin" -Force
-        Copy-Item "build\release\MaximumTrainer.exe" "bin\" -Force
-        # Copy top-level DLLs (windeployqt + VLC-Qt + SFML runtime)
-        $dlls = Get-ChildItem "build\release\*.dll" -ErrorAction SilentlyContinue
-        if ($dlls) {
-          Copy-Item $dlls.FullName "bin\" -Force
-        } else {
-          Write-Warning "No DLL files found in build\release\ -- installer will contain the exe only"
-        }
-      shell: powershell
-
-    - name: Rewrite wix.json with explicit DLL entries
-      run: |
-        # go-msi passes the items in wix.json's files.items verbatim as WiX
-        # File/@Source attributes.  WiX (candle.exe) does not allow wildcards
-        # in that attribute, so "bin/*.dll" is illegal.  Enumerate the actual
-        # DLL files that were staged into bin/ and rewrite wix.json with
-        # explicit paths before go-msi is invoked.
-        $wixJson = Get-Content wix.json -Raw | ConvertFrom-Json
-        [string[]]$dlls = @(Get-ChildItem "bin\*.dll" -ErrorAction SilentlyContinue |
-                            ForEach-Object { "bin/$($_.Name)" })
-        $allItems = @("bin/MaximumTrainer.exe") + $dlls
-        $wixJson.files.items = $allItems
-        # Write without BOM: PowerShell 5.1's -Encoding UTF8 adds a UTF-8 BOM which
-        # Go's encoding/json rejects with "invalid character 'ï'".  Use the .NET
-        # UTF8Encoding constructor with emitBOM=false to avoid this.
-        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
-        [System.IO.File]::WriteAllText((Join-Path (Get-Location).Path "wix.json"), ($wixJson | ConvertTo-Json -Depth 10), $utf8NoBom)
-        Write-Host "Updated wix.json with $($dlls.Count) DLL(s):"
-        $dlls | ForEach-Object { Write-Host "  $_" }
-      shell: powershell
-
-    - name: Install go-msi
-      run: choco install -y go-msi
-      shell: powershell
-
     - name: Set MSI version
       id: msi_version
       run: |
@@ -195,26 +153,95 @@ jobs:
         Write-Host "MSI version: $version"
       shell: powershell
 
-    - name: Build Windows Installer MSI from exe file
+    - name: Generate WiX source file
       run: |
-        # go-msi was installed as an MSI package in the previous step, which updates
-        # the machine-level registry PATH but not the current PowerShell session PATH.
-        # Refresh $env:Path from the registry so go-msi is found.
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        # WiX Toolset v3 is pre-installed on windows-latest runners.
+        # Dynamically generate MaximumTrainer.wxs with the version from the tag.
+        # The AppComponents component group is populated by the heat.exe harvest step.
         $version = "${{ steps.msi_version.outputs.version }}"
-        Write-Host "Building MSI version $version"
+        $wxs = @"
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="MaximumTrainer" Language="1033" Version="$version"
+           Manufacturer="MaximumTrainer Team"
+           UpgradeCode="B076B8C4-CC65-4286-90F3-B34DA237EFAD">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="APPLICATIONROOTDIRECTORY" Name="MaximumTrainer" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="AppProgramsFolder" Name="MaximumTrainer" />
+      </Directory>
+    </Directory>
+    <DirectoryRef Id="AppProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="*">
+        <Shortcut Id="StartMenuShortcut" Name="MaximumTrainer"
+                  Description="Cycling and Rowing Training Application"
+                  Target="[APPLICATIONROOTDIRECTORY]MaximumTrainer.exe"
+                  WorkingDirectory="APPLICATIONROOTDIRECTORY" />
+        <RemoveFolder Id="AppProgramsFolder_Remove" Directory="AppProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\MaximumTrainer" Name="installed"
+                       Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+    <Feature Id="ProductFeature" Title="MaximumTrainer" Level="1">
+      <ComponentGroupRef Id="AppComponents" />
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>
+  </Product>
+</Wix>
+"@
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+        [System.IO.File]::WriteAllText(
+          (Join-Path (Get-Location).Path "MaximumTrainer.wxs"), $wxs, $utf8NoBom)
+        Write-Host "Generated MaximumTrainer.wxs for version $version"
+      shell: powershell
 
-        # go-msi internally calls filepath.Rel(tempDir, sourceFile).  The GitHub
-        # Actions workspace lives on D:\ while the default system TEMP is on C:\.
-        # filepath.Rel() cannot cross drive letters on Windows, so we redirect
-        # TEMP/TMP to a directory on D:\ (same drive as the workspace) before
-        # invoking go-msi so that its temp directory is created on the same drive.
-        $goMsiTmp = "D:\go-msi-tmp"
-        New-Item -ItemType Directory -Path $goMsiTmp -Force | Out-Null
-        $env:TEMP = $goMsiTmp
-        $env:TMP  = $goMsiTmp
+    - name: Harvest application files with heat.exe
+      run: |
+        # heat.exe recursively harvests build\release\ (exe + Qt DLLs + plugins
+        # subdirectories placed by windeployqt) into a WiX component group fragment.
+        # -cg  : component group ID referenced in MaximumTrainer.wxs
+        # -dr  : map the harvest root to the APPLICATIONROOTDIRECTORY directory ID
+        # -gg  : auto-generate stable component GUIDs based on install path
+        # -srd : suppress an explicit root Directory element (root is APPLICATIONROOTDIRECTORY)
+        # -var : replace absolute source paths with a preprocessor variable
+        heat.exe dir build\release `
+          -cg AppComponents `
+          -dr APPLICATIONROOTDIRECTORY `
+          -gg -srd `
+          -var var.SourceDir `
+          -out harvested.wxs
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "heat.exe failed with exit code $LASTEXITCODE"
+          exit $LASTEXITCODE
+        }
+        Write-Host "Harvested build\release into harvested.wxs"
+      shell: powershell
 
-        go-msi make --msi MaximumTrainer-windows-x64.msi --version $version
+    - name: Compile WiX sources with candle.exe
+      run: |
+        New-Item -ItemType Directory -Path wixobj -Force | Out-Null
+        # -dSourceDir resolves $(var.SourceDir) references in harvested.wxs
+        candle.exe -dSourceDir=build\release MaximumTrainer.wxs harvested.wxs -o wixobj\
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "candle.exe compilation failed with exit code $LASTEXITCODE"
+          exit $LASTEXITCODE
+        }
+      shell: powershell
+
+    - name: Link MSI with light.exe
+      run: |
+        light.exe wixobj\MaximumTrainer.wixobj wixobj\harvested.wixobj `
+          -o MaximumTrainer-windows-x64.msi
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "light.exe linking failed with exit code $LASTEXITCODE"
+          exit $LASTEXITCODE
+        }
+        Write-Host "MSI package created: MaximumTrainer-windows-x64.msi"
       shell: powershell
 
     - name: Upload MSI artifact
