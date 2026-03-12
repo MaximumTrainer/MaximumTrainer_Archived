@@ -165,11 +165,11 @@ jobs:
   <Product Id="*" Name="MaximumTrainer" Language="1033" Version="$version"
            Manufacturer="MaximumTrainer Team"
            UpgradeCode="B076B8C4-CC65-4286-90F3-B34DA237EFAD">
-    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFilesFolder">
+      <Directory Id="ProgramFiles64Folder">
         <Directory Id="APPLICATIONROOTDIRECTORY" Name="MaximumTrainer" />
       </Directory>
       <Directory Id="ProgramMenuFolder">
@@ -183,7 +183,7 @@ jobs:
                   Target="[APPLICATIONROOTDIRECTORY]MaximumTrainer.exe"
                   WorkingDirectory="APPLICATIONROOTDIRECTORY" />
         <RemoveFolder Id="AppProgramsFolder_Remove" Directory="AppProgramsFolder" On="uninstall" />
-        <RegistryValue Root="HKCU" Key="Software\MaximumTrainer" Name="installed"
+        <RegistryValue Root="HKLM" Key="Software\MaximumTrainer" Name="installed"
                        Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </DirectoryRef>
@@ -213,6 +213,7 @@ jobs:
           -cg AppComponents `
           -dr APPLICATIONROOTDIRECTORY `
           -gg -srd `
+          -platform x64 `
           -var var.SourceDir `
           -out harvested.wxs
         if ($LASTEXITCODE -ne 0) {
@@ -226,7 +227,8 @@ jobs:
       run: |
         New-Item -ItemType Directory -Path wixobj -Force | Out-Null
         # -dSourceDir resolves $(var.SourceDir) references in harvested.wxs
-        candle.exe -dSourceDir=build\release MaximumTrainer.wxs harvested.wxs -o wixobj\
+        # -arch x64 ensures all harvested components are marked as 64-bit
+        candle.exe -arch x64 -dSourceDir=build\release MaximumTrainer.wxs harvested.wxs -o wixobj\
         if ($LASTEXITCODE -ne 0) {
           Write-Error "candle.exe compilation failed with exit code $LASTEXITCODE"
           exit $LASTEXITCODE
