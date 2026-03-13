@@ -183,7 +183,7 @@ jobs:
             '                  Target="[APPLICATIONROOTDIRECTORY]MaximumTrainer.exe"',
             '                  WorkingDirectory="APPLICATIONROOTDIRECTORY" />',
             '        <RemoveFolder Id="AppProgramsFolder_Remove" Directory="AppProgramsFolder" On="uninstall" />',
-            '        <RegistryValue Root="HKLM" Key="Software\MaximumTrainer" Name="installed"',
+            '        <RegistryValue Root="HKCU" Key="Software\MaximumTrainer" Name="installed"',
             '                       Type="integer" Value="1" KeyPath="yes" />',
             '      </Component>',
             '    </DirectoryRef>',
