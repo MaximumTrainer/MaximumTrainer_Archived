@@ -28,7 +28,6 @@ jobs:
       with:
         version: '5.15.2'
         modules: 'qtwebengine'
-        tools: 'tools_openssl_x64'
         dir: ${{ env.QT_HOME }}
 
     - name: Set QTDIR
@@ -53,6 +52,23 @@ jobs:
           }
         }
         '@ | Set-Content C:\helpers.ps1
+      shell: powershell
+
+    - name: Download OpenSSL 1.1.x
+      # Qt 5.15.2 requires OpenSSL 1.1.x DLLs (libssl-1_1-x64.dll / libcrypto-1_1-x64.dll)
+      # for HTTPS/TLS. Download the pre-built FireDaemon distribution and expose the
+      # DLL directory as OPENSSL_BIN so later steps can reference it.
+      run: |
+        . C:\helpers.ps1
+        Invoke-WebRequestWithRetry `
+          -Uri "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-1.1.1w.zip" `
+          -OutFile "$env:TEMP\openssl.zip"
+        Expand-Archive -Path "$env:TEMP\openssl.zip" -DestinationPath "$env:TEMP\openssl" -Force
+        $dll = Get-ChildItem "$env:TEMP\openssl" -Recurse -Filter "libssl-1_1-x64.dll" |
+               Select-Object -First 1
+        if (-not $dll) { Write-Error "libssl-1_1-x64.dll not found in archive"; exit 1 }
+        echo "OPENSSL_BIN=$($dll.DirectoryName)" >> $env:GITHUB_ENV
+        Write-Host "OpenSSL DLLs at: $($dll.DirectoryName)"
       shell: powershell
 
     - name: Download and install VLC-Qt
@@ -135,22 +151,21 @@ jobs:
 
     - name: Copy OpenSSL DLLs
       # Qt 5.15.2 requires OpenSSL 1.1.x DLLs for HTTPS/TLS.
-      # install-qt-action places them under Tools\OpenSSL\Win_x64\bin\ when
-      # tools: 'tools_openssl_x64' is requested.
+      # OPENSSL_BIN is set by the "Download OpenSSL 1.1.x" step above.
       run: |
-        $opensslBin = "$env:QT_HOME\Qt\Tools\OpenSSL\Win_x64\bin"
+        $opensslBin = "$env:OPENSSL_BIN"
         if (Test-Path $opensslBin) {
           foreach ($dll in @("libssl-1_1-x64.dll", "libcrypto-1_1-x64.dll")) {
             $src = "$opensslBin\$dll"
             if (Test-Path $src) {
               Copy-Item $src "build\release\" -Force
-              Write-Host "Copied $dll from Qt OpenSSL tools"
+              Write-Host "Copied $dll"
             } else {
               Write-Warning "OpenSSL DLL not found: $src"
             }
           }
         } else {
-          Write-Warning "Qt OpenSSL tools directory not found: $opensslBin"
+          Write-Warning "OPENSSL_BIN directory not found: $opensslBin"
         }
       shell: powershell
 

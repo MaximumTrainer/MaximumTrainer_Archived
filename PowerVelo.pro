@@ -3,6 +3,12 @@
 #                                                                             #
 ###############################################################################
 
+# Embed the git version tag into the binary so the app can report its own
+# version and compare it against the latest GitHub release at startup.
+GIT_VERSION = $$system(git describe --tags --match "v[0-9]*" --always)
+isEmpty(GIT_VERSION): GIT_VERSION = "v0.0.0"
+DEFINES += APP_VERSION=\\\"$$GIT_VERSION\\\"
+
 qtHaveModule(uitools):!embedded: QT += uitools
 else: DEFINES += QT_NO_UITOOLS
 

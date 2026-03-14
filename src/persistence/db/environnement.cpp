@@ -38,8 +38,11 @@ QString Environnement::getURLEnvironnementWS() {
 
 //////////////////////////////////////////////////////////////
 QString Environnement::getVersion() {
-
+#ifdef APP_VERSION
+    return QString(APP_VERSION);
+#else
     return current_version;
+#endif
 }
 //////////////////////////////////////////////////////////////
 QString Environnement::getDateBuilded() {

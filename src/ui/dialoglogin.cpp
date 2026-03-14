@@ -287,15 +287,15 @@ void DialogLogin::slotFinishedGetVersion() {
         ui->label_process->setText(tr("Loading page..."));
         QByteArray arrayData =  replyVersion->readAll();
         qDebug() << " Get version response: " << arrayData;
-        double versionDB = Util::parseJsonObjectVersion(QString(arrayData));
+        QString latestVersion = Util::parseJsonObjectVersion(QString(arrayData));
 
-
-        ///  ----------- Show dialog new version if current_version < version
-        if (Environnement::getVersion().toDouble() < versionDB) {
+        ///  ----------- Show update dialog if a newer release exists on GitHub
+        if (!latestVersion.isEmpty() && Util::isVersionNewer(Environnement::getVersion(), latestVersion)) {
             gotUpdateDialog = true;
-            qDebug() << "App is outdated, showing download dialog";
+            qDebug() << "App is outdated, latest:" << latestVersion
+                     << "current:" << Environnement::getVersion();
 
-            UpdateDialog up(versionDB, this);
+            UpdateDialog up(latestVersion, this);
             up.exec();
         }
         else {

@@ -12,19 +12,15 @@ UpdateDialog::~UpdateDialog()
 }
 
 
-UpdateDialog::UpdateDialog(double versionNumber, QWidget *parent) : QDialog(parent), ui(new Ui::UpdateDialog) {
+UpdateDialog::UpdateDialog(const QString &latestVersion, QWidget *parent) : QDialog(parent), ui(new Ui::UpdateDialog) {
 
     ui->setupUi(this);
 
-
     ui->buttonBox->addButton(tr("Download"), QDialogButtonBox::AcceptRole);
-    ui->label_firstLabelVersion->setText(tr("There is a new mandatory update available"));
+    ui->label_firstLabelVersion->setText(
+        tr("There is a new mandatory update available") + " (" + latestVersion + ")");
 
-
-
-    ui->label_firstLabelVersion->setText(ui->label_firstLabelVersion->text() + " (Version " + QString::number(versionNumber, 'f', 2) + ")");
-
-    QString linkNews = "<a href='" + Environnement::getUrlNews()+  "'>";
+    QString linkNews = "<a href='" + urlGitHubReleasesPage + "'>";
     linkNews += tr("See new version release notes") + "</a>";
 
     ui->label_whatsNew->setText(linkNews);
@@ -37,7 +33,7 @@ UpdateDialog::UpdateDialog(double versionNumber, QWidget *parent) : QDialog(pare
 //--------------------------------
 void UpdateDialog::accept() {
 
-    QDesktopServices::openUrl(QUrl(Environnement::getUrlDownload()));
+    QDesktopServices::openUrl(QUrl(urlGitHubReleasesPage));
     QDialog::accept();
 
 }

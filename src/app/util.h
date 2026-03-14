@@ -100,7 +100,8 @@ public:
 
     /// Parse JSON
     static void parseJsonObjectAccount(QString data);
-    static double parseJsonObjectVersion(QString data);
+    static QString parseJsonObjectVersion(const QString &data);
+    static bool isVersionNewer(const QString &currentVersion, const QString &latestVersion);
     static void parseJsonStravaObject(QString data);
     static int parseIdJsonStravaUploadObject(QString data);
     static int parseStravaUploadStatus(QString data);

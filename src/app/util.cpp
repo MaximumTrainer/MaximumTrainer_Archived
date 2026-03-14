@@ -212,17 +212,42 @@ QList<Radio> Util::parseJsonRadioList(QString data) {
 
 
 ///----------------------------------------------- JSON PARSING -----------------------------------------------------
-double Util::parseJsonObjectVersion(QString data) {
-
+// Parses the GitHub Releases API response and returns the latest release tag
+// (e.g. "v0.0.26"). Returns an empty string if the response is invalid.
+QString Util::parseJsonObjectVersion(const QString &data) {
 
     QJsonDocument jsonResponse = QJsonDocument::fromJson(data.toUtf8());
-    QJsonObject jsonObj = jsonResponse.object();
+    if (jsonResponse.isNull() || !jsonResponse.isObject())
+        return QString();
 
+    return jsonResponse.object()["tag_name"].toString();  // e.g. "v0.0.26"
+}
 
-    double number_v = jsonObj["number_v"].toString().toDouble();
-    return number_v;
+// Returns true if latestVersion is strictly newer than currentVersion.
+// Versions may carry a leading "v" (e.g. "v0.0.26") which is stripped before
+// the numeric comparison. Each component is compared left-to-right.
+bool Util::isVersionNewer(const QString &currentVersion, const QString &latestVersion) {
 
+    auto toNums = [](const QString &v) -> QVector<int> {
+        QString s = v;
+        s.remove(QRegularExpression("^[vV]"));
+        const QStringList parts = s.split('.');
+        QVector<int> nums;
+        for (const QString &p : parts)
+            nums << p.toInt();
+        while (nums.size() < 3)
+            nums << 0;
+        return nums;
+    };
 
+    const QVector<int> cur    = toNums(currentVersion);
+    const QVector<int> latest = toNums(latestVersion);
+    const int len = qMin(cur.size(), latest.size());
+    for (int i = 0; i < len; ++i) {
+        if (latest[i] > cur[i]) return true;
+        if (latest[i] < cur[i]) return false;
+    }
+    return false;
 }
 
 ///--------------------------------------------------------------------------------------------------------------------

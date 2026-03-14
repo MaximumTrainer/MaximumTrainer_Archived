@@ -12,7 +12,7 @@ class UpdateDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit UpdateDialog(double versionNumber, QWidget *parent = 0);
+    explicit UpdateDialog(const QString &latestVersion, QWidget *parent = 0);
     ~UpdateDialog();
 //    void reject();
     void accept();
