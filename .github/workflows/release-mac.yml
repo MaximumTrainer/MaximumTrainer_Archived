@@ -24,8 +24,8 @@ jobs:
         arch: 'clang_64'
         modules: 'qtwebengine qtconnectivity qtwebchannel qtpositioning'
 
-    - name: Install SFML
-      run: brew install sfml
+    - name: Install SFML and OpenSSL
+      run: brew install sfml openssl@3
 
     - name: Build and install QWT
       run: |
@@ -48,7 +48,9 @@ jobs:
 
     - name: Package with macdeployqt
       run: |
+        # Add rpath for QWT and OpenSSL so macdeployqt can resolve and bundle them.
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+        install_name_tool -add_rpath $(brew --prefix openssl@3)/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
         macdeployqt build/release/MaximumTrainer.app -dmg
         mv build/release/MaximumTrainer.dmg MaximumTrainer-macos.dmg
 

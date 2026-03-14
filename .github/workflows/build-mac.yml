@@ -24,8 +24,8 @@ jobs:
         arch: 'clang_64'
         modules: 'qtwebengine qtconnectivity qtwebchannel qtpositioning'
 
-    - name: Install SFML
-      run: brew install sfml
+    - name: Install SFML and OpenSSL
+      run: brew install sfml openssl@3
 
     - name: Build and install QWT
       run: |
@@ -63,9 +63,10 @@ jobs:
         qmake runtime_validation_tests.pro
         make -j$(sysctl -n hw.logicalcpu)
 
-    - name: Bind rpath for Qt frameworks
+    - name: Bind rpath for Qt frameworks and OpenSSL
       run: |
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+        install_name_tool -add_rpath $(brew --prefix openssl@3)/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
 
     - name: upload artifact
       uses: actions/upload-artifact@v4

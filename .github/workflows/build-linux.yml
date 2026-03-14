@@ -27,6 +27,7 @@ jobs:
           libvlc-dev \
           libvlccore-dev \
           libusb-1.0-0-dev \
+          libssl-dev \
           cmake \
           build-essential
 

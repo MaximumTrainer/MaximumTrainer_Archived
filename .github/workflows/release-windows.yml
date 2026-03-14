@@ -35,6 +35,7 @@ jobs:
       with:
         version: '5.15.2'
         modules: 'qtwebengine'
+        tools: 'tools_openssl_x64'
         dir: ${{ env.QT_HOME }}
 
     - name: Set QTDIR
@@ -138,6 +139,24 @@ jobs:
         # Copy SFML runtime DLLs
         $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
         Copy-Item "$sfmlDir\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
+
+        # Copy OpenSSL 1.1.x DLLs (required by Qt 5.15.2 for HTTPS/TLS).
+        # install-qt-action places them under Tools\OpenSSL\Win_x64\bin\ when
+        # tools: 'tools_openssl_x64' is requested.
+        $opensslBin = "$env:QT_HOME\Qt\Tools\OpenSSL\Win_x64\bin"
+        if (Test-Path $opensslBin) {
+          foreach ($dll in @("libssl-1_1-x64.dll", "libcrypto-1_1-x64.dll")) {
+            $src = "$opensslBin\$dll"
+            if (Test-Path $src) {
+              Copy-Item $src "$buildRelease\" -Force
+              Write-Host "Copied $dll from Qt OpenSSL tools"
+            } else {
+              Write-Warning "OpenSSL DLL not found: $src"
+            }
+          }
+        } else {
+          Write-Warning "Qt OpenSSL tools directory not found: $opensslBin"
+        }
 
         # Zip the release folder
         Compress-Archive -Path "$buildRelease\*" -DestinationPath "MaximumTrainer-windows-x64.zip" -Force
@@ -403,7 +422,9 @@ jobs:
         $required = @(
           "MaximumTrainer.exe",
           "qwt.dll",
-          "Qt5OpenGL.dll"
+          "Qt5OpenGL.dll",
+          "libssl-1_1-x64.dll",
+          "libcrypto-1_1-x64.dll"
         )
         $failed = $false
         foreach ($file in $required) {

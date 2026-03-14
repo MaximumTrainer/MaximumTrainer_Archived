@@ -28,6 +28,7 @@ jobs:
       with:
         version: '5.15.2'
         modules: 'qtwebengine'
+        tools: 'tools_openssl_x64'
         dir: ${{ env.QT_HOME }}
 
     - name: Set QTDIR
@@ -130,6 +131,27 @@ jobs:
         }
         Copy-Item $qwtDll "build\release\" -Force
         Write-Host "Copied qwt.dll to build\release\"
+      shell: powershell
+
+    - name: Copy OpenSSL DLLs
+      # Qt 5.15.2 requires OpenSSL 1.1.x DLLs for HTTPS/TLS.
+      # install-qt-action places them under Tools\OpenSSL\Win_x64\bin\ when
+      # tools: 'tools_openssl_x64' is requested.
+      run: |
+        $opensslBin = "$env:QT_HOME\Qt\Tools\OpenSSL\Win_x64\bin"
+        if (Test-Path $opensslBin) {
+          foreach ($dll in @("libssl-1_1-x64.dll", "libcrypto-1_1-x64.dll")) {
+            $src = "$opensslBin\$dll"
+            if (Test-Path $src) {
+              Copy-Item $src "build\release\" -Force
+              Write-Host "Copied $dll from Qt OpenSSL tools"
+            } else {
+              Write-Warning "OpenSSL DLL not found: $src"
+            }
+          }
+        } else {
+          Write-Warning "Qt OpenSSL tools directory not found: $opensslBin"
+        }
       shell: powershell
 
     - name: Build runtime validation test
