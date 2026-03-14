@@ -13,6 +13,7 @@ $$PWD/workoutdialog.cpp \
     $$PWD/z_stylesheet.cpp \
     $$PWD/updatedialog.cpp \
     $$PWD/savingwindow.cpp \
+    $$PWD/splashscreen.cpp \
     $$PWD/dialogmainwindowconfig.cpp \
     $$PWD/dialoginfowebview.cpp \
     $$PWD/dialog_connection_method.cpp \
@@ -26,6 +27,7 @@ $$PWD/workoutdialog.h \
     $$PWD/z_stylesheet.h \
     $$PWD/updatedialog.h \
     $$PWD/savingwindow.h \
+    $$PWD/splashscreen.h \
     $$PWD/dialogmainwindowconfig.h \
     $$PWD/dialoginfowebview.h \
     $$PWD/dialog_connection_method.h \

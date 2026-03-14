@@ -10,6 +10,7 @@
 #include "dialoglogin.h"
 #include "globalvars.h"
 #include "logger.h"
+#include "splashscreen.h"
 
 #ifdef GC_HAVE_VLCQT
 #include "myvlcplayer.h"
@@ -42,6 +43,17 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
+#ifndef Q_OS_WASM
+    // Show the splash screen during the initialisation phase.
+    // QSplashScreen is not available in WebAssembly builds because there is
+    // no native windowing system; the browser page itself serves that purpose.
+    SplashScreen splash;
+    splash.show();
+    QApplication::processEvents();
+
+    splash.setStatusMessage(QObject::tr("Loading configuration…"));
+    splash.setProgress(10);
+#endif // Q_OS_WASM
 
     //initialize global object (Account, Settings, SoundPlayer and QNetworkAccessManager)
     GlobalVars myVars;
@@ -61,13 +73,27 @@ int main(int argc, char *argv[]) {
 //    player.setMinimumSize(QSize(500,300));
 //    player.show();
 
+#ifndef Q_OS_WASM
+    splash.setStatusMessage(QObject::tr("Initializing user profile…"));
+    splash.setProgress(30);
+#endif // Q_OS_WASM
 
     /// App Stylesheet (hack so I can type stylesheet in designer instead of source code)
     Z_StyleSheet styleSheetDummy;
     app.setStyleSheet(styleSheetDummy.styleSheet());
 
 #ifndef Q_OS_WASM
+    splash.setStatusMessage(QObject::tr("Applying theme…"));
+    splash.setProgress(55);
+
+    splash.setStatusMessage(QObject::tr("Preparing login…"));
+    splash.setProgress(80);
+    // Hide the splash before showing the modal login dialog so the two
+    // windows do not overlap on small displays.
+    splash.hide();
+
     DialogLogin login;
+
     if (login.exec() != QDialog::Accepted) {
         return 0; // Login refused
     }
@@ -77,6 +103,12 @@ int main(int argc, char *argv[]) {
 #endif // Q_OS_WASM
 
     MainWindow w;
+
+#ifndef Q_OS_WASM
+    splash.setProgress(100);
+    splash.finish(&w);
+#endif // Q_OS_WASM
+
     w.show();
 
 
