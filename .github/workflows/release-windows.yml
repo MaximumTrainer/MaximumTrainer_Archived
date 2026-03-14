@@ -123,6 +123,16 @@ jobs:
         $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
         Copy-Item "$sfmlDir\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
 
+        # Copy QWT runtime DLL – required at runtime; not bundled by windeployqt
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtDll = "$qwtInstallDir\lib\qwt.dll"
+        if (-not (Test-Path $qwtDll)) {
+          Write-Error "qwt.dll not found at expected path: $qwtDll"
+          exit 1
+        }
+        Copy-Item $qwtDll "$buildRelease\" -Force
+        Write-Host "Copied qwt.dll from $qwtDll"
+
         # Zip the release folder
         Compress-Archive -Path "$buildRelease\*" -DestinationPath "MaximumTrainer-windows-x64.zip" -Force
       shell: powershell
@@ -303,4 +313,116 @@ jobs:
       if: always()
       with:
         name: runtime-validation-screenshot-windows
+        path: build\tests\screenshot-windows-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Install Verification – Windows
+  #
+  # Installs the MSI produced by the build_windows job and verifies that:
+  #   • The application files (including qwt.dll) are present in the install
+  #     directory – catching the "qwt.dll not found" regression at release time.
+  #   • The runtime_validation_tests binary is built from source and executed as
+  #     a post-install smoke test; a labelled 1280×720 screenshot produced by
+  #     that test is uploaded as visual evidence that the software runs correctly.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_install_windows:
+    runs-on: windows-latest
+    needs: build_windows
+    permissions:
+      contents: read
+    env:
+      QT_HOME: C:\Qt
+
+    steps:
+    - name: MSVC Environment Setup
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        dir: ${{ env.QT_HOME }}
+
+    - name: Set QTDIR
+      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Download MSI artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-msi
+        path: installer
+
+    - name: Install MSI
+      run: |
+        $msi = Get-Item "installer\MaximumTrainer-windows-x64.msi"
+        Write-Host "Installing: $($msi.FullName)"
+        $result = Start-Process msiexec.exe `
+          -ArgumentList "/i", "`"$($msi.FullName)`"", "/quiet", "/norestart", "/l*v", "install.log" `
+          -Wait -PassThru
+        # 0   = success
+        # 3010 = success, restart required (safe to ignore in CI)
+        # 1641 = success, restart initiated  (safe to ignore in CI)
+        $successCodes = @(0, 3010, 1641)
+        if ($result.ExitCode -notin $successCodes) {
+          Write-Host "=== MSI install log ==="
+          Get-Content install.log -ErrorAction SilentlyContinue | Select-Object -Last 60
+          Write-Error "MSI installation failed with exit code $($result.ExitCode)"
+          exit $result.ExitCode
+        }
+        if ($result.ExitCode -ne 0) {
+          Write-Host "MSI installed successfully (exit code $($result.ExitCode) – restart may be required in non-CI environments)"
+        } else {
+          Write-Host "Installation completed successfully"
+        }
+      shell: powershell
+
+    - name: Verify installed files include qwt.dll
+      run: |
+        $installDir = "$env:ProgramFiles\MaximumTrainer"
+
+        # Guard: confirm the install directory itself was created before listing
+        if (-not (Test-Path $installDir)) {
+          Write-Error "Install directory not found: $installDir. The MSI may have installed to a different location or failed to create the directory."
+          exit 1
+        }
+
+        Write-Host "=== Installed files in: $installDir ==="
+        Get-ChildItem $installDir | Select-Object Name, Length | Format-Table -AutoSize
+
+        # MaximumTrainer.exe must be present
+        if (-not (Test-Path "$installDir\MaximumTrainer.exe")) {
+          Write-Error "MaximumTrainer.exe not found in install directory"
+          exit 1
+        }
+        Write-Host "PASS: MaximumTrainer.exe found"
+
+        # qwt.dll must be present (fixes "qwt.dll not found" on application launch)
+        if (-not (Test-Path "$installDir\qwt.dll")) {
+          Write-Error "qwt.dll not found in install directory. This is the reported missing-DLL regression."
+          exit 1
+        }
+        Write-Host "PASS: qwt.dll found – missing-DLL regression is resolved"
+      shell: powershell
+
+    - name: Build runtime validation test
+      run: |
+        New-Item -ItemType Directory -Force -Path build\tests | Out-Null
+        Set-Location tests\integration
+        qmake runtime_validation_tests.pro
+        nmake
+      shell: powershell
+
+    - name: Run runtime validation test (post-install smoke test)
+      run: .\build\tests\runtime_validation_tests.exe -v2
+      shell: powershell
+
+    - name: Upload install verification screenshot
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: install-verification-screenshot-windows
         path: build\tests\screenshot-windows-*.png

@@ -116,6 +116,22 @@ jobs:
     - name: Build
       run: nmake
 
+    - name: Copy QWT runtime DLL
+      # qwt.dll is linked at build time but windeployqt does not know about it.
+      # Copy it alongside MaximumTrainer.exe so the build artifact is self-contained
+      # and MaximumTrainer.exe can be launched directly from build\release\ without
+      # a "qwt.dll not found" loader error.
+      run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtDll = "$qwtInstallDir\lib\qwt.dll"
+        if (-not (Test-Path $qwtDll)) {
+          Write-Error "qwt.dll not found at expected path: $qwtDll"
+          exit 1
+        }
+        Copy-Item $qwtDll "build\release\" -Force
+        Write-Host "Copied qwt.dll to build\release\"
+      shell: powershell
+
     - name: Build runtime validation test
       run: |
         New-Item -ItemType Directory -Force -Path build\tests | Out-Null
