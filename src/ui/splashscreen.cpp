@@ -128,14 +128,16 @@ void SplashScreen::setProgress(int value)
 {
     m_progressBar->setValue(value);
     m_progressBar->repaint();
-    QApplication::processEvents();
+    // Exclude user-input events to prevent re-entrancy during startup.
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 void SplashScreen::setStatusMessage(const QString &message)
 {
     m_statusLabel->setText(message);
     m_statusLabel->repaint();
-    QApplication::processEvents();
+    // Exclude user-input events to prevent re-entrancy during startup.
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 
@@ -149,7 +151,7 @@ void SplashScreen::drawContents(QPainter *painter)
 
     // "REDUX" tag: thin, spaced capitals in neon green
     QFont reduxFont;
-    reduxFont.setFamily("Segoe UI, Roboto, Arial");
+    reduxFont.setFamily("Segoe UI");
     reduxFont.setPointSize(9);
     reduxFont.setWeight(QFont::Light);
     reduxFont.setLetterSpacing(QFont::AbsoluteSpacing, 4.0);
