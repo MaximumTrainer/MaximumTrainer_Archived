@@ -113,17 +113,8 @@ jobs:
         $qtBin = "$env:QTDIR\bin"
         $buildRelease = "build\release"
 
-        # Run windeployqt to bundle Qt DLLs
-        & "$qtBin\windeployqt.exe" --release --no-translations "$buildRelease\MaximumTrainer.exe"
-
-        # Copy VLC-Qt runtime DLLs
-        Copy-Item "C:\vlcqt\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
-
-        # Copy SFML runtime DLLs
-        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
-        Copy-Item "$sfmlDir\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
-
-        # Copy QWT runtime DLL – required at runtime; not bundled by windeployqt
+        # Copy QWT runtime DLL BEFORE windeployqt so that windeployqt can walk
+        # qwt.dll's Qt imports and include its dependencies (e.g. Qt5OpenGL.dll).
         $qwtInstallDir = "$env:USERPROFILE\qwt"
         $qwtDll = "$qwtInstallDir\lib\qwt.dll"
         if (-not (Test-Path $qwtDll)) {
@@ -132,6 +123,21 @@ jobs:
         }
         Copy-Item $qwtDll "$buildRelease\" -Force
         Write-Host "Copied qwt.dll from $qwtDll"
+
+        # Run windeployqt on the main executable to bundle all its Qt DLLs.
+        & "$qtBin\windeployqt.exe" --release --no-translations "$buildRelease\MaximumTrainer.exe"
+
+        # Run windeployqt again on qwt.dll so that any Qt modules it depends on
+        # (Qt5OpenGL.dll etc.) that are not direct imports of MaximumTrainer.exe
+        # are also included.
+        & "$qtBin\windeployqt.exe" --release --no-translations "$buildRelease\qwt.dll"
+
+        # Copy VLC-Qt runtime DLLs
+        Copy-Item "C:\vlcqt\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
+
+        # Copy SFML runtime DLLs
+        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
+        Copy-Item "$sfmlDir\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
 
         # Zip the release folder
         Compress-Archive -Path "$buildRelease\*" -DestinationPath "MaximumTrainer-windows-x64.zip" -Force
@@ -393,19 +399,22 @@ jobs:
         Write-Host "=== Installed files in: $installDir ==="
         Get-ChildItem $installDir | Select-Object Name, Length | Format-Table -AutoSize
 
-        # MaximumTrainer.exe must be present
-        if (-not (Test-Path "$installDir\MaximumTrainer.exe")) {
-          Write-Error "MaximumTrainer.exe not found in install directory"
-          exit 1
+        # Check all required files
+        $required = @(
+          "MaximumTrainer.exe",
+          "qwt.dll",
+          "Qt5OpenGL.dll"
+        )
+        $failed = $false
+        foreach ($file in $required) {
+          if (-not (Test-Path "$installDir\$file")) {
+            Write-Error "FAIL: $file not found in install directory"
+            $failed = $true
+          } else {
+            Write-Host "PASS: $file found"
+          }
         }
-        Write-Host "PASS: MaximumTrainer.exe found"
-
-        # qwt.dll must be present (fixes "qwt.dll not found" on application launch)
-        if (-not (Test-Path "$installDir\qwt.dll")) {
-          Write-Error "qwt.dll not found in install directory. This is the reported missing-DLL regression."
-          exit 1
-        }
-        Write-Host "PASS: qwt.dll found - missing-DLL regression is resolved"
+        if ($failed) { exit 1 }
       shell: powershell
 
     - name: Build runtime validation test
