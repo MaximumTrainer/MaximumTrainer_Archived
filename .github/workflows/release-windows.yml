@@ -361,7 +361,7 @@ jobs:
         $msi = Get-Item "installer\MaximumTrainer-windows-x64.msi"
         Write-Host "Installing: $($msi.FullName)"
         $result = Start-Process msiexec.exe `
-          -ArgumentList "/i", "`"$($msi.FullName)`"", "/quiet", "/norestart", "/l*v", "install.log" `
+          -ArgumentList "/i", "$($msi.FullName)", "/quiet", "/norestart", "/l*v", "install.log" `
           -Wait -PassThru
         # 0   = success
         # 3010 = success, restart required (safe to ignore in CI)
