@@ -321,8 +321,9 @@ jobs:
   # Installs the MSI produced by the build_windows job and verifies that:
   #   • The application files (including qwt.dll) are present in the install
   #     directory – catching the "qwt.dll not found" regression at release time.
-  #   • A labelled screenshot of the running application is captured and
-  #     uploaded as visual evidence of a successful install.
+  #   • The runtime_validation_tests binary is built from source and executed as
+  #     a post-install smoke test; a labelled 1280×720 screenshot produced by
+  #     that test is uploaded as visual evidence that the software runs correctly.
   # ──────────────────────────────────────────────────────────────────────────
   test_install_windows:
     runs-on: windows-latest
@@ -362,18 +363,33 @@ jobs:
         $result = Start-Process msiexec.exe `
           -ArgumentList "/i", "`"$($msi.FullName)`"", "/quiet", "/norestart", "/l*v", "install.log" `
           -Wait -PassThru
-        if ($result.ExitCode -ne 0) {
+        # 0   = success
+        # 3010 = success, restart required (safe to ignore in CI)
+        # 1641 = success, restart initiated  (safe to ignore in CI)
+        $successCodes = @(0, 3010, 1641)
+        if ($result.ExitCode -notin $successCodes) {
           Write-Host "=== MSI install log ==="
           Get-Content install.log -ErrorAction SilentlyContinue | Select-Object -Last 60
           Write-Error "MSI installation failed with exit code $($result.ExitCode)"
           exit $result.ExitCode
         }
-        Write-Host "Installation completed successfully"
+        if ($result.ExitCode -ne 0) {
+          Write-Host "MSI installed successfully (exit code $($result.ExitCode) – restart may be required in non-CI environments)"
+        } else {
+          Write-Host "Installation completed successfully"
+        }
       shell: powershell
 
     - name: Verify installed files include qwt.dll
       run: |
         $installDir = "$env:ProgramFiles\MaximumTrainer"
+
+        # Guard: confirm the install directory itself was created before listing
+        if (-not (Test-Path $installDir)) {
+          Write-Error "Install directory not found: $installDir. The MSI may have installed to a different location or failed to create the directory."
+          exit 1
+        }
+
         Write-Host "=== Installed files in: $installDir ==="
         Get-ChildItem $installDir | Select-Object Name, Length | Format-Table -AutoSize
 
