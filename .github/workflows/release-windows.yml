@@ -374,7 +374,7 @@ jobs:
           exit $result.ExitCode
         }
         if ($result.ExitCode -ne 0) {
-          Write-Host "MSI installed successfully (exit code $($result.ExitCode) – restart may be required in non-CI environments)"
+          Write-Host "MSI installed successfully (exit code $($result.ExitCode) - restart may be required in non-CI environments)"
         } else {
           Write-Host "Installation completed successfully"
         }
@@ -405,7 +405,7 @@ jobs:
           Write-Error "qwt.dll not found in install directory. This is the reported missing-DLL regression."
           exit 1
         }
-        Write-Host "PASS: qwt.dll found – missing-DLL regression is resolved"
+        Write-Host "PASS: qwt.dll found - missing-DLL regression is resolved"
       shell: powershell
 
     - name: Build runtime validation test
