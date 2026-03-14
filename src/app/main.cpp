@@ -63,6 +63,20 @@ int main(int argc, char *argv[]) {
     // QSettings so the user's level / file-path choices take effect for the
     // rest of the session.
     Logger::instance().loadConfig();
+
+    // --debug (Unix style) and /debug (Windows style) both enable verbose
+    // diagnostic output for this session, overriding any saved QSettings level.
+    {
+        const QStringList args = QCoreApplication::arguments();
+        const bool debugMode = args.contains(QStringLiteral("--debug"), Qt::CaseInsensitive)
+                            || args.contains(QStringLiteral("/debug"),  Qt::CaseInsensitive);
+        if (debugMode) {
+            Logger::instance().setLogLevel(LogLevel::Debug);
+            Logger::instance().setFileLogging(true);
+            LOG_INFO("main", QStringLiteral("Debug mode enabled via command-line switch"));
+        }
+    }
+
     LOG_INFO("main", QStringLiteral("MaximumTrainer starting"));
 
 //    MyVlcPlayer player;

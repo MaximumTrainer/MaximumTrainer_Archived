@@ -6,6 +6,8 @@
 #include <QKeyEvent>
 #include <QDesktopServices>
 
+#include "logger.h"
+
 
 
 #include "updatedialog.h"
@@ -78,9 +80,16 @@ DialogLogin::DialogLogin(QWidget *parent) : QDialog(parent), ui(new Ui::DialogLo
 
 
     /// Check if new version APP available
-    /// //TODO; show loading icon before response
     replyVersion = VersionDAO::getVersion();
     connect(replyVersion, SIGNAL(finished()), this, SLOT(slotFinishedGetVersion()));
+
+    // Safety-net: if the version check doesn't complete within 10 s (e.g. network
+    // latency, firewall, TLS failure) abort the request and proceed to login so the
+    // app never hangs on this dialog.
+    m_versionTimeout = new QTimer(this);
+    m_versionTimeout->setSingleShot(true);
+    connect(m_versionTimeout, &QTimer::timeout, this, &DialogLogin::onVersionTimeout);
+    m_versionTimeout->start(10000);
     // --------------------------------------------
 
     connect(ui->webView_login, SIGNAL(loadProgress(int)), this, SLOT(showLoadingProgress(int)));
@@ -279,42 +288,61 @@ void DialogLogin::loginLoaded(bool ok){
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::onVersionTimeout() {
+    if (!replyVersion) return;
+    LOG_WARN("DialogLogin", QStringLiteral("Version check timed out after 10 s – aborting and proceeding to login"));
+    ui->label_process->setText(tr("Version check timed out, loading login…"));
+    // Aborting emits finished() → slotFinishedGetVersion() handles the rest.
+    replyVersion->abort();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DialogLogin::slotFinishedGetVersion() {
 
-    //success
-    if (replyVersion->error() == QNetworkReply::NoError) {
-        qDebug() << "slotFinishedGetVersion";
-        ui->label_process->setText(tr("Loading page..."));
-        QByteArray arrayData =  replyVersion->readAll();
-        qDebug() << " Get version response: " << arrayData;
-        QString latestVersion = Util::parseJsonObjectVersion(QString(arrayData));
+    m_versionTimeout->stop();
 
-        ///  ----------- Show update dialog if a newer release exists on GitHub
+    if (!replyVersion) return;
+
+    const QNetworkReply::NetworkError netError = replyVersion->error();
+
+    if (netError == QNetworkReply::NoError) {
+        const QByteArray arrayData = replyVersion->readAll();
+        LOG_DEBUG("DialogLogin", QStringLiteral("Version check response: ") + QString::fromUtf8(arrayData));
+
+        const QString latestVersion = Util::parseJsonObjectVersion(QString::fromUtf8(arrayData));
+        LOG_INFO("DialogLogin", QStringLiteral("Current: ") + Environnement::getVersion()
+                 + QStringLiteral("  Latest: ") + latestVersion);
+
         if (!latestVersion.isEmpty() && Util::isVersionNewer(Environnement::getVersion(), latestVersion)) {
             gotUpdateDialog = true;
-            qDebug() << "App is outdated, latest:" << latestVersion
-                     << "current:" << Environnement::getVersion();
-
+            LOG_INFO("DialogLogin", QStringLiteral("Update available – showing dialog"));
+            ui->label_process->setText(tr("Update available!"));
             UpdateDialog up(latestVersion, this);
             up.exec();
-        }
-        else {
-            // can login!
+        } else {
+            ui->label_process->setText(tr("Loading page..."));
             ui->webView_login->setUrl(QUrl(Environnement::getUrlLogin()));
             connect(ui->webView_login, SIGNAL(loadFinished(bool)), this, SLOT(loginLoaded(bool)));
         }
+
         if (gotUpdateDialog) {
+            replyVersion->deleteLater();
+            replyVersion = nullptr;
             return QDialog::reject();
         }
+
+    } else {
+        const QString errMsg = replyVersion->errorString();
+        LOG_WARN("DialogLogin", QStringLiteral("Version check failed (") + errMsg
+                 + QStringLiteral(") – proceeding to login"));
+        ui->label_process->setText(tr("Version check failed, loading login…"));
+        // Don't block the user — proceed to login even if the check fails.
+        ui->webView_login->setUrl(QUrl(Environnement::getUrlLogin()));
+        connect(ui->webView_login, SIGNAL(loadFinished(bool)), this, SLOT(loginLoaded(bool)));
     }
-    //error
-    else {
-        qDebug() << "Problem getting version..." << replyVersion->errorString();
-        ui->label_process->setText("Problem retrieving version: " + replyVersion->errorString());
-    }
+
     replyVersion->deleteLater();
-
-
+    replyVersion = nullptr;
 }
 
 

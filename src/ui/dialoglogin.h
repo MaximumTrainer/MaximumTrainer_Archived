@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QMovie>
 #include <QNetworkReply>
+#include <QTimer>
 
 
 #include <QtWebEngineWidgets/QWebEngineView>
@@ -52,6 +53,7 @@ private slots:
 
     void slotFinishedGoogle();
     void slotFinishedGetVersion();
+    void onVersionTimeout();
 
 
 
@@ -76,6 +78,7 @@ private:
     QNetworkReply *replyGoogle;
     QNetworkReply *replyVersion;
     QNetworkReply *replyGetAccount;
+    QTimer        *m_versionTimeout;
 
     bool gotUpdateDialog;
 
