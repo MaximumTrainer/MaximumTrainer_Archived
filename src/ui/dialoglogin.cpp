@@ -140,8 +140,14 @@ void DialogLogin::showLoadingProgress(int prog) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 void DialogLogin::loginLoaded(bool ok){
-    if (!ok)
+    if (!ok) {
+        // The login page failed to load (common when offline). Still reveal
+        // widget_bottom so the "Work Offline" checkbox and "Start Offline"
+        // button remain accessible.
+        ui->widget_loading->setVisible(false);
+        ui->widget_bottom->setVisible(true);
         return;
+    }
 
     ui->widget_loading->setVisible(false);
     ui->label_loading->setVisible(false);
@@ -380,7 +386,7 @@ void DialogLogin::slotFinishedGoogle() {
         const int choice = QMessageBox::question(
             this,
             tr("No Internet Connection"),
-            tr("Could not reach the server.\n\nWould you like to proceed in Offline Mode?"),
+            tr("Could not reach the internet.\n\nWould you like to proceed in Offline Mode?"),
             QMessageBox::Yes | QMessageBox::No,
             QMessageBox::Yes);
 
@@ -434,6 +440,10 @@ void DialogLogin::loginOffline()
     // default of -1, so callers can distinguish offline from unauthenticated.
     account->id               = 0;
     account->email            = QStringLiteral("local@offline");
+    // email_clean is used by XmlUtil::parseLocalSaveFile() and saveLocalSaveFile()
+    // to derive the local .save filename.  Give it a fixed, filesystem-safe value
+    // so offline sessions consistently load and write to the same file.
+    account->email_clean      = QStringLiteral("offline_user");
     account->display_name     = tr("Local User");
     account->first_name       = tr("Local");
     account->last_name        = tr("User");
