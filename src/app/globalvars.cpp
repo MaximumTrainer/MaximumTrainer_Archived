@@ -9,6 +9,7 @@
 #include "calibration_types.h"
 #include "trackpoint.h"
 #include "userstudio.h"
+#include "localdatabase.h"
 
 #include <QWebEngineSettings>
 #include <QWebEngineProfile>
@@ -69,6 +70,7 @@ GlobalVars::GlobalVars(QObject *parent) :
     Account *account = new Account(this);
     Settings *settings = new Settings(this);
     SoundPlayer *soundPlayer = new SoundPlayer(this);
+    LocalDatabase *localDb = new LocalDatabase(this);
 
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
     QNetworkAccessManager *managerWS = new QNetworkAccessManager(this);
@@ -94,6 +96,7 @@ GlobalVars::GlobalVars(QObject *parent) :
     qApp->setProperty("SoundPlayer", QVariant::fromValue<SoundPlayer*>(soundPlayer));
     qApp->setProperty("NetworkManager", QVariant::fromValue<QNetworkAccessManager*>(manager));
     qApp->setProperty("NetworkManagerWS", QVariant::fromValue<QNetworkAccessManager*>(managerWS));
+    qApp->setProperty("LocalDatabase", QVariant::fromValue<LocalDatabase*>(localDb));
 
 
 }

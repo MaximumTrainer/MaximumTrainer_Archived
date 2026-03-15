@@ -29,6 +29,7 @@ QT       += network printsupport
 # (which lacks concurrent, bluetooth, and webenginewidgets).
 qtHaveModule(concurrent):       QT += concurrent
 qtHaveModule(bluetooth):        QT += bluetooth
+qtHaveModule(sql):              QT += sql
 qtHaveModule(webenginewidgets): QT += webenginewidgets
 
 #QT += serialport

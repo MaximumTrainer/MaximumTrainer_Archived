@@ -4,6 +4,7 @@
 #include "util.h"
 #include "environnement.h"
 #include "gpxparser.h"
+#include "localdatabase.h"
 
 
 
@@ -81,7 +82,28 @@ void XmlUtil::parseLocalSaveFile(Account *account) {
 
     qDebug() << "\n\n Parsing Local Save file!";
 
-    //Load Xml file
+    // ── 1. Open the per-user SQLite database ──────────────────────────────
+    LocalDatabase *localDb = qApp->property("LocalDatabase").value<LocalDatabase*>();
+    if (localDb && !localDb->isOpen()) {
+        localDb->open(account->email_clean);
+    }
+
+    // ── 2. Load from DB if it has data ────────────────────────────────────
+    if (localDb && localDb->isOpen()) {
+        const QSet<QString> workoutsDone = localDb->getWorkoutsDone();
+        const QSet<QString> coursesDone  = localDb->getCoursesDone();
+
+        if (!workoutsDone.isEmpty() || !coursesDone.isEmpty()) {
+            account->hashWorkoutDone = workoutsDone;
+            account->hashCourseDone  = coursesDone;
+            qDebug() << "\n\n End Parsing Local Save file (from DB)!";
+            return;
+        }
+    }
+
+    // ── 3. Fall back to legacy XML .save file ─────────────────────────────
+    //    Load it and, if successful, migrate the data into the DB so that
+    //    future sessions use the database exclusively.
     QString nameFile = Util::getMaximumTrainerDocumentPath() + QDir::separator() + account->email_clean + ".save";
     qDebug() << "name of File should be" << nameFile;
     QFile fileMt(nameFile);
@@ -115,6 +137,15 @@ void XmlUtil::parseLocalSaveFile(Account *account) {
             }
 
         }
+    }
+
+    // ── 4. Migrate XML data into the DB ───────────────────────────────────
+    if (localDb && localDb->isOpen()) {
+        localDb->setWorkoutsDone(account->hashWorkoutDone);
+        localDb->setCoursesDone(account->hashCourseDone);
+        qDebug() << "LocalDatabase: migrated" << account->hashWorkoutDone.size()
+                 << "workouts and" << account->hashCourseDone.size()
+                 << "courses from XML to SQLite";
     }
 
     qDebug() << "\n\n End Parsing Local Save file!";
@@ -320,8 +351,14 @@ bool XmlUtil::saveUserStudioFile(QVector<UserStudio> vecUserStudio, QString file
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool XmlUtil::saveLocalSaveFile(Account *account) {
 
+    // ── 1. Persist to the local SQLite database (primary storage) ─────────
+    LocalDatabase *localDb = qApp->property("LocalDatabase").value<LocalDatabase*>();
+    if (localDb && localDb->isOpen()) {
+        localDb->setWorkoutsDone(account->hashWorkoutDone);
+        localDb->setCoursesDone(account->hashCourseDone);
+    }
 
-
+    // ── 2. Also write the legacy XML .save file (backward compatibility) ──
     QString nameFile = Util::getMaximumTrainerDocumentPath() + QDir::separator() + account->email_clean + ".save";
     qDebug() << "name of File should be" << nameFile;
     QFile fileMt(nameFile);

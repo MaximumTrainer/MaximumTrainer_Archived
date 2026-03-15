@@ -110,6 +110,42 @@ jobs:
         ./build/tests/logger_tests -v2
 
   # ──────────────────────────────────────────────────────────────────────────
+  # LocalDatabase Unit Test (Linux)
+  #
+  # Builds and runs the LocalDatabase unit test suite (tests/persistence/) to
+  # verify that the SQLite-backed local storage layer correctly persists and
+  # retrieves workout/course history, account profiles, and sensor configs.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_localdatabase:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          libqt5sql5-sqlite \
+          build-essential
+
+    - name: Build LocalDatabase unit tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        mkdir -p build/tests
+        cd tests/persistence
+        qmake persistence_tests.pro
+        make -j$(nproc)
+
+    - name: Run LocalDatabase unit tests
+      run: |
+        ./build/tests/persistence_tests -v2
+
+  # ──────────────────────────────────────────────────────────────────────────
   # BTLE Integration Test (Linux)
   #
   # Runs SimulatorHub in a Qt window under Xvfb, takes a screenshot as
