@@ -8,7 +8,8 @@ SOURCES     +=\
     $$PWD/environnement.cpp \
     $$PWD/sensordao.cpp \
     $$PWD/radiodao.cpp \
-    $$PWD/achievementdao.cpp
+    $$PWD/achievementdao.cpp \
+    $$PWD/intervalsicuservice.cpp
 
 HEADERS     += \
     $$PWD/userdao.h \
@@ -17,7 +18,8 @@ HEADERS     += \
     $$PWD/environnement.h \
     $$PWD/sensordao.h \
     $$PWD/radiodao.h \
-    $$PWD/achievementdao.h
+    $$PWD/achievementdao.h \
+    $$PWD/intervalsicuservice.h
 
 
 

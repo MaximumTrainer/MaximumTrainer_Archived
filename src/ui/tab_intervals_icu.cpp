@@ -1,0 +1,309 @@
+#include "tab_intervals_icu.h"
+#include "ui_tab_intervals_icu.h"
+
+#include <QDir>
+#include <QFile>
+#include <QRegularExpression>
+#include <QTableWidgetItem>
+#include <QHeaderView>
+#include <QMessageBox>
+#include <QDebug>
+#include <QApplication>
+
+#include "account.h"
+#include "util.h"
+
+// ─────────────────────────────────────────────────────────────────────────────
+TabIntervalsIcu::TabIntervalsIcu(QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::TabIntervalsIcu)
+    , m_service(new IntervalsIcuService(this))
+    , m_weekStart(QDate::currentDate())
+{
+    ui->setupUi(this);
+
+    // Align week start to Monday
+    const int dow = m_weekStart.dayOfWeek(); // 1=Mon … 7=Sun
+    m_weekStart = m_weekStart.addDays(1 - dow);
+    updateWeekLabel();
+
+    // Stretch the "Name" column to fill available space
+    ui->tableWidget_calendar->horizontalHeader()->setSectionResizeMode(
+        1, QHeaderView::Stretch);
+
+#ifdef GC_WASM_BUILD
+    // In WASM mode the app is offline — show the offline banner and hide
+    // all interactive controls.
+    ui->label_offline->setVisible(true);
+    ui->pushButton_refresh->setVisible(false);
+    ui->pushButton_prevWeek->setVisible(false);
+    ui->pushButton_nextWeek->setVisible(false);
+    ui->pushButton_loadWorkout->setVisible(false);
+    ui->label_week->setVisible(false);
+    ui->tableWidget_calendar->setVisible(false);
+    ui->label_status->setVisible(false);
+#else
+    connect(ui->pushButton_refresh,  &QPushButton::clicked,
+            this, &TabIntervalsIcu::onRefreshClicked);
+    connect(ui->pushButton_prevWeek, &QPushButton::clicked,
+            this, &TabIntervalsIcu::onPrevWeekClicked);
+    connect(ui->pushButton_nextWeek, &QPushButton::clicked,
+            this, &TabIntervalsIcu::onNextWeekClicked);
+    connect(ui->pushButton_loadWorkout, &QPushButton::clicked,
+            this, &TabIntervalsIcu::onLoadWorkoutClicked);
+    connect(ui->tableWidget_calendar,
+            &QTableWidget::itemSelectionChanged, this, [this]() {
+                const int row =
+                    ui->tableWidget_calendar->currentRow();
+                const bool hasWorkout =
+                    row >= 0 && row < m_rowWorkoutIds.size() &&
+                    !m_rowWorkoutIds[row].isEmpty();
+                ui->pushButton_loadWorkout->setEnabled(hasWorkout);
+            });
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+TabIntervalsIcu::~TabIntervalsIcu()
+{
+    delete ui;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::refreshCredentials()
+{
+#ifndef GC_WASM_BUILD
+    auto *account = qApp->property("Account").value<Account *>();
+    if (!account)
+        return;
+
+    m_service->setCredentials(account->intervals_icu_api_key,
+                               account->intervals_icu_athlete_id);
+
+    if (account->intervals_icu_api_key.isEmpty() ||
+        account->intervals_icu_athlete_id.isEmpty()) {
+        setStatus(tr("Configure your Intervals.icu credentials in "
+                     "Preferences → Cloud Sync."));
+    } else {
+        setStatus(tr("Ready — click Refresh to load this week's schedule."));
+    }
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onRefreshClicked()
+{
+#ifndef GC_WASM_BUILD
+    auto *account = qApp->property("Account").value<Account *>();
+    if (!account || account->intervals_icu_api_key.isEmpty() ||
+        account->intervals_icu_athlete_id.isEmpty()) {
+        setStatus(tr("Please configure Intervals.icu credentials in "
+                     "Preferences → Cloud Sync first."));
+        return;
+    }
+
+    // Abort any in-flight request
+    if (m_calendarReply) {
+        m_calendarReply->abort();
+        m_calendarReply->deleteLater();
+        m_calendarReply = nullptr;
+    }
+
+    setBusy(true);
+    setStatus(tr("Fetching calendar…"));
+
+    const QDate newest = m_weekStart.addDays(6);
+    m_calendarReply = m_service->fetchCalendar(m_weekStart, newest);
+    connect(m_calendarReply, &QNetworkReply::finished,
+            this, &TabIntervalsIcu::onCalendarFetchFinished);
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onPrevWeekClicked()
+{
+    m_weekStart = m_weekStart.addDays(-7);
+    updateWeekLabel();
+    ui->tableWidget_calendar->setRowCount(0);
+    m_rowWorkoutIds.clear();
+    ui->pushButton_loadWorkout->setEnabled(false);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onNextWeekClicked()
+{
+    m_weekStart = m_weekStart.addDays(7);
+    updateWeekLabel();
+    ui->tableWidget_calendar->setRowCount(0);
+    m_rowWorkoutIds.clear();
+    ui->pushButton_loadWorkout->setEnabled(false);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onLoadWorkoutClicked()
+{
+#ifndef GC_WASM_BUILD
+    const int row = ui->tableWidget_calendar->currentRow();
+    if (row < 0 || row >= m_rowWorkoutIds.size())
+        return;
+
+    const QString workoutId = m_rowWorkoutIds[row];
+    if (workoutId.isEmpty())
+        return;
+
+    if (m_downloadReply) {
+        m_downloadReply->abort();
+        m_downloadReply->deleteLater();
+        m_downloadReply = nullptr;
+    }
+
+    setBusy(true);
+    setStatus(tr("Downloading workout file…"));
+    m_downloadReply = m_service->downloadWorkoutZwo(workoutId);
+    connect(m_downloadReply, &QNetworkReply::finished,
+            this, &TabIntervalsIcu::onWorkoutDownloadFinished);
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onCalendarFetchFinished()
+{
+#ifndef GC_WASM_BUILD
+    setBusy(false);
+
+    if (!m_calendarReply)
+        return;
+
+    if (m_calendarReply->error() != QNetworkReply::NoError) {
+        setStatus(tr("Error fetching calendar: %1")
+                      .arg(m_calendarReply->errorString()));
+        m_calendarReply->deleteLater();
+        m_calendarReply = nullptr;
+        return;
+    }
+
+    const QByteArray data = m_calendarReply->readAll();
+    m_calendarReply->deleteLater();
+    m_calendarReply = nullptr;
+
+    const QList<IntervalsIcuService::CalendarEvent> events =
+        IntervalsIcuService::parseEvents(data);
+
+    populateTable(events);
+
+    if (events.isEmpty()) {
+        setStatus(tr("No events found for this week."));
+    } else {
+        setStatus(tr("%1 event(s) loaded.").arg(events.size()));
+    }
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onWorkoutDownloadFinished()
+{
+#ifndef GC_WASM_BUILD
+    setBusy(false);
+
+    if (!m_downloadReply)
+        return;
+
+    if (m_downloadReply->error() != QNetworkReply::NoError) {
+        setStatus(tr("Error downloading workout: %1")
+                      .arg(m_downloadReply->errorString()));
+        m_downloadReply->deleteLater();
+        m_downloadReply = nullptr;
+        return;
+    }
+
+    const QByteArray zwoData = m_downloadReply->readAll();
+    m_downloadReply->deleteLater();
+    m_downloadReply = nullptr;
+
+    // Derive a file name from the selected row's workout name
+    const int row = ui->tableWidget_calendar->currentRow();
+    QString workoutName = (row >= 0)
+        ? ui->tableWidget_calendar->item(row, 1)->text()
+        : "intervals_workout";
+
+    // Sanitise for filesystem use
+    workoutName.replace(QRegularExpression("[^A-Za-z0-9_\\-. ]"), "_");
+    workoutName = workoutName.trimmed();
+
+    const QString dir =
+        Util::getSystemPathWorkout() + QDir::separator() + "intervals_icu";
+    QDir().mkpath(dir);
+
+    const QString filePath =
+        dir + QDir::separator() + workoutName + ".zwo";
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        setStatus(tr("Could not save workout file: %1").arg(filePath));
+        return;
+    }
+    file.write(zwoData);
+    file.close();
+
+    setStatus(tr("Workout saved: %1").arg(workoutName + ".zwo"));
+    emit workoutDownloaded(workoutName);
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::updateWeekLabel()
+{
+    const QDate weekEnd = m_weekStart.addDays(6);
+    ui->label_week->setText(
+        m_weekStart.toString("d MMM") + " – " +
+        weekEnd.toString("d MMM yyyy"));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::populateTable(
+    const QList<IntervalsIcuService::CalendarEvent> &events)
+{
+    ui->tableWidget_calendar->setRowCount(0);
+    m_rowWorkoutIds.clear();
+    ui->pushButton_loadWorkout->setEnabled(false);
+
+    for (const IntervalsIcuService::CalendarEvent &ev : events) {
+        const int row = ui->tableWidget_calendar->rowCount();
+        ui->tableWidget_calendar->insertRow(row);
+
+        ui->tableWidget_calendar->setItem(
+            row, 0, new QTableWidgetItem(ev.date.toString("ddd d MMM")));
+        ui->tableWidget_calendar->setItem(
+            row, 1, new QTableWidgetItem(ev.name));
+        ui->tableWidget_calendar->setItem(
+            row, 2, new QTableWidgetItem(ev.type));
+
+        // Format duration as h:mm or m:ss
+        QString durStr;
+        if (ev.duration_sec > 0) {
+            const int h = ev.duration_sec / 3600;
+            const int m = (ev.duration_sec % 3600) / 60;
+            durStr = h > 0
+                ? QString("%1h %2m").arg(h).arg(m, 2, 10, QChar('0'))
+                : QString("%1 min").arg(m);
+        }
+        ui->tableWidget_calendar->setItem(
+            row, 3, new QTableWidgetItem(durStr));
+
+        m_rowWorkoutIds.append(ev.workout_id);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::setStatus(const QString &msg)
+{
+    ui->label_status->setText(msg);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::setBusy(bool busy)
+{
+    ui->pushButton_refresh->setEnabled(!busy);
+    ui->pushButton_prevWeek->setEnabled(!busy);
+    ui->pushButton_nextWeek->setEnabled(!busy);
+}

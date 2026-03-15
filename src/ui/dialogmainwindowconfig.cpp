@@ -4,11 +4,14 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #include "util.h"
 #include "dialoginfowebview.h"
 #include "environnement.h"
 #include "extrequest.h"
+#include "intervalsicuservice.h"
 
 
 DialogMainWindowConfig::~DialogMainWindowConfig()
@@ -42,15 +45,18 @@ DialogMainWindowConfig::DialogMainWindowConfig(QWidget *parent) : QDialog(parent
     QListWidgetItem *item2 = new QListWidgetItem(QIcon(":/image/icon/gear"), tr("Connectivity"), ui->listWidget_settings);
     QListWidgetItem *item3 = new QListWidgetItem(QIcon(":/image/icon/folder"), tr("Folders"), ui->listWidget_settings);
     QListWidgetItem *item4 = new QListWidgetItem(QIcon(":/image/icon/upload"), tr("Auto Upload"), ui->listWidget_settings);
+    QListWidgetItem *item5 = new QListWidgetItem(QIcon(":/image/icon/calendar"), tr("Cloud Sync"), ui->listWidget_settings);
     item1->setSizeHint(QSize(35,35));
     item2->setSizeHint(QSize(35,35));
     item3->setSizeHint(QSize(35,35));
     item4->setSizeHint(QSize(35,35));
+    item5->setSizeHint(QSize(35,35));
 
     ui->listWidget_settings->addItem(item1);
     ui->listWidget_settings->addItem(item2);
     ui->listWidget_settings->addItem(item3);
     ui->listWidget_settings->addItem(item4);
+    ui->listWidget_settings->addItem(item5);
 
 
     connect(ui->listWidget_settings, SIGNAL(currentRowChanged(int)), this, SLOT(currentListViewSelectionChanged(int)) );
@@ -66,6 +72,9 @@ DialogMainWindowConfig::DialogMainWindowConfig(QWidget *parent) : QDialog(parent
     ui->label_courseTxt->setVisible(false);
 
     ui->checkBox_trainingPeaksPrivate->setVisible(false);
+
+    connect(ui->pushButton_testIntervalsConnection, &QPushButton::clicked,
+            this, &DialogMainWindowConfig::onTestIntervalsConnectionClicked);
 }
 
 
@@ -121,6 +130,11 @@ void DialogMainWindowConfig::initUI() {
 
     ui->lineEdit_userSelfloops->setText(account->selfloops_user);
     ui->lineEdit_pwSelfloops->setText(account->selfloops_pw);
+
+    // Intervals.icu credentials
+    ui->lineEdit_intervalsApiKey->setText(account->intervals_icu_api_key);
+    ui->lineEdit_intervalsAthleteId->setText(account->intervals_icu_athlete_id);
+    ui->label_intervalsTestResult->clear();
 
 }
 
@@ -401,9 +415,76 @@ void DialogMainWindowConfig::accept() {
 
     qDebug() << "user Selfloop is" << account->selfloops_user << "pw is:" << account->selfloops_pw;
 
+    // Intervals.icu credentials
+    const bool intervalsChanged =
+        account->intervals_icu_api_key    != ui->lineEdit_intervalsApiKey->text() ||
+        account->intervals_icu_athlete_id != ui->lineEdit_intervalsAthleteId->text();
+
+    account->intervals_icu_api_key    = ui->lineEdit_intervalsApiKey->text();
+    account->intervals_icu_athlete_id = ui->lineEdit_intervalsAthleteId->text();
+    account->saveIntervalsIcuCredentials();
 
     settings->saveGeneralSettings();
+
+    if (intervalsChanged)
+        emit intervalsIcuCredentialsChanged();
+
     QDialog::accept();
 }
 
 
+
+//---------------------------------------------------------------------------------------------
+void DialogMainWindowConfig::onTestIntervalsConnectionClicked()
+{
+#ifndef GC_WASM_BUILD
+    const QString apiKey    = ui->lineEdit_intervalsApiKey->text().trimmed();
+    const QString athleteId = ui->lineEdit_intervalsAthleteId->text().trimmed();
+
+    if (apiKey.isEmpty() || athleteId.isEmpty()) {
+        ui->label_intervalsTestResult->setStyleSheet("color: red;");
+        ui->label_intervalsTestResult->setText(tr("Please enter both API key and Athlete ID."));
+        return;
+    }
+
+    ui->pushButton_testIntervalsConnection->setEnabled(false);
+    ui->label_intervalsTestResult->setStyleSheet("color: #555;");
+    ui->label_intervalsTestResult->setText(tr("Testing…"));
+
+    IntervalsIcuService *svc = new IntervalsIcuService(this);
+    svc->setCredentials(apiKey, athleteId);
+    replyIntervalsTest = svc->testConnection();
+    connect(replyIntervalsTest, &QNetworkReply::finished,
+            this, &DialogMainWindowConfig::onTestIntervalsConnectionFinished);
+#else
+    ui->label_intervalsTestResult->setStyleSheet("color: #888;");
+    ui->label_intervalsTestResult->setText(tr("Not available in the web version."));
+#endif
+}
+
+//---------------------------------------------------------------------------------------------
+void DialogMainWindowConfig::onTestIntervalsConnectionFinished()
+{
+#ifndef GC_WASM_BUILD
+    ui->pushButton_testIntervalsConnection->setEnabled(true);
+
+    if (!replyIntervalsTest)
+        return;
+
+    if (replyIntervalsTest->error() == QNetworkReply::NoError) {
+        const QByteArray data = replyIntervalsTest->readAll();
+        const QJsonDocument doc = QJsonDocument::fromJson(data);
+        const QString name = doc.object()["name"].toString();
+        ui->label_intervalsTestResult->setStyleSheet("color: green;");
+        ui->label_intervalsTestResult->setText(
+            tr("✓ Connected") + (name.isEmpty() ? "" : " — " + name));
+    } else {
+        ui->label_intervalsTestResult->setStyleSheet("color: red;");
+        ui->label_intervalsTestResult->setText(
+            tr("✗ Failed: %1").arg(replyIntervalsTest->errorString()));
+    }
+
+    replyIntervalsTest->deleteLater();
+    replyIntervalsTest = nullptr;
+#endif
+}
