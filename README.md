@@ -15,6 +15,101 @@ An open-source, high-performance indoor cycling training application built with 
 | **Workout formats** | `.erg`, `.mrc` (imported and converted to the native `.workout` XML format) |
 | **Workout source** | Integrated TrainerDay.com browser for online workout plans |
 
+## Authentication & User Data
+
+### Login Flow
+
+MaximumTrainer uses **web-based authentication** against the MaximumTrainer.com
+backend. The login dialog (`src/ui/dialoglogin.cpp`) embeds a Qt WebEngine
+view pointing to the remote login page rather than managing credentials locally.
+
+**Step-by-step flow:**
+
+1. **App startup** (`src/app/main.cpp`) — creates global `Account` and
+   `Settings` objects and registers them as Qt application properties so every
+   component can access them without singleton globals.
+
+2. **`DialogLogin` constructor** — reads any previously saved local settings
+   (last username, encrypted password, language preference) from the OS-native
+   settings store via `QSettings`.
+
+3. **Connectivity check** — sends a HEAD request to Google to confirm internet
+   access; shows an error dialog if offline.
+
+4. **Version check** — queries the GitHub Releases API
+   (`api.github.com/repos/MaximumTrainer/MaximumTrainer_Redux/releases/latest`);
+   if a newer version is detected, an update dialog is shown.  A 10-second
+   timeout ensures a slow network never blocks login indefinitely.
+
+5. **Login page load** — once the version check completes, the embedded
+   `QWebEngineView` loads the remote login form:
+   - English: `https://maximumtrainer.com/login/insideMT`
+   - French: `https://maximumtrainer.com/connexion/insideMT`
+
+6. **Auto-fill** — if a previous session was saved with **Remember Me**
+   enabled, the last username is injected into the `#email` field via
+   `runJavaScript()`, the stored password is decrypted and injected into
+   `#password`, and the submit button (`#login-btn`) is clicked automatically.
+
+7. **Server response** — the backend validates the credentials and redirects
+   the web view to a URL containing `/account_rest/`.  `DialogLogin::loginLoaded()`
+   intercepts this URL change in its `loadFinished` slot.
+
+8. **JSON parsing** — `page()->toPlainText()` retrieves the JSON payload;
+   `Util::parseJsonObjectAccount()` deserialises it into the global `Account`
+   object.  A local XML file is also read (`XmlUtil::parseLocalSaveFile()`) to
+   restore folder paths that are only stored on-device.
+
+9. **Local credential save** — on a successful login, the password is
+   encrypted with `SimpleCrypt` and written to `QSettings` (together with the
+   email address) so "Remember Me" can work on the next launch.  The dialog
+   calls `accept()` and `MainWindow` takes control.
+
+> **Account creation and password reset** are handled on the MaximumTrainer.com
+> website.  The app opens `signup` and `forgotpw` paths in the system browser
+> (via `MyQWebEnginePage`'s external-link list).
+
+### Where Data Is Stored
+
+| Data | Storage location | Notes |
+|------|-----------------|-------|
+| User profile + 160+ settings | MaximumTrainer.com backend database | Fetched on login; synced back via `PUT /api/account_rest/account/` (`UserDAO::putAccount`) |
+| Session token (`session_mt_id`) | In-memory `Account` object only | Sent with every API call; never written to disk |
+| Encrypted password | OS-native settings store (see below) | `SimpleCrypt` obfuscation — not strong encryption; only stored when "Remember Me" is checked |
+| Last 5 usernames | OS-native settings store | Plain text; displayed in the login form dropdown |
+| Language preference | OS-native settings store | Integer index: `0` = English, `1` = French |
+| Local folder paths | OS-native settings store | Workout, history, and course directories chosen by the user |
+| Completed workout files | User-chosen local directory | FIT + XML files written to disk after each session |
+
+**OS-native settings store paths (`QSettings` with organisation `Max++ inc.`,
+application `MaximumTrainer`):**
+
+| Platform | Path |
+|----------|------|
+| Windows | `HKEY_CURRENT_USER\Software\Max++ inc.\MaximumTrainer` |
+| Linux | `~/.config/Max++ inc./MaximumTrainer.conf` |
+| macOS | `~/Library/Preferences/com.maximumtrainer.MaximumTrainer.plist` |
+
+### Key Source Files
+
+| File | Role |
+|------|------|
+| `src/ui/dialoglogin.cpp` | Login dialog: web view management, auto-fill, server response handling |
+| `src/model/account.h/.cpp` | `Account` model — all user profile fields and the in-memory session token |
+| `src/model/settings.h/.cpp` | `Settings` model — local preferences loaded/saved via `QSettings` |
+| `src/persistence/db/userdao.cpp` | `UserDAO::putAccount()` — uploads changed account data to the server |
+| `src/persistence/db/environnement.h` | Backend URLs: production `https://maximumtrainer.com/`, dev `http://localhost/` |
+| `src/app/simplecrypt.h/.cpp` | Lightweight symmetric encryption for local password caching |
+| `src/app/util.cpp` | `Util::parseJsonObjectAccount()` — JSON → `Account` deserialisation |
+| `src/app/globalvars.cpp` | Initialises global `Account`, `Settings`, and `QNetworkAccessManager` instances |
+
+> **Security note:** The local password cache uses `SimpleCrypt`, which is
+> designed to prevent casual observation, not to withstand a determined
+> attacker.  Users who leave **Remember Me** unchecked never have their
+> password stored on disk.
+
+---
+
 ## Hardware Setup
 
 ### 1 — Wake up your sensors
