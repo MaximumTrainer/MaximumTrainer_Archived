@@ -68,7 +68,11 @@ bool LocalDatabase::open(const QString &emailClean)
     // Enable WAL mode for better concurrent read performance and durability.
     // (WAL is not applicable to :memory: databases but is harmless there.)
     QSqlQuery pragmaQuery(m_db);
-    pragmaQuery.exec(QStringLiteral("PRAGMA journal_mode=WAL"));
+    if (!pragmaQuery.exec(QStringLiteral("PRAGMA journal_mode=WAL"))) {
+        qWarning() << "LocalDatabase: could not enable WAL mode:"
+                   << pragmaQuery.lastError().text();
+        // WAL is a performance hint; failure is non-fatal.
+    }
 
     if (!createTables()) {
         close();

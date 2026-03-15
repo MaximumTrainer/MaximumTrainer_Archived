@@ -32,7 +32,7 @@
 // The SQLite driver uses the "database name" literally as the file path.
 // Passing ":memory:" opens an in-memory database — perfect for unit tests.
 // ─────────────────────────────────────────────────────────────────────────────
-static constexpr const char *IN_MEMORY_DB = ":memory:";
+static const QLatin1String kInMemoryDb(":memory:");
 
 class TstLocalDatabase : public QObject
 {
@@ -81,20 +81,20 @@ private slots:
 void TstLocalDatabase::testOpen_succeeds()
 {
     LocalDatabase db;
-    QVERIFY(db.open(QStringLiteral(IN_MEMORY_DB)));
+    QVERIFY(db.open(kInMemoryDb));
 }
 
 void TstLocalDatabase::testOpen_isOpen_afterOpen()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
     QVERIFY(db.isOpen());
 }
 
 void TstLocalDatabase::testClose_isNotOpen_afterClose()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
     db.close();
     QVERIFY(!db.isOpen());
 }
@@ -102,9 +102,9 @@ void TstLocalDatabase::testClose_isNotOpen_afterClose()
 void TstLocalDatabase::testReopen_afterClose()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
     db.close();
-    QVERIFY(db.open(QStringLiteral(IN_MEMORY_DB)));
+    QVERIFY(db.open(kInMemoryDb));
     QVERIFY(db.isOpen());
 }
 
@@ -115,7 +115,7 @@ void TstLocalDatabase::testReopen_afterClose()
 void TstLocalDatabase::testWorkout_markAndGet()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     QVERIFY(db.markWorkoutDone(QStringLiteral("ftp_test.xml")));
     QVERIFY(db.markWorkoutDone(QStringLiteral("sweet_spot_40.xml")));
@@ -129,7 +129,7 @@ void TstLocalDatabase::testWorkout_markAndGet()
 void TstLocalDatabase::testWorkout_markIdempotent()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     db.markWorkoutDone(QStringLiteral("ftp_test.xml"));
     // Inserting the same workout twice should not fail or create a duplicate.
@@ -140,7 +140,7 @@ void TstLocalDatabase::testWorkout_markIdempotent()
 void TstLocalDatabase::testWorkout_markUndone()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     db.markWorkoutDone(QStringLiteral("ftp_test.xml"));
     db.markWorkoutDone(QStringLiteral("sweet_spot_40.xml"));
@@ -155,7 +155,7 @@ void TstLocalDatabase::testWorkout_markUndone()
 void TstLocalDatabase::testWorkout_undoneNonExistent_noError()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
     // Removing a workout that was never marked done must succeed silently.
     QVERIFY(db.markWorkoutUndone(QStringLiteral("nonexistent.xml")));
 }
@@ -163,7 +163,7 @@ void TstLocalDatabase::testWorkout_undoneNonExistent_noError()
 void TstLocalDatabase::testWorkout_setWorkoutsDone_bulkReplace()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     db.markWorkoutDone(QStringLiteral("old_workout.xml"));
 
@@ -180,14 +180,14 @@ void TstLocalDatabase::testWorkout_setWorkoutsDone_bulkReplace()
 void TstLocalDatabase::testWorkout_emptyNameIgnored()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     // Bulk-set that includes an empty string: empty entries must be skipped.
-    QSet<QString> withEmpty = {QStringLiteral("valid.xml"), QString()};
+    QSet<QString> withEmpty = {QStringLiteral("valid.xml"), QStringLiteral("")};
     QVERIFY(db.setWorkoutsDone(withEmpty));
 
     const QSet<QString> done = db.getWorkoutsDone();
-    QVERIFY(!done.contains(QString()));
+    QVERIFY(!done.contains(QStringLiteral("")));
     QVERIFY(done.contains(QStringLiteral("valid.xml")));
 }
 
@@ -198,7 +198,7 @@ void TstLocalDatabase::testWorkout_emptyNameIgnored()
 void TstLocalDatabase::testCourse_markAndGet()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     QVERIFY(db.markCourseDone(QStringLiteral("route_1.xml")));
     QVERIFY(db.markCourseDone(QStringLiteral("route_2.xml")));
@@ -212,7 +212,7 @@ void TstLocalDatabase::testCourse_markAndGet()
 void TstLocalDatabase::testCourse_markIdempotent()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     db.markCourseDone(QStringLiteral("route_1.xml"));
     QVERIFY(db.markCourseDone(QStringLiteral("route_1.xml")));
@@ -222,7 +222,7 @@ void TstLocalDatabase::testCourse_markIdempotent()
 void TstLocalDatabase::testCourse_markUndone()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     db.markCourseDone(QStringLiteral("route_1.xml"));
     db.markCourseDone(QStringLiteral("route_2.xml"));
@@ -236,7 +236,7 @@ void TstLocalDatabase::testCourse_markUndone()
 void TstLocalDatabase::testCourse_setCoursesDone_bulkReplace()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     db.markCourseDone(QStringLiteral("old_course.xml"));
 
@@ -255,7 +255,7 @@ void TstLocalDatabase::testCourse_setCoursesDone_bulkReplace()
 void TstLocalDatabase::testAccount_saveAndLoad()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     Account saved;
     saved.email_clean          = QStringLiteral("testuser");
@@ -289,7 +289,7 @@ void TstLocalDatabase::testAccount_saveAndLoad()
 void TstLocalDatabase::testAccount_loadMissing_returnsFalse()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     Account account;
     account.email_clean = QStringLiteral("nobody");
@@ -299,7 +299,7 @@ void TstLocalDatabase::testAccount_loadMissing_returnsFalse()
 void TstLocalDatabase::testAccount_saveOverwriteExisting()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     Account first;
     first.email_clean = QStringLiteral("testuser");
@@ -324,7 +324,7 @@ void TstLocalDatabase::testAccount_saveOverwriteExisting()
 void TstLocalDatabase::testSensors_saveAndGet()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     QList<Sensor> sensors = {
         Sensor(101, Sensor::SENSOR_HR,    QStringLiteral("HR Belt"),   QStringLiteral("BLE HR")),
@@ -348,7 +348,7 @@ void TstLocalDatabase::testSensors_saveAndGet()
 void TstLocalDatabase::testSensors_saveOverwriteExisting()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     QList<Sensor> first = {
         Sensor(101, Sensor::SENSOR_HR, QStringLiteral("HR Belt"), QStringLiteral(""))
@@ -368,7 +368,7 @@ void TstLocalDatabase::testSensors_saveOverwriteExisting()
 void TstLocalDatabase::testSensors_emptyList_clearsAll()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     QList<Sensor> sensors = {
         Sensor(101, Sensor::SENSOR_HR, QStringLiteral("HR Belt"), QStringLiteral(""))
@@ -382,7 +382,7 @@ void TstLocalDatabase::testSensors_emptyList_clearsAll()
 void TstLocalDatabase::testSensors_deviceTypePreserved()
 {
     LocalDatabase db;
-    db.open(QStringLiteral(IN_MEMORY_DB));
+    db.open(kInMemoryDb);
 
     QList<Sensor> sensors = {
         Sensor(777, Sensor::SENSOR_OXYGEN, QStringLiteral("O2 Ring"), QStringLiteral(""))

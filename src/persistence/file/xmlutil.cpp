@@ -85,7 +85,9 @@ void XmlUtil::parseLocalSaveFile(Account *account) {
     // ── 1. Open the per-user SQLite database ──────────────────────────────
     LocalDatabase *localDb = qApp->property("LocalDatabase").value<LocalDatabase*>();
     if (localDb && !localDb->isOpen()) {
-        localDb->open(account->email_clean);
+        if (!localDb->open(account->email_clean)) {
+            qWarning() << "LocalDatabase: failed to open DB for" << account->email_clean;
+        }
     }
 
     // ── 2. Load from DB if it has data ────────────────────────────────────
@@ -354,8 +356,12 @@ bool XmlUtil::saveLocalSaveFile(Account *account) {
     // ── 1. Persist to the local SQLite database (primary storage) ─────────
     LocalDatabase *localDb = qApp->property("LocalDatabase").value<LocalDatabase*>();
     if (localDb && localDb->isOpen()) {
-        localDb->setWorkoutsDone(account->hashWorkoutDone);
-        localDb->setCoursesDone(account->hashCourseDone);
+        if (!localDb->setWorkoutsDone(account->hashWorkoutDone)) {
+            qWarning() << "LocalDatabase: failed to save workout history";
+        }
+        if (!localDb->setCoursesDone(account->hashCourseDone)) {
+            qWarning() << "LocalDatabase: failed to save course history";
+        }
     }
 
     // ── 2. Also write the legacy XML .save file (backward compatibility) ──
