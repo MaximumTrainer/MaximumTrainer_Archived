@@ -1102,5 +1102,115 @@ QString Util::getStringFromUCHAR(unsigned char* ch) {
 
 
 
+// ───────────────────────────────────────────────────────────────────────────────
+// Parse GET /api/v1/athlete/{id}
+// Updates account->first_name, last_name, display_name, weight_kg, FTP, LTHR.
+void Util::parseJsonIntervalsIcuAthlete(const QString &data)
+{
+    Account *account = qApp->property("Account").value<Account*>();
+
+    qDebug() << "parseJsonIntervalsIcuAthlete: " << data.left(200);
+
+    QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+    if (doc.isNull() || !doc.isObject()) {
+        qWarning() << "parseJsonIntervalsIcuAthlete: invalid JSON";
+        return;
+    }
+
+    QJsonObject obj = doc.object();
+
+    // Name fields — Intervals.icu may return separate firstname/lastname or a
+    // combined name field depending on the API version; handle both.
+    const QString firstname = obj.value(QStringLiteral("firstname")).toString(
+                              obj.value(QStringLiteral("name")).toString());
+    const QString lastname  = obj.value(QStringLiteral("lastname")).toString();
+
+    if (!firstname.isEmpty())
+        account->first_name = firstname;
+    if (!lastname.isEmpty())
+        account->last_name = lastname;
+
+    // Rebuild display_name from the retrieved parts when available.
+    const QString displayName = obj.value(QStringLiteral("name")).toString();
+    if (!displayName.isEmpty())
+        account->display_name = displayName;
+    else if (!account->first_name.isEmpty())
+        account->display_name = account->first_name + (account->last_name.isEmpty()
+                                ? QString()
+                                : QStringLiteral(" ") + account->last_name);
+
+    // Weight — Intervals.icu stores in kilograms.
+    const double weight = obj.value(QStringLiteral("weight")).toDouble(-1.0);
+    if (weight > 0.0)
+        account->weight_kg = weight;
+
+    // FTP — stored as integer watts.
+    const int ftp = obj.value(QStringLiteral("ftp")).toInt(-1);
+    if (ftp > 0)
+        account->FTP = ftp;
+
+    // LTHR (Lactate Threshold Heart Rate).
+    const int lthr = obj.value(QStringLiteral("lthr")).toInt(-1);
+    if (lthr > 0)
+        account->LTHR = lthr;
+
+    qDebug() << "Intervals.icu athlete: name=" << account->display_name
+             << " weight=" << account->weight_kg
+             << " FTP=" << account->FTP
+             << " LTHR=" << account->LTHR;
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Parse GET /api/v1/athlete/{id}/settings
+// Updates account->hr_zones and account->power_zones with the upper-bound of
+// each zone, extracted from the Intervals.icu settings JSON.
+void Util::parseJsonIntervalsIcuSettings(const QString &data)
+{
+    Account *account = qApp->property("Account").value<Account*>();
+
+    qDebug() << "parseJsonIntervalsIcuSettings: " << data.left(200);
+
+    QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+    if (doc.isNull() || !doc.isObject()) {
+        qWarning() << "parseJsonIntervalsIcuSettings: invalid JSON";
+        return;
+    }
+
+    QJsonObject obj = doc.object();
+
+    // HR zones — array of zone objects each containing a "max" bound.
+    const QJsonValue hrZonesVal = obj.value(QStringLiteral("hrZones"));
+    if (hrZonesVal.isArray()) {
+        QList<int> zones;
+        for (const QJsonValue &zv : hrZonesVal.toArray()) {
+            const QJsonObject z = zv.toObject();
+            const int upper = z.value(QStringLiteral("max")).toInt(
+                              z.value(QStringLiteral("to")).toInt(0));
+            if (upper > 0)
+                zones.append(upper);
+        }
+        if (!zones.isEmpty())
+            account->hr_zones = zones;
+    }
+
+    // Power zones — same structure.
+    const QJsonValue pwrZonesVal = obj.value(QStringLiteral("powerZones"));
+    if (pwrZonesVal.isArray()) {
+        QList<int> zones;
+        for (const QJsonValue &zv : pwrZonesVal.toArray()) {
+            const QJsonObject z = zv.toObject();
+            const int upper = z.value(QStringLiteral("max")).toInt(
+                              z.value(QStringLiteral("to")).toInt(0));
+            if (upper > 0)
+                zones.append(upper);
+        }
+        if (!zones.isEmpty())
+            account->power_zones = zones;
+    }
+
+    qDebug() << "Intervals.icu settings: hrZones=" << account->hr_zones
+             << " powerZones=" << account->power_zones;
+}
 
 

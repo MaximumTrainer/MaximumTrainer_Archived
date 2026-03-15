@@ -56,6 +56,10 @@ private slots:
     void onVersionTimeout();
     void onGoogleTimeout();
 
+    void slotFinishedIntervalsIcuAthlete();
+    void slotFinishedIntervalsIcuSettings();
+    void onIntervalsIcuTimeout();
+
 
 
     void on_comboBox_language_currentIndexChanged(int index);
@@ -66,6 +70,16 @@ private slots:
 
 private:
     void loginOffline();
+
+    /// Trigger an Intervals.icu athlete-profile fetch immediately after a
+    /// successful maximumtrainer.com authentication, if the user has stored
+    /// their Intervals.icu credentials.  Falls through to completeLogin() if
+    /// no credentials are configured.
+    void fetchIntervalsIcuData();
+
+    /// Final step of the login flow: accept the dialog and hand control back
+    /// to MainWindow.
+    void completeLogin();
 
     Ui::DialogLogin *ui;
     QTranslator     m_translator;   /**< contains the translations for this application */
@@ -83,10 +97,14 @@ private:
     QNetworkReply *replyGoogle;
     QNetworkReply *replyVersion;
     QNetworkReply *replyGetAccount;
+    QNetworkReply *replyIntervalsIcuAthlete;
+    QNetworkReply *replyIntervalsIcuSettings;
     QTimer        *m_versionTimeout;
     QTimer        *m_googleTimeout;
+    QTimer        *m_intervalsIcuTimeout;
 
     bool gotUpdateDialog;
+    int  m_pendingIntervalsIcuReplies;  ///< how many Intervals.icu replies we are still waiting for
 
 
 

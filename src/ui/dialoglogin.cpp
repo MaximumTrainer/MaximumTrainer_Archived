@@ -19,6 +19,7 @@
 #include "simplecrypt.h"
 #include "xmlutil.h"
 #include "userdao.h"
+#include "intervalsicudao.h"
 #include "myqwebenginepage.h"
 
 
@@ -48,6 +49,10 @@ DialogLogin::DialogLogin(QWidget *parent) : QDialog(parent), ui(new Ui::DialogLo
 
     gotUpdateDialog = false;
     firstLogin = true;
+    replyIntervalsIcuAthlete  = nullptr;
+    replyIntervalsIcuSettings = nullptr;
+    m_intervalsIcuTimeout     = nullptr;
+    m_pendingIntervalsIcuReplies = 0;
 
 
     ///Set loading icon (wait for login page to show)
@@ -208,7 +213,7 @@ void DialogLogin::loginLoaded(bool ok){
             settings->lastLoggedKey = encryptedPw;
             settings->saveGeneralSettings();
 
-            this->accept();
+            fetchIntervalsIcuData();
         });
 
     }
@@ -523,4 +528,128 @@ void DialogLogin::on_comboBox_language_currentIndexChanged(int index) {
 }
 
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Intervals.icu data retrieval
+// ─────────────────────────────────────────────────────────────────────────────
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::fetchIntervalsIcuData()
+{
+    if (account->intervals_icu_athlete_id.isEmpty() || account->intervals_icu_api_key.isEmpty()) {
+        // No credentials stored — skip Intervals.icu and proceed directly.
+        LOG_INFO("DialogLogin", QStringLiteral("No Intervals.icu credentials configured – skipping retrieval"));
+        completeLogin();
+        return;
+    }
+
+    LOG_INFO("DialogLogin", QStringLiteral("Intervals.icu is retrieving all relevant user details"));
+    ui->label_process->setText(tr("Intervals.icu is retrieving all relevant user details..."));
+
+    m_pendingIntervalsIcuReplies = 2;  // athlete + settings
+
+    // Fetch basic profile.
+    replyIntervalsIcuAthlete = IntervalsIcuDAO::getAthlete(
+            account->intervals_icu_athlete_id,
+            account->intervals_icu_api_key);
+    connect(replyIntervalsIcuAthlete, &QNetworkReply::finished,
+            this, &DialogLogin::slotFinishedIntervalsIcuAthlete);
+
+    // Fetch training-zone settings.
+    replyIntervalsIcuSettings = IntervalsIcuDAO::getAthleteSettings(
+            account->intervals_icu_athlete_id,
+            account->intervals_icu_api_key);
+    connect(replyIntervalsIcuSettings, &QNetworkReply::finished,
+            this, &DialogLogin::slotFinishedIntervalsIcuSettings);
+
+    // Safety-net: if either reply stalls, proceed after 15 s anyway.
+    m_intervalsIcuTimeout = new QTimer(this);
+    m_intervalsIcuTimeout->setSingleShot(true);
+    connect(m_intervalsIcuTimeout, &QTimer::timeout,
+            this, &DialogLogin::onIntervalsIcuTimeout);
+    m_intervalsIcuTimeout->start(15000);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::slotFinishedIntervalsIcuAthlete()
+{
+    if (!replyIntervalsIcuAthlete) return;
+
+    if (replyIntervalsIcuAthlete->error() == QNetworkReply::NoError) {
+        const QByteArray data = replyIntervalsIcuAthlete->readAll();
+        Util::parseJsonIntervalsIcuAthlete(QString::fromUtf8(data));
+        LOG_INFO("DialogLogin", QStringLiteral("Intervals.icu athlete profile retrieved successfully"));
+    } else {
+        LOG_WARN("DialogLogin",
+                 QStringLiteral("Intervals.icu athlete fetch failed: ")
+                 + replyIntervalsIcuAthlete->errorString());
+    }
+
+    replyIntervalsIcuAthlete->deleteLater();
+    replyIntervalsIcuAthlete = nullptr;
+
+    m_pendingIntervalsIcuReplies--;
+    if (m_pendingIntervalsIcuReplies <= 0) {
+        if (m_intervalsIcuTimeout) m_intervalsIcuTimeout->stop();
+        completeLogin();
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::slotFinishedIntervalsIcuSettings()
+{
+    if (!replyIntervalsIcuSettings) return;
+
+    if (replyIntervalsIcuSettings->error() == QNetworkReply::NoError) {
+        const QByteArray data = replyIntervalsIcuSettings->readAll();
+        Util::parseJsonIntervalsIcuSettings(QString::fromUtf8(data));
+        LOG_INFO("DialogLogin", QStringLiteral("Intervals.icu training zones retrieved successfully"));
+    } else {
+        LOG_WARN("DialogLogin",
+                 QStringLiteral("Intervals.icu settings fetch failed: ")
+                 + replyIntervalsIcuSettings->errorString());
+    }
+
+    replyIntervalsIcuSettings->deleteLater();
+    replyIntervalsIcuSettings = nullptr;
+
+    m_pendingIntervalsIcuReplies--;
+    if (m_pendingIntervalsIcuReplies <= 0) {
+        if (m_intervalsIcuTimeout) m_intervalsIcuTimeout->stop();
+        completeLogin();
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::onIntervalsIcuTimeout()
+{
+    LOG_WARN("DialogLogin",
+             QStringLiteral("Intervals.icu retrieval timed out after 15 s – proceeding with login"));
+    ui->label_process->setText(tr("Intervals.icu retrieval timed out, continuing..."));
+
+    if (replyIntervalsIcuAthlete) {
+        replyIntervalsIcuAthlete->abort();
+        replyIntervalsIcuAthlete->deleteLater();
+        replyIntervalsIcuAthlete = nullptr;
+    }
+    if (replyIntervalsIcuSettings) {
+        replyIntervalsIcuSettings->abort();
+        replyIntervalsIcuSettings->deleteLater();
+        replyIntervalsIcuSettings = nullptr;
+    }
+
+    m_pendingIntervalsIcuReplies = 0;
+    completeLogin();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::completeLogin()
+{
+    LOG_INFO("DialogLogin", QStringLiteral("Login complete – entering application"));
+    this->accept();
+}
 

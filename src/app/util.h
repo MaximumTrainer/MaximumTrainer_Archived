@@ -113,6 +113,14 @@ public:
     static QList<Achievement> parseJsonAchievementList(QString data);
     static QSet<int> parseJsonAchievementListForUser(QString data);
 
+    /// Intervals.icu — parse the GET /api/v1/athlete/{id} response.
+    /// Updates the global Account object with name, weight, FTP, and LTHR.
+    static void parseJsonIntervalsIcuAthlete(const QString &data);
+
+    /// Intervals.icu — parse the GET /api/v1/athlete/{id}/settings response.
+    /// Updates the global Account object with hr_zones and power_zones lists.
+    static void parseJsonIntervalsIcuSettings(const QString &data);
+
 
 
 

@@ -114,6 +114,18 @@ void XmlUtil::parseLocalSaveFile(Account *account) {
                 parseCourseDone(account, xml);
             }
 
+            else if (xml.name() == QLatin1String("IntervalsIcu") && xml.isStartElement()) {
+                while (!xml.atEnd()) {
+                    xml.readNextStartElement();
+                    if (xml.name() == QLatin1String("AthleteId"))
+                        account->intervals_icu_athlete_id = xml.readElementText();
+                    else if (xml.name() == QLatin1String("ApiKey"))
+                        account->intervals_icu_api_key = xml.readElementText();
+                    else if (xml.tokenType() == QXmlStreamReader::EndElement
+                             && xml.name() == QLatin1String("IntervalsIcu"))
+                        break;
+                }
+            }
         }
     }
 
@@ -368,6 +380,13 @@ bool XmlUtil::saveLocalSaveFile(Account *account) {
                 writer.writeTextElement("Course", value);
         }
         writer.writeEndElement();  // CourseDone
+
+        ///-------------------------------------------------------------------------------------------------------
+        // Intervals.icu credentials — stored locally so they survive re-login.
+        writer.writeStartElement("IntervalsIcu");
+        writer.writeTextElement("AthleteId", account->intervals_icu_athlete_id);
+        writer.writeTextElement("ApiKey",    account->intervals_icu_api_key);
+        writer.writeEndElement();  // IntervalsIcu
         ///-------------------------------------------------------------------------------------------------------
 
 

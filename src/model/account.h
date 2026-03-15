@@ -77,6 +77,12 @@ public:
     QString selfloops_user;
     QString selfloops_pw;
 
+    // Intervals.icu integration
+    QString intervals_icu_athlete_id;  ///< Intervals.icu athlete ID (e.g. "i12345")
+    QString intervals_icu_api_key;     ///< Intervals.icu API key
+    QList<int> hr_zones;               ///< HR zone upper-bounds retrieved from Intervals.icu
+    QList<int> power_zones;            ///< Power zone upper-bounds retrieved from Intervals.icu
+
     QString training_peaks_access_token;
     QString training_peaks_refresh_token;
     bool training_peaks_public_upload;
