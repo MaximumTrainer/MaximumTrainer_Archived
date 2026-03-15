@@ -96,7 +96,8 @@ IntervalsIcuService::parseEvents(const QByteArray &data)
         const QJsonObject obj = val.toObject();
 
         CalendarEvent ev;
-        ev.id          = QString::number(obj["id"].toInt());
+        // Use toVariant().toLongLong() to preserve full 64-bit IDs on both Qt 5 and Qt 6
+        ev.id          = QString::number(obj["id"].toVariant().toLongLong());
         ev.name        = obj["name"].toString();
         ev.type        = obj["type"].toString();
         ev.duration_sec = obj["moving_time"].toInt(0);
@@ -104,7 +105,7 @@ IntervalsIcuService::parseEvents(const QByteArray &data)
 
         // workout_id may be absent (free event, not a structured workout)
         if (obj.contains("workout_id") && !obj["workout_id"].isNull())
-            ev.workout_id = QString::number(obj["workout_id"].toInt());
+            ev.workout_id = QString::number(obj["workout_id"].toVariant().toLongLong());
 
         // start_date_local is ISO 8601 "YYYY-MM-DDThh:mm:ss"
         const QString dateStr =

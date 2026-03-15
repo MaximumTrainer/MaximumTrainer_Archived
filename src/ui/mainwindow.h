@@ -75,7 +75,6 @@ public slots:
     void leftMenuChanged(int tabSelected);
 
     void goToWorkoutPlanFilter(const QString& plan);
-    void goToWorkoutNameFilter();
     void goToWorkoutNameFilterFromIntervals(const QString &workoutName);
     void exportWorkoutToPdf(const Workout& workout);
 

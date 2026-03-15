@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "account.h"
 #include "dialoginfowebview.h"
+#include "intervalsicuservice.h"
 
 
 namespace Ui {
@@ -69,6 +70,7 @@ private:
     QNetworkReply *replyTPDeauthorization;
 
     QNetworkReply *replyIntervalsTest = nullptr;
+    IntervalsIcuService *m_intervalsService = nullptr;
 
     DialogInfoWebView *stravaConnectView;
     bool stravaConnectViewAlreadyUsed;

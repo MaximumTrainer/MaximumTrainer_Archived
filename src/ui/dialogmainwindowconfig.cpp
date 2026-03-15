@@ -447,13 +447,23 @@ void DialogMainWindowConfig::onTestIntervalsConnectionClicked()
         return;
     }
 
+    // Abort any in-flight test request
+    if (replyIntervalsTest) {
+        replyIntervalsTest->abort();
+        replyIntervalsTest->deleteLater();
+        replyIntervalsTest = nullptr;
+    }
+
+    // Reuse or create the service object
+    if (!m_intervalsService)
+        m_intervalsService = new IntervalsIcuService(this);
+    m_intervalsService->setCredentials(apiKey, athleteId);
+
     ui->pushButton_testIntervalsConnection->setEnabled(false);
     ui->label_intervalsTestResult->setStyleSheet("color: #555;");
     ui->label_intervalsTestResult->setText(tr("Testing…"));
 
-    IntervalsIcuService *svc = new IntervalsIcuService(this);
-    svc->setCredentials(apiKey, athleteId);
-    replyIntervalsTest = svc->testConnection();
+    replyIntervalsTest = m_intervalsService->testConnection();
     connect(replyIntervalsTest, &QNetworkReply::finished,
             this, &DialogMainWindowConfig::onTestIntervalsConnectionFinished);
 #else
@@ -475,6 +485,8 @@ void DialogMainWindowConfig::onTestIntervalsConnectionFinished()
         const QByteArray data = replyIntervalsTest->readAll();
         const QJsonDocument doc = QJsonDocument::fromJson(data);
         const QString name = doc.object()["name"].toString();
+        if (name.isEmpty())
+            qWarning() << "IntervalsIcuService: athlete response missing 'name' field";
         ui->label_intervalsTestResult->setStyleSheet("color: green;");
         ui->label_intervalsTestResult->setText(
             tr("✓ Connected") + (name.isEmpty() ? "" : " — " + name));

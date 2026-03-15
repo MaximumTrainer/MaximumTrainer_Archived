@@ -74,8 +74,10 @@ void TabIntervalsIcu::refreshCredentials()
 {
 #ifndef GC_WASM_BUILD
     auto *account = qApp->property("Account").value<Account *>();
-    if (!account)
+    if (!account) {
+        qWarning() << "TabIntervalsIcu::refreshCredentials: Account property not available";
         return;
+    }
 
     m_service->setCredentials(account->intervals_icu_api_key,
                                account->intervals_icu_athlete_id);
@@ -226,13 +228,20 @@ void TabIntervalsIcu::onWorkoutDownloadFinished()
         ? ui->tableWidget_calendar->item(row, 1)->text()
         : "intervals_workout";
 
-    // Sanitise for filesystem use
-    workoutName.replace(QRegularExpression("[^A-Za-z0-9_\\-. ]"), "_");
+    // Sanitise for filesystem use (strip leading/trailing whitespace, then
+    // replace everything except safe characters with underscores)
     workoutName = workoutName.trimmed();
+    workoutName.replace(QRegularExpression("[^A-Za-z0-9_\\-.]"), "_");
+
+    if (workoutName.isEmpty())
+        workoutName = "intervals_workout";
 
     const QString dir =
         Util::getSystemPathWorkout() + QDir::separator() + "intervals_icu";
-    QDir().mkpath(dir);
+    if (!QDir().mkpath(dir)) {
+        setStatus(tr("Could not create workout directory: %1").arg(dir));
+        return;
+    }
 
     const QString filePath =
         dir + QDir::separator() + workoutName + ".zwo";

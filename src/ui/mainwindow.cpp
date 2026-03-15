@@ -289,15 +289,6 @@ void MainWindow::goToWorkoutPlanFilter(const QString& plan) {
 
 }
 
-// trigger after a download is finish on Intervals.icu tab
-//---------------------------------------------------------------------------------
-void MainWindow::goToWorkoutNameFilter() {
-
-    ui->tab_workout1->refreshUserWorkout();
-    ui->tabWidget_workout->setCurrentIndex(0);
-    ftb->setCurrentIndex(0);
-}
-
 // trigger after a .zwo file downloaded from Intervals.icu is saved
 //---------------------------------------------------------------------------------
 void MainWindow::goToWorkoutNameFilterFromIntervals(const QString &workoutName) {
