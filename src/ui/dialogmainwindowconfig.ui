@@ -743,7 +743,6 @@
        </item>
       </layout>
      </widget>
-    </widget>
      <widget class="QWidget" name="page_cloud_sync">
       <layout class="QVBoxLayout" name="verticalLayout_cloud">
        <property name="topMargin">
