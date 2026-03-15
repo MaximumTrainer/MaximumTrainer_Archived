@@ -54,14 +54,19 @@ private slots:
     void slotFinishedGoogle();
     void slotFinishedGetVersion();
     void onVersionTimeout();
+    void onGoogleTimeout();
 
 
 
     void on_comboBox_language_currentIndexChanged(int index);
     void on_checkBox_autoLogin_clicked(bool checked);
+    void on_checkBox_workOffline_clicked(bool checked);
+    void on_pushButton_startOffline_clicked();
 
 
 private:
+    void loginOffline();
+
     Ui::DialogLogin *ui;
     QTranslator     m_translator;   /**< contains the translations for this application */
     QString         m_currLang;     /**< contains the currently loaded language */
@@ -79,6 +84,7 @@ private:
     QNetworkReply *replyVersion;
     QNetworkReply *replyGetAccount;
     QTimer        *m_versionTimeout;
+    QTimer        *m_googleTimeout;
 
     bool gotUpdateDialog;
 

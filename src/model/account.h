@@ -48,6 +48,7 @@ public:
 
 
     //-------------------------- not in DB ----------------------
+    bool isOffline;  ///< true when the user logged in via offline (local) mode
     double userCda;
     QString os;
 
