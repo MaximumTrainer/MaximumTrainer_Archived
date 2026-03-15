@@ -143,6 +143,7 @@ Account::Account(QObject *parent) : QObject(parent)  {
 
 
     //-------------------------- not in DB ----------------------
+    isOffline = false;
 #ifdef Q_OS_WIN32
     os = "win";
 #endif

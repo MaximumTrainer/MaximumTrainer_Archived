@@ -77,6 +77,12 @@ DialogLogin::DialogLogin(QWidget *parent) : QDialog(parent), ui(new Ui::DialogLo
     replyGoogle = ExtRequest::checkGoogleConnection();
     connect(replyGoogle, SIGNAL(finished()), this, SLOT(slotFinishedGoogle()) );
 
+    // Abort the Google connectivity check if it doesn't complete within 10 s.
+    m_googleTimeout = new QTimer(this);
+    m_googleTimeout->setSingleShot(true);
+    connect(m_googleTimeout, &QTimer::timeout, this, &DialogLogin::onGoogleTimeout);
+    m_googleTimeout->start(10000);
+
 
 
     /// Check if new version APP available
@@ -297,6 +303,15 @@ void DialogLogin::onVersionTimeout() {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::onGoogleTimeout() {
+    if (!replyGoogle) return;
+    LOG_WARN("DialogLogin", QStringLiteral("Connectivity check timed out after 10 s – aborting and offering offline mode"));
+    ui->label_process->setText(tr("Connection timed out."));
+    // Aborting emits finished() → slotFinishedGoogle() handles the rest.
+    replyGoogle->abort();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DialogLogin::slotFinishedGetVersion() {
 
     m_versionTimeout->stop();
@@ -352,25 +367,86 @@ void DialogLogin::slotFinishedGetVersion() {
 //----------------------------------------------------------------------------------------
 void DialogLogin::slotFinishedGoogle() {
 
+    m_googleTimeout->stop();
 
     //success, process data
     if (replyGoogle->error() == QNetworkReply::NoError) {
         ui->label_process->setText(tr("Checking for updates..."));
     }
     else {
-        //Remove for now, testing local
-        qDebug() << "Problem reaching google..." << replyGoogle->errorString();
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Critical);
-        msgBox.setText(tr("No internet connection was detected."));
-        msgBox.setInformativeText(tr("Please verify your internet connection."));
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Save);
-        msgBox.exec();
+        qDebug() << "Problem reaching Google..." << replyGoogle->errorString();
+        LOG_WARN("DialogLogin", QStringLiteral("No internet connection – offering offline mode"));
+
+        const int choice = QMessageBox::question(
+            this,
+            tr("No Internet Connection"),
+            tr("Could not reach the server.\n\nWould you like to proceed in Offline Mode?"),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::Yes);
+
+        if (choice == QMessageBox::Yes) {
+            loginOffline();
+        }
+        // If the user chose No, leave the checkbox unchecked and let them
+        // wait for the server or close the dialog manually.
     }
     replyGoogle->deleteLater();
 }
 
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::on_checkBox_workOffline_clicked(bool checked)
+{
+    if (checked) {
+        // Hide the web-based login form and expose the "Start Offline" button.
+        ui->webView_login->setVisible(false);
+        ui->pushButton_startOffline->setVisible(true);
+        ui->label_process->setText(tr("Offline mode selected. Click \"Start Offline\" to continue."));
+    } else {
+        // Restore normal online login UI.
+        ui->webView_login->setVisible(true);
+        ui->pushButton_startOffline->setVisible(false);
+        ui->label_process->setText(tr("Loading page..."));
+    }
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::on_pushButton_startOffline_clicked()
+{
+    loginOffline();
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::loginOffline()
+{
+    // Populate the global Account object with safe defaults for a local user.
+    account->isOffline        = true;
+    // ID 0 is used as the offline-user sentinel: 0 is not a valid database
+    // primary key (valid IDs start at 1) and differs from the uninitialized
+    // default of -1, so callers can distinguish offline from unauthenticated.
+    account->id               = 0;
+    account->email            = QStringLiteral("local@offline");
+    account->display_name     = tr("Local User");
+    account->first_name       = tr("Local");
+    account->last_name        = tr("User");
+    // subscription_type_id 1 = Free tier (lowest privilege); ensures that any
+    // feature gated on subscription level behaves conservatively offline.
+    account->subscription_type_id = 1;
+
+    // Load any previously saved local preferences (folder paths, etc.).
+    XmlUtil::parseLocalSaveFile(account);
+
+    LOG_INFO("DialogLogin", QStringLiteral("Offline login accepted – running as LocalUser"));
+    this->accept();
+}
 
 
 
