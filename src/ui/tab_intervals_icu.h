@@ -60,6 +60,7 @@ private:
 
     QNetworkReply *m_calendarReply  = nullptr;
     QNetworkReply *m_downloadReply  = nullptr;
+    QString        m_pendingWorkoutName; ///< name captured at download start
 
     // Parallel list of workout IDs for each table row (empty string = no
     // downloadable workout for that event)

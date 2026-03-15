@@ -16,6 +16,13 @@
 
 DialogMainWindowConfig::~DialogMainWindowConfig()
 {
+#ifndef GC_WASM_BUILD
+    if (replyIntervalsTest) {
+        replyIntervalsTest->abort();
+        replyIntervalsTest->deleteLater();
+        replyIntervalsTest = nullptr;
+    }
+#endif
     delete ui;
 }
 
@@ -415,13 +422,16 @@ void DialogMainWindowConfig::accept() {
 
     qDebug() << "user Selfloop is" << account->selfloops_user << "pw is:" << account->selfloops_pw;
 
-    // Intervals.icu credentials
-    const bool intervalsChanged =
-        account->intervals_icu_api_key    != ui->lineEdit_intervalsApiKey->text() ||
-        account->intervals_icu_athlete_id != ui->lineEdit_intervalsAthleteId->text();
+    // Intervals.icu credentials — trim whitespace before saving
+    const QString newApiKey    = ui->lineEdit_intervalsApiKey->text().trimmed();
+    const QString newAthleteId = ui->lineEdit_intervalsAthleteId->text().trimmed();
 
-    account->intervals_icu_api_key    = ui->lineEdit_intervalsApiKey->text();
-    account->intervals_icu_athlete_id = ui->lineEdit_intervalsAthleteId->text();
+    const bool intervalsChanged =
+        account->intervals_icu_api_key    != newApiKey ||
+        account->intervals_icu_athlete_id != newAthleteId;
+
+    account->intervals_icu_api_key    = newApiKey;
+    account->intervals_icu_athlete_id = newAthleteId;
     account->saveIntervalsIcuCredentials();
 
     settings->saveGeneralSettings();
@@ -483,13 +493,22 @@ void DialogMainWindowConfig::onTestIntervalsConnectionFinished()
 
     if (replyIntervalsTest->error() == QNetworkReply::NoError) {
         const QByteArray data = replyIntervalsTest->readAll();
-        const QJsonDocument doc = QJsonDocument::fromJson(data);
-        const QString name = doc.object()["name"].toString();
-        if (name.isEmpty())
-            qWarning() << "IntervalsIcuService: athlete response missing 'name' field";
-        ui->label_intervalsTestResult->setStyleSheet("color: green;");
-        ui->label_intervalsTestResult->setText(
-            tr("✓ Connected") + (name.isEmpty() ? "" : " — " + name));
+        QJsonParseError parseError;
+        const QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+        if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
+            qWarning() << "IntervalsIcuService: failed to parse athlete response:"
+                       << parseError.errorString();
+            ui->label_intervalsTestResult->setStyleSheet("color: red;");
+            ui->label_intervalsTestResult->setText(
+                tr("✗ Unexpected response from server."));
+        } else {
+            const QString name = doc.object()["name"].toString();
+            if (name.isEmpty())
+                qWarning() << "IntervalsIcuService: athlete response missing 'name' field";
+            ui->label_intervalsTestResult->setStyleSheet("color: green;");
+            ui->label_intervalsTestResult->setText(
+                tr("✓ Connected") + (name.isEmpty() ? "" : " — " + name));
+        }
     } else {
         ui->label_intervalsTestResult->setStyleSheet("color: red;");
         ui->label_intervalsTestResult->setText(

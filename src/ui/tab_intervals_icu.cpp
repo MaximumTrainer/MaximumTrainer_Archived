@@ -84,6 +84,26 @@ void TabIntervalsIcu::refreshCredentials()
 
     if (account->intervals_icu_api_key.isEmpty() ||
         account->intervals_icu_athlete_id.isEmpty()) {
+        // Clear any stale calendar data so the old content isn't visible
+        // with credentials that may no longer be valid.
+        ui->tableWidget_calendar->setRowCount(0);
+        m_rowWorkoutIds.clear();
+        ui->pushButton_loadWorkout->setEnabled(false);
+
+        // Also abort any in-flight requests
+        if (m_calendarReply) {
+            m_calendarReply->abort();
+            m_calendarReply->deleteLater();
+            m_calendarReply = nullptr;
+        }
+        if (m_downloadReply) {
+            m_downloadReply->abort();
+            m_downloadReply->deleteLater();
+            m_downloadReply = nullptr;
+            ui->tableWidget_calendar->setSelectionMode(QAbstractItemView::SingleSelection);
+        }
+
+        setBusy(false);
         setStatus(tr("Configure your Intervals.icu credentials in "
                      "Preferences → Cloud Sync."));
     } else {
@@ -161,6 +181,18 @@ void TabIntervalsIcu::onLoadWorkoutClicked()
 
     setBusy(true);
     setStatus(tr("Downloading workout file…"));
+
+    // Capture workout name now so a mid-flight selection change can't
+    // affect which file name we write.
+    const int nameRow = ui->tableWidget_calendar->currentRow();
+    const QTableWidgetItem *nameItem = (nameRow >= 0)
+        ? ui->tableWidget_calendar->item(nameRow, 1)
+        : nullptr;
+    m_pendingWorkoutName = nameItem ? nameItem->text() : "intervals_workout";
+
+    // Disable selection while download is in progress
+    ui->tableWidget_calendar->setSelectionMode(QAbstractItemView::NoSelection);
+
     m_downloadReply = m_service->downloadWorkoutZwo(workoutId);
     connect(m_downloadReply, &QNetworkReply::finished,
             this, &TabIntervalsIcu::onWorkoutDownloadFinished);
@@ -215,6 +247,8 @@ void TabIntervalsIcu::onWorkoutDownloadFinished()
                       .arg(m_downloadReply->errorString()));
         m_downloadReply->deleteLater();
         m_downloadReply = nullptr;
+        // Restore selection mode on error too
+        ui->tableWidget_calendar->setSelectionMode(QAbstractItemView::SingleSelection);
         return;
     }
 
@@ -222,11 +256,11 @@ void TabIntervalsIcu::onWorkoutDownloadFinished()
     m_downloadReply->deleteLater();
     m_downloadReply = nullptr;
 
-    // Derive a file name from the selected row's workout name
-    const int row = ui->tableWidget_calendar->currentRow();
-    QString workoutName = (row >= 0)
-        ? ui->tableWidget_calendar->item(row, 1)->text()
-        : "intervals_workout";
+    // Restore normal row selection
+    ui->tableWidget_calendar->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    // Use the name captured when the download was started
+    QString workoutName = m_pendingWorkoutName;
 
     // Sanitise for filesystem use (strip leading/trailing whitespace, then
     // replace everything except safe characters with underscores)

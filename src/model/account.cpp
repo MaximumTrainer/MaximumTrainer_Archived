@@ -69,8 +69,6 @@ Account::Account(QObject *parent) : QObject(parent)  {
     training_peaks_public_upload = false;
     selfloops_user = "";
     selfloops_pw = "";
-    intervals_icu_api_key = "";
-    intervals_icu_athlete_id = "";
     control_trainer_resistance = true;
     stop_pairing_on_found = true;
     nb_sec_pairing = 2;
