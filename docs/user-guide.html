@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Guide — Maximum Trainer</title>
+  <meta name="description" content="Complete user guide for Maximum Trainer — learn how to connect sensors, run structured interval workouts in ERG mode, create custom workouts, and upload activities." />
+  <link rel="icon" type="image/png" href="assets/images/main_icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── User Guide specific styles ─────────────────────────────────────────── */
+
+    /* Page hero (lighter than index hero — no full-vh) */
+    .guide-hero {
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(33,150,243,0.15) 0%, transparent 70%),
+                  linear-gradient(180deg, #121212 0%, #161616 100%);
+      padding: 4rem 1.5rem 3rem;
+      text-align: center;
+      border-bottom: 1px solid var(--clr-border);
+    }
+    .guide-hero h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      color: var(--clr-heading);
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+    .guide-hero p {
+      color: var(--clr-text-muted);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin-inline: auto;
+    }
+
+    /* Two-column layout: sidebar TOC + content */
+    .guide-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 0;
+      max-width: 1200px;
+      margin-inline: auto;
+      align-items: start;
+      min-height: calc(100vh - 64px);
+    }
+
+    /* Sticky sidebar */
+    .guide-sidebar {
+      position: sticky;
+      top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      overflow-y: auto;
+      padding: 2rem 1.25rem;
+      border-right: 1px solid var(--clr-border);
+      background-color: var(--clr-bg-alt);
+    }
+    .guide-sidebar h2 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--clr-text-muted);
+      margin-bottom: 1rem;
+    }
+    .guide-toc {
+      list-style: none;
+    }
+    .guide-toc li {
+      margin-bottom: 0.1rem;
+    }
+    .guide-toc a {
+      display: block;
+      padding: 0.35em 0.6em;
+      border-radius: var(--radius-sm);
+      color: var(--clr-text-muted);
+      font-size: 0.875rem;
+      transition: background-color 0.15s, color 0.15s;
+      text-decoration: none;
+    }
+    .guide-toc a:hover {
+      background-color: var(--clr-surface);
+      color: var(--clr-heading);
+      text-decoration: none;
+    }
+    .guide-toc a.active {
+      background-color: var(--clr-surface-high);
+      color: var(--clr-accent-light);
+    }
+    .guide-toc .toc-section {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--clr-text-muted);
+      padding: 0.9em 0.6em 0.2em;
+      pointer-events: none;
+    }
+
+    /* Main content pane */
+    .guide-content {
+      padding: 3rem 3rem 5rem;
+      min-width: 0;
+    }
+
+    /* Section anchors */
+    .guide-section {
+      padding-top: 1rem;
+      margin-bottom: 3.5rem;
+    }
+    .guide-section h2 {
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      font-weight: 700;
+      color: var(--clr-heading);
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--clr-border);
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .guide-section h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--clr-heading);
+      margin-top: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .guide-section p {
+      color: var(--clr-text);
+      margin-bottom: 0.9rem;
+      line-height: 1.75;
+    }
+    .guide-section ul,
+    .guide-section ol {
+      margin: 0.5rem 0 1rem 1.5rem;
+      color: var(--clr-text);
+      line-height: 1.75;
+    }
+    .guide-section li {
+      margin-bottom: 0.35rem;
+    }
+
+    /* Callout / tip / warning boxes */
+    .callout {
+      border-left: 3px solid var(--clr-accent);
+      background-color: var(--clr-surface);
+      padding: 0.85rem 1.1rem;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin: 1.25rem 0;
+      color: var(--clr-text);
+      font-size: 0.95rem;
+    }
+    .callout strong {
+      color: var(--clr-accent-light);
+    }
+    .callout--warn {
+      border-left-color: #f59e0b;
+    }
+    .callout--warn strong {
+      color: #fcd34d;
+    }
+    .callout--success {
+      border-left-color: #22c55e;
+    }
+    .callout--success strong {
+      color: #86efac;
+    }
+
+    /* Inline kbd keys */
+    kbd {
+      display: inline-block;
+      background-color: var(--clr-surface-high);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-sm);
+      padding: 0.1em 0.45em;
+      font-family: var(--font-mono);
+      font-size: 0.82em;
+      color: var(--clr-heading);
+      white-space: nowrap;
+    }
+
+    /* Step list (numbered with highlighted circles) */
+    .steps {
+      list-style: none;
+      margin: 0.75rem 0 1.25rem;
+      counter-reset: step-counter;
+    }
+    .steps li {
+      counter-increment: step-counter;
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .steps li::before {
+      content: counter(step-counter);
+      flex-shrink: 0;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background-color: var(--clr-accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.2rem;
+    }
+
+    /* Feature card row for quick reference */
+    .guide-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+    .guide-card {
+      background-color: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.1rem;
+    }
+    .guide-card .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.4rem;
+    }
+    .guide-card h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--clr-heading);
+      margin-bottom: 0.3rem;
+    }
+    .guide-card p {
+      font-size: 0.85rem;
+      color: var(--clr-text-muted);
+      margin-bottom: 0;
+    }
+
+    /* Screenshots */
+    .guide-screenshot {
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin: 1.25rem 0;
+      box-shadow: var(--shadow-card);
+    }
+    .guide-screenshot img {
+      width: 100%;
+      display: block;
+    }
+    .guide-screenshot figcaption {
+      background-color: var(--clr-surface);
+      padding: 0.5rem 0.85rem;
+      font-size: 0.82rem;
+      color: var(--clr-text-muted);
+      border-top: 1px solid var(--clr-border);
+    }
+
+    /* Specs table (reuse from index) */
+    .guide-table-wrap {
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .guide-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .guide-table th {
+      background-color: var(--clr-surface-high);
+      color: var(--clr-heading);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.65rem 0.9rem;
+      border-bottom: 2px solid var(--clr-border);
+    }
+    .guide-table td {
+      padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid var(--clr-border);
+      color: var(--clr-text);
+      vertical-align: top;
+    }
+    .guide-table tr:last-child td {
+      border-bottom: none;
+    }
+    .guide-table tr:hover td {
+      background-color: var(--clr-surface);
+    }
+
+    /* "Back to top" link in sidebar */
+    .sidebar-back {
+      display: block;
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--clr-text-muted);
+      text-align: center;
+    }
+    .sidebar-back:hover {
+      color: var(--clr-accent-light);
+      text-decoration: none;
+    }
+
+    /* Mobile: collapse sidebar into a flat TOC above content */
+    @media (max-width: 768px) {
+      .guide-layout {
+        grid-template-columns: 1fr;
+      }
+      .guide-sidebar {
+        position: static;
+        height: auto;
+        overflow-y: visible;
+        border-right: none;
+        border-bottom: 1px solid var(--clr-border);
+        padding: 1.25rem;
+      }
+      .guide-toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+      .guide-toc .toc-section {
+        display: none;
+      }
+      .guide-toc a {
+        background-color: var(--clr-surface);
+        font-size: 0.8rem;
+        padding: 0.3em 0.7em;
+      }
+      .guide-content {
+        padding: 1.75rem 1.25rem 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════ NAV ══════════════════════════════════════ -->
+  <header class="nav-header" id="top">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/images/logo.png" alt="Maximum Trainer logo" height="36" />
+        <span>Maximum Trainer</span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu">&#9776;</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html#story">Story</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#gallery">Gallery</a></li>
+        <li><a href="index.html#download">Download</a></li>
+        <li><a href="user-guide.html" class="active">User Guide</a></li>
+        <li><a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/discussions" target="_blank" rel="noopener">Community</a></li>
+        <li>
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux" class="btn btn-outline" target="_blank" rel="noopener">
+            GitHub
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ═══════════════════════════════════ PAGE HERO ═══════════════════════════════════ -->
+  <div class="guide-hero">
+    <h1>📘 User Guide</h1>
+    <p>Everything you need to start training — from connecting your first sensor to uploading your finished ride.</p>
+  </div>
+
+  <!-- ══════════════════════════════════ MAIN LAYOUT ══════════════════════════════════ -->
+  <div class="guide-layout">
+
+    <!-- ── Sidebar TOC ──────────────────────────────────────────────────────────── -->
+    <aside class="guide-sidebar">
+      <h2>Contents</h2>
+      <ul class="guide-toc" id="guideToc">
+        <li><a href="#overview">Overview</a></li>
+
+        <li class="toc-section">Getting Started</li>
+        <li><a href="#first-launch">First Launch &amp; Login</a></li>
+        <li><a href="#user-profile">User Profile &amp; FTP</a></li>
+
+        <li class="toc-section">Devices</li>
+        <li><a href="#connecting-devices">Connecting Sensors</a></li>
+        <li><a href="#simulation-mode">Simulation Mode</a></li>
+
+        <li class="toc-section">Workouts</li>
+        <li><a href="#finding-workouts">Finding Workouts</a></li>
+        <li><a href="#importing-workouts">Importing Workouts</a></li>
+        <li><a href="#creating-workouts">Creating Workouts</a></li>
+
+        <li class="toc-section">Training</li>
+        <li><a href="#workout-modes">ERG vs Slope Mode</a></li>
+        <li><a href="#workout-player">The Workout Player</a></li>
+        <li><a href="#during-workout">During a Workout</a></li>
+
+        <li class="toc-section">Post-Workout</li>
+        <li><a href="#saving-activity">Saving Your Activity</a></li>
+        <li><a href="#uploading">Uploading to Strava &amp; More</a></li>
+
+        <li class="toc-section">App</li>
+        <li><a href="#settings">Settings</a></li>
+        <li><a href="#studio-mode">Studio Mode</a></li>
+        <li><a href="#achievements">Achievements</a></li>
+        <li><a href="#tips">Tips &amp; Shortcuts</a></li>
+      </ul>
+      <a href="#top" class="sidebar-back">↑ Back to top</a>
+    </aside>
+
+    <!-- ── Content ──────────────────────────────────────────────────────────────── -->
+    <main class="guide-content">
+
+      <!-- ── Overview ──────────────────────────────────────────── -->
+      <section class="guide-section" id="overview">
+        <h2>🚴 Overview</h2>
+        <p>
+          Maximum Trainer is a free, open-source indoor cycling and rowing training application. It
+          connects to smart trainers, power meters, heart rate monitors, and cadence sensors over
+          <strong>Bluetooth LE (BLE)</strong>, runs structured interval workouts in automatic
+          <strong>ERG mode</strong>, and exports completed activities to the Garmin FIT format for
+          upload to Strava, TrainingPeaks, and SelfLoops.
+        </p>
+
+        <div class="guide-cards">
+          <div class="guide-card">
+            <div class="card-icon">📡</div>
+            <h4>BLE Sensors</h4>
+            <p>Heart rate, power, cadence, speed, and muscle oxygen via standard BLE profiles.</p>
+          </div>
+          <div class="guide-card">
+            <div class="card-icon">⚡</div>
+            <h4>ERG Mode</h4>
+            <p>Automatic resistance control — just pedal at the right cadence and hit your target power.</p>
+          </div>
+          <div class="guide-card">
+            <div class="card-icon">📋</div>
+            <h4>Workout Library</h4>
+            <p>Thousands of free workouts from TrainerDay.com, plus import your own .erg / .mrc files.</p>
+          </div>
+          <div class="guide-card">
+            <div class="card-icon">☁️</div>
+            <h4>Activity Upload</h4>
+            <p>Post-workout upload to Strava, TrainingPeaks, and SelfLoops — directly from the app.</p>
+          </div>
+        </div>
+
+        <p>
+          This guide assumes Maximum Trainer is already installed on your computer. If you need
+          installation instructions, see the
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux#building" target="_blank" rel="noopener">README on GitHub</a>.
+        </p>
+      </section>
+
+      <!-- ── First Launch ───────────────────────────────────────── -->
+      <section class="guide-section" id="first-launch">
+        <h2>🚀 First Launch &amp; Login</h2>
+        <p>
+          On first launch, Maximum Trainer displays a <strong>login screen</strong>. You can create
+          a local account or log in with an existing one. Your account stores your user profile (FTP,
+          weight, heart rate zones) and links to third-party services such as Strava.
+        </p>
+
+        <ol class="steps">
+          <li>Launch <strong>MaximumTrainer</strong> from your Start Menu, Applications folder, or desktop shortcut.</li>
+          <li>On the login screen, enter your <strong>username</strong> and <strong>password</strong>, then click <strong>Login</strong>.</li>
+          <li>If this is your first time, click <strong>Create Account</strong> and follow the on-screen prompts to set up a new local profile.</li>
+          <li>After a successful login the <strong>Main Window</strong> opens, showing your workout library.</li>
+        </ol>
+
+        <div class="callout">
+          <strong>Tip:</strong> Your account data is stored locally on your computer. No internet
+          connection is required to log in or train.
+        </div>
+      </section>
+
+      <!-- ── User Profile ───────────────────────────────────────── -->
+      <section class="guide-section" id="user-profile">
+        <h2>👤 User Profile &amp; FTP</h2>
+        <p>
+          Maximum Trainer uses your <strong>Functional Threshold Power (FTP)</strong> and
+          <strong>body weight</strong> to calculate training zones and relative power (W/kg).
+          Setting these values correctly ensures ERG targets and zone boundaries are accurate.
+        </p>
+
+        <ol class="steps">
+          <li>Open <strong>Preferences → Preferences &amp; Profile</strong> from the menu bar (or the gear icon in the toolbar).</li>
+          <li>Select the <strong>User Profile</strong> tab.</li>
+          <li>Enter your <strong>FTP</strong> (in watts). If you don't know your FTP, a value of 200 W is a reasonable starting point.</li>
+          <li>Enter your <strong>body weight</strong> (in kg).</li>
+          <li>Adjust <strong>heart rate zones</strong> if desired (default zones are percentage-based on your max HR).</li>
+          <li>Click <strong>Save</strong>.</li>
+        </ol>
+
+        <div class="callout">
+          <strong>Tip:</strong> After completing a ramp test or FTP test, remember to update your
+          FTP in the profile so that all future workout targets and difficulty adjustments scale
+          correctly.
+        </div>
+      </section>
+
+      <!-- ── Connecting Devices ─────────────────────────────────── -->
+      <section class="guide-section" id="connecting-devices">
+        <h2>📡 Connecting Your Sensors</h2>
+        <p>
+          Maximum Trainer communicates with cycling hardware over <strong>Bluetooth Low Energy (BLE)</strong>.
+          Before connecting, make sure your devices are awake and within range (typically 10 m).
+        </p>
+
+        <h3>Waking up your devices</h3>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Device</th><th>How to wake it</th></tr></thead>
+            <tbody>
+              <tr><td>Smart trainer</td><td>Start pedalling for a few seconds</td></tr>
+              <tr><td>Power meter</td><td>Start pedalling</td></tr>
+              <tr><td>Heart rate strap</td><td>Moisten the electrode contacts and put it on</td></tr>
+              <tr><td>Speed / cadence sensor</td><td>Spin the crank or wheel</td></tr>
+              <tr><td>Moxy muscle-oxygen sensor</td><td>Press the activation button or begin exercise</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Pairing sensors in the app</h3>
+        <ol class="steps">
+          <li>From the main window, open <strong>Preferences → Device Connections</strong> (or the Bluetooth icon in the toolbar).</li>
+          <li>Click <strong>Scan / Add Devices</strong>. The BLE scanner lists every nearby Bluetooth LE device.</li>
+          <li>Select the correct <strong>BLE profile</strong> for each device from the list below.</li>
+          <li>Click <strong>Connect</strong>. A green indicator confirms the sensor is active.</li>
+          <li>Repeat for additional sensors. You can pair multiple devices simultaneously (e.g. an FTMS smart trainer <em>and</em> a heart rate strap).</li>
+        </ol>
+
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead>
+              <tr>
+                <th>Profile</th>
+                <th>BLE UUID</th>
+                <th>Data provided</th>
+                <th>ERG control</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Fitness Machine (FTMS)</strong></td>
+                <td><code>0x1826</code></td>
+                <td>Speed · Cadence · Power</td>
+                <td>✅ Yes — automatic resistance</td>
+              </tr>
+              <tr>
+                <td>Cycling Power</td>
+                <td><code>0x1818</code></td>
+                <td>Power (W) · L/R Balance</td>
+                <td>❌ No</td>
+              </tr>
+              <tr>
+                <td>Heart Rate Monitor</td>
+                <td><code>0x180D</code></td>
+                <td>Heart rate (bpm)</td>
+                <td>❌ No</td>
+              </tr>
+              <tr>
+                <td>Cycling Speed &amp; Cadence</td>
+                <td><code>0x1816</code></td>
+                <td>Speed (km/h) · Cadence (rpm)</td>
+                <td>❌ No</td>
+              </tr>
+              <tr>
+                <td>Moxy Muscle Oxygen</td>
+                <td><code>0xAAB0</code></td>
+                <td>SmO₂ (%) · tHb (g/dL)</td>
+                <td>❌ No</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--warn">
+          <strong>Important:</strong> Select the <strong>Fitness Machine (FTMS / 0x1826)</strong>
+          profile for your smart trainer to enable automatic ERG resistance control. Choosing a
+          plain Power or Speed profile disables ERG.
+        </div>
+
+        <div class="callout">
+          <strong>Linux users:</strong> If the scanner returns an empty list, make sure your user
+          account is in the <code>bluetooth</code> group and the BlueZ daemon is running. See the
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux#linux--bluetooth-setup" target="_blank" rel="noopener">Linux Bluetooth Setup</a>
+          section of the README.
+        </div>
+      </section>
+
+      <!-- ── Simulation Mode ───────────────────────────────────── -->
+      <section class="guide-section" id="simulation-mode">
+        <h2>🎮 Simulation Mode</h2>
+        <p>
+          If you have no Bluetooth hardware available — or simply want to preview a new workout —
+          choose <strong>Simulation</strong> in the connection dialog. The built-in simulator
+          generates realistic, gently drifting sensor values and responds to ERG load commands,
+          giving you a full end-to-end test of the training logic without any physical devices.
+        </p>
+
+        <ol class="steps">
+          <li>When the connection method dialog appears, select <strong>Simulation</strong> instead of <em>BTLE Device</em>.</li>
+          <li>Choose a workout and press <strong>Start</strong>.</li>
+          <li>The simulator immediately begins emitting data — no hardware required.</li>
+        </ol>
+
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Channel</th><th>Base value</th><th>Range</th></tr></thead>
+            <tbody>
+              <tr><td>Heart rate</td><td>140 bpm</td><td>125–165 bpm</td></tr>
+              <tr><td>Cadence</td><td>90 rpm</td><td>80–100 rpm</td></tr>
+              <tr><td>Speed</td><td>28 km/h</td><td>23–33 km/h</td></tr>
+              <tr><td>Power</td><td>200 W</td><td>170–260 W</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--success">
+          <strong>Good to know:</strong> The simulator responds to ERG load commands. When an
+          interval target changes, the simulated power output adjusts accordingly — letting you
+          verify the full workout flow before your first real ride.
+        </div>
+      </section>
+
+      <!-- ── Finding Workouts ──────────────────────────────────── -->
+      <section class="guide-section" id="finding-workouts">
+        <h2>🔍 Finding Workouts</h2>
+
+        <figure class="guide-screenshot">
+          <img src="assets/screenshots/screenshot_main_window.png"
+               alt="Main window — workout list with structured interval plans" />
+          <figcaption>Main window — workout library with the TrainerDay browser in the sidebar</figcaption>
+        </figure>
+
+        <h3>Option A — TrainerDay.com integrated browser</h3>
+        <p>
+          Maximum Trainer includes a built-in browser for the
+          <a href="https://www.trainerday.com/" target="_blank" rel="noopener">TrainerDay.com</a>
+          workout library — thousands of free, coach-designed structured interval workouts for every
+          discipline and fitness level.
+        </p>
+        <ol class="steps">
+          <li>Click the <strong>Find Workouts</strong> tab in the left sidebar of the main window.</li>
+          <li>Browse or search the TrainerDay.com catalogue directly inside the app.</li>
+          <li>Double-click a workout to download it to your local library.</li>
+          <li>The workout appears in your library list immediately, ready to start.</li>
+        </ol>
+
+        <div class="callout">
+          <strong>Tip:</strong> Use the search box to filter by duration, workout type (base, sweet spot,
+          VO2max, etc.), or creator name. An internet connection is required to browse the online catalogue.
+        </div>
+
+        <h3>Option B — Browse existing library</h3>
+        <p>
+          Previously downloaded workouts are listed in the <strong>Workouts</strong> tab of the main
+          window. Use the search/filter bar at the top to quickly find a specific session by name,
+          duration, or workout type.
+        </p>
+      </section>
+
+      <!-- ── Importing Workouts ────────────────────────────────── -->
+      <section class="guide-section" id="importing-workouts">
+        <h2>📂 Importing Workouts</h2>
+        <p>
+          If you already have workout files from another application (TrainerRoad, Zwift Companion,
+          ErgDB, etc.), you can import them directly into Maximum Trainer.
+        </p>
+
+        <h3>Supported import formats</h3>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Format</th><th>Extension</th><th>Source applications</th></tr></thead>
+            <tbody>
+              <tr><td>CyclingPeaks / TrainerRoad ERG</td><td><code>.erg</code></td><td>TrainerRoad, ErgDB, custom scripts</td></tr>
+              <tr><td>CyclingPeaks MRC</td><td><code>.mrc</code></td><td>TrainerRoad, PerfPro, various</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Importing a single workout file</h3>
+        <ol class="steps">
+          <li>Go to <strong>File → Import Workout</strong> in the menu bar.</li>
+          <li>Navigate to your <code>.erg</code> or <code>.mrc</code> file and click <strong>Open</strong>.</li>
+          <li>Maximum Trainer converts the file to its native XML format and adds it to your library.</li>
+        </ol>
+
+        <h3>Importing a folder of workout files</h3>
+        <ol class="steps">
+          <li>Go to <strong>File → Import Course Folder</strong>.</li>
+          <li>Select the folder containing your <code>.erg</code> / <code>.mrc</code> files.</li>
+          <li>All compatible files in the folder are batch-imported at once.</li>
+        </ol>
+      </section>
+
+      <!-- ── Creating Workouts ─────────────────────────────────── -->
+      <section class="guide-section" id="creating-workouts">
+        <h2>✏️ Creating Custom Workouts</h2>
+        <p>
+          The built-in <strong>Workout Creator</strong> lets you design your own structured interval
+          sessions — specify target power (as absolute watts or % FTP), cadence, or heart rate for
+          every segment, add repeats, and save for immediate use.
+        </p>
+
+        <figure class="guide-screenshot">
+          <img src="assets/screenshots/screenshot_workout_editor.png"
+               alt="Workout editor — build custom interval sessions" />
+          <figcaption>Workout Creator — designing a custom interval session with the graphical editor</figcaption>
+        </figure>
+
+        <ol class="steps">
+          <li>Click the <strong>pencil / Workout Creator</strong> icon in the toolbar (or go to <strong>File → New Workout</strong>).</li>
+          <li>Enter a <strong>name</strong>, optional description, and workout type (cycling / rowing).</li>
+          <li>
+            Add intervals using the <strong>Add Interval</strong> button:
+            <ul>
+              <li>Set the <strong>duration</strong> (minutes:seconds).</li>
+              <li>Set the <strong>target</strong> — Power (W or % FTP), Cadence (rpm), or Heart Rate (bpm).</li>
+              <li>Choose <strong>Ramp</strong> if the power should smoothly transition from the previous segment.</li>
+            </ul>
+          </li>
+          <li>Use <strong>Add Repeat Block</strong> to wrap a set of intervals in a repeat loop (e.g. 4 × 4 min at 105 % FTP).</li>
+          <li>Drag rows in the interval table to reorder segments.</li>
+          <li>The graphical preview at the top updates in real time as you add and edit intervals.</li>
+          <li>Click <strong>Save</strong>. The workout is added to your library immediately.</li>
+        </ol>
+
+        <div class="callout">
+          <strong>Tip:</strong> Click an existing workout in your library and then open the Workout Creator
+          — it will load the selected workout for editing. Click <strong>Save as New</strong> to keep
+          the original intact.
+        </div>
+      </section>
+
+      <!-- ── Workout Modes ─────────────────────────────────────── -->
+      <section class="guide-section" id="workout-modes">
+        <h2>⚙️ ERG vs Slope Mode</h2>
+        <p>
+          Maximum Trainer supports two resistance modes when connected to a smart trainer.
+          Understanding the difference is key to getting the most out of your sessions.
+        </p>
+
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>How it works</th>
+                <th>Best for</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>ERG</strong></td>
+                <td>
+                  The app continuously adjusts trainer resistance so your actual power output
+                  matches the interval target. You only need to control cadence.
+                </td>
+                <td>Structured interval workouts with power targets</td>
+              </tr>
+              <tr>
+                <td><strong>Slope / Manual</strong></td>
+                <td>
+                  The app sends a constant simulated incline (grade %) to the trainer. Resistance
+                  increases naturally with speed, just like riding a hill outdoors.
+                </td>
+                <td>Free-riding, ramp tests, courses, race simulations</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>Note:</strong> The workout player switches to Slope mode automatically when the
+          current interval has no power target, or when you press the
+          <strong>Increase / Decrease Difficulty</strong> buttons to temporarily override ERG.
+        </div>
+
+        <h3>ERG tips</h3>
+        <ul>
+          <li>Maintain a <strong>smooth, consistent cadence</strong> (85–95 rpm is typical). Abrupt cadence changes
+              cause the trainer to momentarily over- or under-correct resistance.</li>
+          <li>When a new interval starts, give the trainer 5–10 seconds to settle at the new target.</li>
+          <li>If a target feels too hard or too easy, use <strong>Adjust Difficulty</strong> (±5 % FTP per press) to
+              scale the entire session without stopping.</li>
+        </ul>
+      </section>
+
+      <!-- ── Workout Player ────────────────────────────────────── -->
+      <section class="guide-section" id="workout-player">
+        <h2>▶️ The Workout Player</h2>
+
+        <figure class="guide-screenshot">
+          <img src="assets/screenshots/screenshot_workout_running.png"
+               alt="Active ERG workout — live power graph and real-time sensor metrics" />
+          <figcaption>Workout Player — real-time power graph and live sensor metrics during an active ERG session</figcaption>
+        </figure>
+
+        <p>
+          The workout player is the central screen during a training session. It combines a real-time
+          power graph, live sensor metrics, interval information, and playback controls all in one view.
+        </p>
+
+        <h3>Display elements</h3>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Element</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Interval graph</strong></td><td>Coloured target-power band with your live wattage overlaid as a line. Each zone has a distinct colour matching standard training zones.</td></tr>
+              <tr><td><strong>Interval countdown</strong></td><td>Time remaining in the current interval, displayed prominently at the top.</td></tr>
+              <tr><td><strong>Workout time</strong></td><td>Total elapsed time and total remaining time for the full session.</td></tr>
+              <tr><td><strong>Power</strong></td><td>Live power output in watts from your trainer or power meter.</td></tr>
+              <tr><td><strong>Heart rate</strong></td><td>Live beats per minute from your HR strap, colour-coded by zone.</td></tr>
+              <tr><td><strong>Cadence</strong></td><td>Live pedalling cadence in rpm.</td></tr>
+              <tr><td><strong>Speed</strong></td><td>Live speed in km/h.</td></tr>
+              <tr><td><strong>L/R Balance</strong></td><td>Left/right power split (%) — only shown when a dual-sided power meter is connected.</td></tr>
+              <tr><td><strong>SmO₂ / tHb</strong></td><td>Muscle oxygen saturation and total haemoglobin — only shown when a Moxy sensor is connected.</td></tr>
+              <tr><td><strong>Calories</strong></td><td>Estimated kilojoules / kcal burned, calculated from power data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── During a Workout ──────────────────────────────────── -->
+      <section class="guide-section" id="during-workout">
+        <h2>🎛️ During a Workout</h2>
+
+        <h3>Starting a workout</h3>
+        <ol class="steps">
+          <li>Select a workout in the main window and click <strong>Start Workout</strong> (or double-click the workout).</li>
+          <li>Choose your connection method: <strong>BTLE Device</strong> (real hardware) or <strong>Simulation</strong>.</li>
+          <li>The workout player opens and begins the pre-ride countdown.</li>
+          <li>Start pedalling — the ERG controller begins adjusting resistance immediately.</li>
+        </ol>
+
+        <h3>Playback controls</h3>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Control</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Pause / Resume</strong></td><td>Temporarily pauses the workout timer and sets trainer load to 0 W. Press again to resume.</td></tr>
+              <tr><td><strong>Skip Interval</strong></td><td>Immediately jumps to the next interval in the sequence.</td></tr>
+              <tr><td><strong>+ Difficulty</strong></td><td>Increases all remaining interval targets by 5 % of your FTP (stacks).</td></tr>
+              <tr><td><strong>− Difficulty</strong></td><td>Decreases all remaining interval targets by 5 % of your FTP (stacks).</td></tr>
+              <tr><td><strong>Lap</strong></td><td>Marks a manual lap in the recorded data (useful for free-ride segments).</td></tr>
+              <tr><td><strong>Stop / Finish</strong></td><td>Ends the session and opens the post-workout save screen.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Settings during a workout</h3>
+        <p>
+          Press the <strong>gear icon</strong> within the workout player to open the in-workout
+          settings panel. From here you can adjust display options — which metrics are visible,
+          timer size, font size — without interrupting the session.
+        </p>
+
+        <h3>Internet radio</h3>
+        <p>
+          Maximum Trainer includes a built-in internet radio player. Open the settings panel during
+          a workout and navigate to the <strong>Radio</strong> tab to add a stream URL and adjust
+          volume. Radio plays in the background alongside workout audio cues.
+        </p>
+
+        <h3>Video player</h3>
+        <p>
+          On desktop builds with VLC-Qt installed, you can open a local video file (training
+          footage, virtual rides) to play alongside your workout. Use <strong>Settings →
+          Video</strong> in the workout player to select a file.
+        </p>
+
+        <div class="callout callout--warn">
+          <strong>Reconnection:</strong> If your BLE device disconnects mid-workout (e.g. low
+          battery), Maximum Trainer automatically attempts to reconnect every 5 seconds, up to
+          3 times. A notification appears while reconnecting. The workout timer continues so you
+          don't lose data — simply wait a moment and the connection will restore.
+        </div>
+      </section>
+
+      <!-- ── Saving ────────────────────────────────────────────── -->
+      <section class="guide-section" id="saving-activity">
+        <h2>💾 Saving Your Activity</h2>
+        <p>
+          When you press <strong>Stop / Finish</strong> (or the workout ends naturally), the
+          post-workout screen appears.
+        </p>
+
+        <ol class="steps">
+          <li>Review the <strong>activity summary</strong> — total time, average and normalised power, average HR, TSS, and interval breakdown.</li>
+          <li>Edit the <strong>activity name</strong> if desired (defaults to the workout name + date).</li>
+          <li>Click <strong>Save</strong> to write the activity as a <code>.fit</code> file to your configured history folder.</li>
+        </ol>
+
+        <div class="callout">
+          <strong>Where are my files?</strong> By default, activity files are saved to your
+          system's Documents folder under <code>MaximumTrainer / History</code>. You can change the
+          history folder in <strong>Preferences → Folders</strong>.
+        </div>
+
+        <p>
+          If you choose <strong>Discard</strong> instead, the raw data is deleted and no file is
+          written. This cannot be undone.
+        </p>
+      </section>
+
+      <!-- ── Uploading ─────────────────────────────────────────── -->
+      <section class="guide-section" id="uploading">
+        <h2>☁️ Uploading to Strava &amp; More</h2>
+        <p>
+          Maximum Trainer can upload completed activities directly to third-party platforms from the
+          post-workout screen — no need to open a web browser or manually transfer files.
+        </p>
+
+        <h3>Supported platforms</h3>
+        <div class="guide-cards">
+          <div class="guide-card">
+            <div class="card-icon">🟠</div>
+            <h4>Strava</h4>
+            <p>Authenticate once via OAuth. Activities appear on your Strava feed automatically after uploading.</p>
+          </div>
+          <div class="guide-card">
+            <div class="card-icon">📊</div>
+            <h4>TrainingPeaks</h4>
+            <p>Link your TrainingPeaks account for seamless TSS, ATL/CTL tracking integration.</p>
+          </div>
+          <div class="guide-card">
+            <div class="card-icon">📈</div>
+            <h4>SelfLoops</h4>
+            <p>Upload to the SelfLoops analytics platform for advanced power and performance metrics.</p>
+          </div>
+        </div>
+
+        <h3>Linking a platform (one-time setup)</h3>
+        <ol class="steps">
+          <li>Open <strong>Preferences → Preferences &amp; Profile</strong>.</li>
+          <li>Select the <strong>Connections</strong> tab.</li>
+          <li>Click <strong>Connect to Strava</strong> (or TrainingPeaks / SelfLoops).</li>
+          <li>A browser window opens for you to authorise Maximum Trainer. Log in and click <strong>Authorise</strong>.</li>
+          <li>Return to Maximum Trainer — the platform now shows as <em>linked</em> with a green tick.</li>
+        </ol>
+
+        <h3>Uploading after a workout</h3>
+        <ol class="steps">
+          <li>On the post-workout summary screen, click the <strong>Upload to Strava</strong> (or other platform) button.</li>
+          <li>Maximum Trainer uploads the <code>.fit</code> file. A confirmation message appears when the upload completes.</li>
+        </ol>
+
+        <div class="callout">
+          <strong>Manual upload:</strong> You can also upload any saved <code>.fit</code> file from
+          your activity history. Open the <strong>History</strong> tab in the main window,
+          right-click an activity, and choose <strong>Upload</strong>.
+        </div>
+      </section>
+
+      <!-- ── Settings ──────────────────────────────────────────── -->
+      <section class="guide-section" id="settings">
+        <h2>⚙️ Settings</h2>
+        <p>
+          Open <strong>Preferences → Preferences &amp; Profile</strong> from the menu bar to access
+          the full settings dialog. Settings are organised into tabs.
+        </p>
+
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Tab</th><th>What you can configure</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>User Profile</strong></td>
+                <td>FTP (W), body weight (kg), max heart rate, heart rate zones, display name</td>
+              </tr>
+              <tr>
+                <td><strong>Display</strong></td>
+                <td>Which metric widgets are visible during workouts (power, HR, cadence, speed, balance, SmO₂, calories), timer style, font size</td>
+              </tr>
+              <tr>
+                <td><strong>Trainer</strong></td>
+                <td>Trainer make/model and power curve calibration (for trainers without native FTMS power reporting)</td>
+              </tr>
+              <tr>
+                <td><strong>Folders</strong></td>
+                <td>Workout library folder, activity history folder, course file folder</td>
+              </tr>
+              <tr>
+                <td><strong>Connections</strong></td>
+                <td>Link/unlink Strava, TrainingPeaks, SelfLoops accounts</td>
+              </tr>
+              <tr>
+                <td><strong>Radio</strong></td>
+                <td>Add, edit, and reorder internet radio station URLs</td>
+              </tr>
+              <tr>
+                <td><strong>Language</strong></td>
+                <td>Switch the UI language (requires a restart)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── Studio Mode ───────────────────────────────────────── -->
+      <section class="guide-section" id="studio-mode">
+        <h2>🏟️ Studio Mode</h2>
+        <p>
+          Studio Mode allows <strong>multiple riders</strong> to train simultaneously on a single
+          installation — perfect for spinning studios and group training sessions. Each rider has
+          their own BLE device slot and individual metrics display.
+        </p>
+
+        <figure class="guide-screenshot">
+          <img src="assets/screenshots/screenshot_studio_mode.png"
+               alt="Studio mode — multiple riders training simultaneously" />
+          <figcaption>Studio Mode — six riders training simultaneously, each with their own metrics panel</figcaption>
+        </figure>
+
+        <h3>Enabling Studio Mode</h3>
+        <ol class="steps">
+          <li>Open <strong>Preferences → Preferences &amp; Profile</strong>.</li>
+          <li>On the <strong>Studio</strong> tab, toggle <strong>Enable Studio Mode</strong>.</li>
+          <li>Set the <strong>number of riders</strong> (up to the maximum supported by your hardware).</li>
+          <li>For each rider, configure their name, FTP, and assign a BLE device.</li>
+          <li>Click <strong>Save</strong>. The main window now shows a rider panel for each participant.</li>
+        </ol>
+
+        <div class="callout">
+          <strong>Note:</strong> In Studio Mode, each rider's power data is recorded separately in
+          the session <code>.fit</code> file. Workout targets are scaled per-rider based on
+          individual FTP values.
+        </div>
+      </section>
+
+      <!-- ── Achievements ──────────────────────────────────────── -->
+      <section class="guide-section" id="achievements">
+        <h2>🏆 Achievements</h2>
+        <p>
+          Maximum Trainer awards <strong>achievements</strong> automatically at the end of a workout
+          based on your performance data. Achievements recognise milestones such as personal power
+          records, streak completions, and training volume targets.
+        </p>
+        <p>
+          After saving an activity, any newly unlocked achievements are displayed on the post-workout
+          screen. You can review all earned achievements at any time in the <strong>History</strong>
+          tab of the main window.
+        </p>
+
+        <div class="callout callout--success">
+          <strong>Motivation tip:</strong> Achievements are evaluated against your full activity
+          history, so every completed workout counts — even if you don't hit the power targets
+          perfectly.
+        </div>
+      </section>
+
+      <!-- ── Tips & Shortcuts ──────────────────────────────────── -->
+      <section class="guide-section" id="tips">
+        <h2>💡 Tips &amp; Shortcuts</h2>
+
+        <h3>Useful keyboard shortcuts (during a workout)</h3>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Key</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><kbd>Space</kbd></td><td>Pause / Resume workout</td></tr>
+              <tr><td><kbd>→</kbd></td><td>Skip to next interval</td></tr>
+              <tr><td><kbd>+</kbd></td><td>Increase difficulty (+5 % FTP)</td></tr>
+              <tr><td><kbd>−</kbd></td><td>Decrease difficulty (−5 % FTP)</td></tr>
+              <tr><td><kbd>L</kbd></td><td>Mark a lap</td></tr>
+              <tr><td><kbd>Esc</kbd></td><td>Stop workout (confirmation dialog appears)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>General tips</h3>
+        <ul>
+          <li>
+            <strong>Warm up your trainer</strong> before calibrating or doing a serious workout.
+            Most direct-drive trainers need 10–15 minutes of easy riding at 100–150 W to reach
+            operating temperature and produce accurate power readings.
+          </li>
+          <li>
+            <strong>Use simulation mode</strong> to preview new workouts and verify that the
+            interval structure is what you expect before committing to the real effort.
+          </li>
+          <li>
+            <strong>Adjust difficulty on the fly</strong> — if a workout is designed at 100 % FTP
+            and you're having a bad day, knock it down by 1–2 presses (−5–10 %) rather than
+            stopping. You'll still get a training benefit and keep the streak alive.
+          </li>
+          <li>
+            <strong>Set accurate FTP and weight</strong>. Incorrect values shift all zone
+            boundaries and make ERG targets too easy or too hard. Update your FTP after every
+            test or ramp test.
+          </li>
+          <li>
+            <strong>Check for updates</strong> regularly via <strong>Help → Check for Updates</strong>
+            in the menu bar. New trainer profiles and BLE improvements are shipped frequently.
+          </li>
+        </ul>
+
+        <h3>Troubleshooting</h3>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Sensor not appearing in BLE scanner</td>
+                <td>Wake the device (pedal / moisten HR strap), bring it closer, and click <strong>Rescan</strong>. On Linux, ensure the <code>bluetooth</code> group membership and BlueZ daemon are correct.</td>
+              </tr>
+              <tr>
+                <td>ERG resistance not changing</td>
+                <td>Ensure the trainer is connected with the <strong>FTMS (0x1826)</strong> profile, not a plain Power profile. A plain Power profile provides data but does not accept load commands.</td>
+              </tr>
+              <tr>
+                <td>Power readings seem inaccurate</td>
+                <td>Spin-down / calibrate the trainer from its own app, then reconnect in Maximum Trainer. If your trainer uses a built-in power curve, verify the correct model is selected in Preferences → Trainer.</td>
+              </tr>
+              <tr>
+                <td>App won't connect after a BLE disconnect</td>
+                <td>Maximum Trainer retries automatically (up to 3 times, 5-second intervals). If reconnection fails, toggle Bluetooth off/on in your OS and click <strong>Reconnect</strong> in the notification bar.</td>
+              </tr>
+              <tr>
+                <td>Upload to Strava fails</td>
+                <td>Re-link your Strava account in Preferences → Connections. OAuth tokens expire; re-linking refreshes them.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>Need more help?</strong> Visit the
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/discussions" target="_blank" rel="noopener">Community Discussions</a>
+          on GitHub, or open an
+          <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/issues" target="_blank" rel="noopener">issue</a>
+          if you believe you've found a bug.
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════ FOOTER ══════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-logo">
+        <img src="assets/images/logo.png" alt="Maximum Trainer" height="28" />
+        <span>Maximum Trainer Redux</span>
+      </div>
+      <nav class="footer-nav">
+        <a href="index.html#story">Story</a>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#gallery">Gallery</a>
+        <a href="index.html#download">Download</a>
+        <a href="user-guide.html">User Guide</a>
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/discussions" target="_blank" rel="noopener">Community</a>
+      </nav>
+      <p class="footer-copy">
+        GPL-3.0 &nbsp;·&nbsp; Originally created by Maxime Blais &nbsp;·&nbsp; Revived as open source
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // ── Sidebar TOC active-link highlighting on scroll ─────────────────────────
+    (function () {
+      var sections = document.querySelectorAll('.guide-section[id]');
+      var tocLinks = document.querySelectorAll('.guide-toc a[href^="#"]');
+
+      function onScroll() {
+        var scrollY = (window.scrollY || window.pageYOffset) + 100;
+        var active = '';
+        sections.forEach(function (s) {
+          if (scrollY >= s.offsetTop) active = s.id;
+        });
+        tocLinks.forEach(function (a) {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + active);
+        });
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }());
+  </script>
+</body>
+</html>
