@@ -552,15 +552,31 @@ void DialogLogin::fetchIntervalsIcuData()
     replyIntervalsIcuAthlete = IntervalsIcuDAO::getAthlete(
             account->intervals_icu_athlete_id,
             account->intervals_icu_api_key);
-    connect(replyIntervalsIcuAthlete, &QNetworkReply::finished,
-            this, &DialogLogin::slotFinishedIntervalsIcuAthlete);
+    if (replyIntervalsIcuAthlete) {
+        connect(replyIntervalsIcuAthlete, &QNetworkReply::finished,
+                this, &DialogLogin::slotFinishedIntervalsIcuAthlete);
+    } else {
+        LOG_WARN("DialogLogin", QStringLiteral("Intervals.icu getAthlete returned null reply"));
+        m_pendingIntervalsIcuReplies--;
+    }
 
     // Fetch training-zone settings.
     replyIntervalsIcuSettings = IntervalsIcuDAO::getAthleteSettings(
             account->intervals_icu_athlete_id,
             account->intervals_icu_api_key);
-    connect(replyIntervalsIcuSettings, &QNetworkReply::finished,
-            this, &DialogLogin::slotFinishedIntervalsIcuSettings);
+    if (replyIntervalsIcuSettings) {
+        connect(replyIntervalsIcuSettings, &QNetworkReply::finished,
+                this, &DialogLogin::slotFinishedIntervalsIcuSettings);
+    } else {
+        LOG_WARN("DialogLogin", QStringLiteral("Intervals.icu getAthleteSettings returned null reply"));
+        m_pendingIntervalsIcuReplies--;
+    }
+
+    // If both requests failed immediately (no manager), proceed without waiting.
+    if (m_pendingIntervalsIcuReplies <= 0) {
+        completeLogin();
+        return;
+    }
 
     // Safety-net: if either reply stalls, proceed after 15 s anyway.
     m_intervalsIcuTimeout = new QTimer(this);
@@ -630,18 +646,25 @@ void DialogLogin::onIntervalsIcuTimeout()
              QStringLiteral("Intervals.icu retrieval timed out after 15 s – proceeding with login"));
     ui->label_process->setText(tr("Intervals.icu retrieval timed out, continuing..."));
 
+    // Set the counter to 0 and null out the pointers BEFORE calling abort(),
+    // because abort() may emit finished() synchronously.  The slots check the
+    // pointer for nullptr at the very top, so they will return early even if
+    // the finished() signal fires inside abort().
+    m_pendingIntervalsIcuReplies = 0;
+
     if (replyIntervalsIcuAthlete) {
-        replyIntervalsIcuAthlete->abort();
-        replyIntervalsIcuAthlete->deleteLater();
+        auto *reply = replyIntervalsIcuAthlete;
         replyIntervalsIcuAthlete = nullptr;
+        reply->abort();
+        reply->deleteLater();
     }
     if (replyIntervalsIcuSettings) {
-        replyIntervalsIcuSettings->abort();
-        replyIntervalsIcuSettings->deleteLater();
+        auto *reply = replyIntervalsIcuSettings;
         replyIntervalsIcuSettings = nullptr;
+        reply->abort();
+        reply->deleteLater();
     }
 
-    m_pendingIntervalsIcuReplies = 0;
     completeLogin();
 }
 
@@ -649,6 +672,10 @@ void DialogLogin::onIntervalsIcuTimeout()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DialogLogin::completeLogin()
 {
+    // Guard against being called more than once (e.g. if both replies finish
+    // nearly simultaneously after the counter reaches zero).
+    if (!this->isVisible()) return;
+
     LOG_INFO("DialogLogin", QStringLiteral("Login complete – entering application"));
     this->accept();
 }

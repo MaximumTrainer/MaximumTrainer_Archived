@@ -27,6 +27,10 @@ QNetworkRequest IntervalsIcuDAO::buildRequest(const QString &url, const QString 
 QNetworkReply* IntervalsIcuDAO::getAthlete(const QString &athleteId, const QString &apiKey)
 {
     QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        qWarning() << "IntervalsIcuDAO::getAthlete: NetworkManagerWS is not available";
+        return nullptr;
+    }
 
     const QString url = urlIntervalsIcuApi + athleteId;
     QNetworkRequest request = buildRequest(url, apiKey);
@@ -40,6 +44,10 @@ QNetworkReply* IntervalsIcuDAO::getAthlete(const QString &athleteId, const QStri
 QNetworkReply* IntervalsIcuDAO::getAthleteSettings(const QString &athleteId, const QString &apiKey)
 {
     QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        qWarning() << "IntervalsIcuDAO::getAthleteSettings: NetworkManagerWS is not available";
+        return nullptr;
+    }
 
     const QString url = urlIntervalsIcuApi + athleteId + QStringLiteral("/settings");
     QNetworkRequest request = buildRequest(url, apiKey);
