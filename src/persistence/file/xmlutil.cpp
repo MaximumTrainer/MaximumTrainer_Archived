@@ -84,14 +84,13 @@ void XmlUtil::parseLocalSaveFile(Account *account) {
 
     // ── 1. Open the per-user SQLite database ──────────────────────────────
     LocalDatabase *localDb = qApp->property("LocalDatabase").value<LocalDatabase*>();
-    if (localDb && !localDb->isOpen()) {
-        if (!localDb->open(account->email_clean)) {
-            qWarning() << "LocalDatabase: failed to open DB for" << account->email_clean;
-        }
+    const bool dbAvailable = localDb && (localDb->isOpen() || localDb->open(account->email_clean));
+    if (localDb && !dbAvailable) {
+        qWarning() << "LocalDatabase: failed to open DB for" << account->email_clean;
     }
 
     // ── 2. Load from DB if it has data ────────────────────────────────────
-    if (localDb && localDb->isOpen()) {
+    if (dbAvailable) {
         const QSet<QString> workoutsDone = localDb->getWorkoutsDone();
         const QSet<QString> coursesDone  = localDb->getCoursesDone();
 
@@ -104,7 +103,7 @@ void XmlUtil::parseLocalSaveFile(Account *account) {
     }
 
     // ── 3. Fall back to legacy XML .save file ─────────────────────────────
-    //    Load it and, if successful, migrate the data into the DB so that
+    //    Load it and, if the DB is open, migrate the data into it so that
     //    future sessions use the database exclusively.
     QString nameFile = Util::getMaximumTrainerDocumentPath() + QDir::separator() + account->email_clean + ".save";
     qDebug() << "name of File should be" << nameFile;
@@ -142,12 +141,17 @@ void XmlUtil::parseLocalSaveFile(Account *account) {
     }
 
     // ── 4. Migrate XML data into the DB ───────────────────────────────────
-    if (localDb && localDb->isOpen()) {
-        localDb->setWorkoutsDone(account->hashWorkoutDone);
-        localDb->setCoursesDone(account->hashCourseDone);
-        qDebug() << "LocalDatabase: migrated" << account->hashWorkoutDone.size()
-                 << "workouts and" << account->hashCourseDone.size()
-                 << "courses from XML to SQLite";
+    if (dbAvailable) {
+        const bool workoutOk = localDb->setWorkoutsDone(account->hashWorkoutDone);
+        const bool courseOk  = localDb->setCoursesDone(account->hashCourseDone);
+        if (workoutOk && courseOk) {
+            qDebug() << "LocalDatabase: migrated" << account->hashWorkoutDone.size()
+                     << "workouts and" << account->hashCourseDone.size()
+                     << "courses from XML to SQLite";
+        } else {
+            qWarning() << "LocalDatabase: XML migration partially failed"
+                       << "(workouts:" << workoutOk << "courses:" << courseOk << ")";
+        }
     }
 
     qDebug() << "\n\n End Parsing Local Save file!";

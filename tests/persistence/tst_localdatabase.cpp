@@ -132,7 +132,7 @@ void TstLocalDatabase::testWorkout_markIdempotent()
     db.open(kInMemoryDb);
 
     db.markWorkoutDone(QStringLiteral("ftp_test.xml"));
-    // Inserting the same workout twice should not fail or create a duplicate.
+    // INSERT OR IGNORE: a duplicate insert must succeed (no error) and leave exactly one row.
     QVERIFY(db.markWorkoutDone(QStringLiteral("ftp_test.xml")));
     QCOMPARE(db.getWorkoutsDone().size(), 1);
 }

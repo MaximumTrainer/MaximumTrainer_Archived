@@ -65,13 +65,16 @@ bool LocalDatabase::open(const QString &emailClean)
         return false;
     }
 
-    // Enable WAL mode for better concurrent read performance and durability.
-    // (WAL is not applicable to :memory: databases but is harmless there.)
+    // Enable WAL journal mode for improved write durability and crash
+    // recovery.  In WAL mode, a crash mid-write leaves the database in a
+    // consistent state (the incomplete write is discarded on next open)
+    // rather than potentially corrupting the main database file.
+    // WAL is also harmless on :memory: databases, where it is a no-op.
     QSqlQuery pragmaQuery(m_db);
     if (!pragmaQuery.exec(QStringLiteral("PRAGMA journal_mode=WAL"))) {
         qWarning() << "LocalDatabase: could not enable WAL mode:"
                    << pragmaQuery.lastError().text();
-        // WAL is a performance hint; failure is non-fatal.
+        // WAL is a durability hint; failure is non-fatal.
     }
 
     if (!createTables()) {
@@ -223,7 +226,11 @@ bool LocalDatabase::setWorkoutsDone(const QSet<QString> &workouts)
     if (!m_db.isOpen())
         return false;
 
-    m_db.transaction();
+    if (!m_db.transaction()) {
+        qWarning() << "LocalDatabase::setWorkoutsDone: could not begin transaction:"
+                   << m_db.lastError().text();
+        return false;
+    }
 
     QSqlQuery del(m_db);
     if (!del.exec(QStringLiteral("DELETE FROM workout_history"))) {
@@ -312,7 +319,11 @@ bool LocalDatabase::setCoursesDone(const QSet<QString> &courses)
     if (!m_db.isOpen())
         return false;
 
-    m_db.transaction();
+    if (!m_db.transaction()) {
+        qWarning() << "LocalDatabase::setCoursesDone: could not begin transaction:"
+                   << m_db.lastError().text();
+        return false;
+    }
 
     QSqlQuery del(m_db);
     if (!del.exec(QStringLiteral("DELETE FROM course_history"))) {
@@ -421,7 +432,11 @@ bool LocalDatabase::saveSensors(const QList<Sensor> &sensors)
     if (!m_db.isOpen())
         return false;
 
-    m_db.transaction();
+    if (!m_db.transaction()) {
+        qWarning() << "LocalDatabase::saveSensors: could not begin transaction:"
+                   << m_db.lastError().text();
+        return false;
+    }
 
     QSqlQuery del(m_db);
     if (!del.exec(QStringLiteral("DELETE FROM sensors"))) {

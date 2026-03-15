@@ -30,6 +30,7 @@ SOURCES += \
     ../../src/persistence/db/localdatabase.cpp \
     ../../src/model/account.cpp \
     ../../src/model/sensor.cpp \
+    ../../src/model/powercurve.cpp \
     tst_localdatabase.cpp
 
 HEADERS += \
