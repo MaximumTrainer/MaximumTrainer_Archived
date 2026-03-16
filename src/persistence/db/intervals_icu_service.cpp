@@ -12,8 +12,8 @@ QNetworkRequest IntervalsIcuService::buildRequest(const QString &url, const QStr
     QNetworkRequest request;
     request.setUrl(QUrl(url));
 
-    // Intervals.icu uses HTTP Basic Auth: username="athlete", password=<apiKey>
-    const QString credentials = QStringLiteral("athlete:") + apiKey;
+    // Intervals.icu uses HTTP Basic Auth: username="API_KEY", password=<apiKey>
+    const QString credentials = QStringLiteral("API_KEY:") + apiKey;
     request.setRawHeader("Authorization",
                          QByteArray("Basic ") + credentials.toUtf8().toBase64());
     request.setRawHeader("Accept", "application/json");

@@ -100,7 +100,7 @@ protected:
 // ─────────────────────────────────────────────────────────────────────────────
 static QByteArray expectedBasicHeader(const QString &apiKey)
 {
-    const QString credentials = QStringLiteral("athlete:") + apiKey;
+    const QString credentials = QStringLiteral("API_KEY:") + apiKey;
     return QByteArray("Basic ") + credentials.toUtf8().toBase64();
 }
 

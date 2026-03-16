@@ -52,6 +52,11 @@
 
 
 MainWindow::~MainWindow() {
+    if (replyIntervalsIcuZwo) {
+        replyIntervalsIcuZwo->abort();
+        replyIntervalsIcuZwo->deleteLater();
+        replyIntervalsIcuZwo = nullptr;
+    }
     delete ui;
 
     qDebug() << "Desctructor MainWindow";
@@ -438,10 +443,51 @@ void MainWindow::showPlanContextMenu(const QPoint &pos) {
 //---------------------------------------------------------------------------------
 void MainWindow::goToWorkoutNameFilterFromIntervals(const QString &workoutName) {
 
-    ui->tab_workout1->refreshUserWorkout();
-
     qDebug() << "Intervals.icu workout downloaded:" << workoutName;
 
+    // Parse the raw .zwo file saved by TabIntervalsIcu and convert it to .workout format
+    const QString zwoDir  = Util::getSystemPathWorkout() + QDir::separator() + QStringLiteral("intervals_icu");
+    const QString zwoPath = zwoDir + QDir::separator() + workoutName + QStringLiteral(".zwo");
+
+    QFile zwoFile(zwoPath);
+    if (zwoFile.open(QIODevice::ReadOnly)) {
+        const QByteArray zwoData = zwoFile.readAll();
+        zwoFile.close();
+
+        Workout imported = ImporterWorkoutZwo::importFromByteArray(zwoData, workoutName);
+        if (!imported.getLstInterval().isEmpty()) {
+            // Sanitise name for filesystem use
+            QString safeName = imported.getName();
+            safeName.replace(QRegularExpression(QStringLiteral("[/\\\\:*?\"<>|]")), QStringLiteral("_"));
+            if (safeName.isEmpty())
+                safeName = workoutName;
+
+            const QString workoutDir = Util::getSystemPathWorkout() + QDir::separator() + QStringLiteral("intervals");
+            QDir().mkpath(workoutDir);
+
+            // Find a unique filename
+            QString uniqueName = safeName;
+            for (int n = 1; QFile::exists(workoutDir + QDir::separator() + uniqueName + QStringLiteral(".workout")); ++n)
+                uniqueName = safeName + QStringLiteral("_") + QString::number(n);
+
+            const QString destPath = workoutDir + QDir::separator() + uniqueName + QStringLiteral(".workout");
+            if (XmlUtil::createWorkoutXml(imported, destPath)) {
+                ui->tab_workout1->refreshUserWorkout();
+                ui->tabWidget_workout->setCurrentIndex(0);
+                ui->tab_workout1->setFilterWorkoutName(imported.getName());
+                ftb->setCurrentIndex(0);
+                ui->widget_bottomMenu->setGeneralMessage(
+                    tr("Workout '%1' imported from Intervals.icu.").arg(imported.getName()), 5000);
+                return;
+            }
+        }
+        qWarning() << "goToWorkoutNameFilterFromIntervals: ZWO parse/save failed for" << zwoPath;
+    } else {
+        qWarning() << "goToWorkoutNameFilterFromIntervals: could not open ZWO file" << zwoPath;
+    }
+
+    // Fallback: refresh list even if parsing failed
+    ui->tab_workout1->refreshUserWorkout();
     ui->tabWidget_workout->setCurrentIndex(0);
     ui->tab_workout1->setFilterWorkoutName(workoutName);
     ftb->setCurrentIndex(0);
