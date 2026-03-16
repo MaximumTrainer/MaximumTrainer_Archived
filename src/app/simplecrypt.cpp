@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QString>
 #include <QDataStream>
 #include <QIODevice>
-#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+#if QT_VERSION >= QT_VERSION_CHECK(5,10,0)
 #include <QRandomGenerator>
 #endif
 
@@ -45,7 +45,7 @@ SimpleCrypt::SimpleCrypt():
     m_protectionMode(ProtectionChecksum),
     m_lastError(ErrorNoError)
 {
-#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+#if QT_VERSION < QT_VERSION_CHECK(5,10,0)
     qsrand(uint(QDateTime::currentMSecsSinceEpoch() & 0xFFFF));
 #endif
 }
@@ -56,7 +56,7 @@ SimpleCrypt::SimpleCrypt(quint64 key):
     m_protectionMode(ProtectionChecksum),
     m_lastError(ErrorNoError)
 {
-#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+#if QT_VERSION < QT_VERSION_CHECK(5,10,0)
     qsrand(uint(QDateTime::currentMSecsSinceEpoch() & 0xFFFF));
 #endif
     splitKey();
@@ -124,7 +124,7 @@ QByteArray SimpleCrypt::encryptToByteArray(QByteArray plaintext)
     }
 
     //prepend a random char to the string
-#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+#if QT_VERSION >= QT_VERSION_CHECK(5,10,0)
     char randomChar = char(QRandomGenerator::global()->generate() & 0xFF);
 #else
     char randomChar = char(qrand() & 0xFF);
