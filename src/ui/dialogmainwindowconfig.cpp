@@ -142,6 +142,7 @@ void DialogMainWindowConfig::initUI() {
     // Intervals.icu credentials
     ui->lineEdit_intervalsApiKey->setText(account->intervals_icu_api_key);
     ui->lineEdit_intervalsAthleteId->setText(account->intervals_icu_athlete_id);
+    ui->checkBox_intervalsAutoUpload->setChecked(account->intervals_icu_auto_upload);
     ui->label_intervalsTestResult->clear();
 
 }
@@ -433,6 +434,7 @@ void DialogMainWindowConfig::accept() {
 
     account->intervals_icu_api_key    = newApiKey;
     account->intervals_icu_athlete_id = newAthleteId;
+    account->intervals_icu_auto_upload = ui->checkBox_intervalsAutoUpload->isChecked();
     account->saveIntervalsIcuCredentials();  // persist to QSettings (fast, no-fail path)
     if (!XmlUtil::saveLocalSaveFile(account)) {
         QMessageBox::warning(this,

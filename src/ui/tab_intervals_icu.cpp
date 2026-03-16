@@ -12,6 +12,8 @@
 
 #include "account.h"
 #include "util.h"
+#include "importerworkoutzwo.h"
+#include "xmlutil.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 TabIntervalsIcu::TabIntervalsIcu(QWidget *parent)
@@ -39,6 +41,7 @@ TabIntervalsIcu::TabIntervalsIcu(QWidget *parent)
     ui->pushButton_prevWeek->setVisible(false);
     ui->pushButton_nextWeek->setVisible(false);
     ui->pushButton_loadWorkout->setVisible(false);
+    ui->pushButton_syncAll->setVisible(false);
     ui->label_week->setVisible(false);
     ui->tableWidget_calendar->setVisible(false);
     ui->label_status->setVisible(false);
@@ -51,6 +54,8 @@ TabIntervalsIcu::TabIntervalsIcu(QWidget *parent)
             this, &TabIntervalsIcu::onNextWeekClicked);
     connect(ui->pushButton_loadWorkout, &QPushButton::clicked,
             this, &TabIntervalsIcu::onLoadWorkoutClicked);
+    connect(ui->pushButton_syncAll, &QPushButton::clicked,
+            this, &TabIntervalsIcu::onSyncAllClicked);
     connect(ui->tableWidget_calendar,
             &QTableWidget::itemSelectionChanged, this, [this]() {
                 const int row =
@@ -349,4 +354,173 @@ void TabIntervalsIcu::setBusy(bool busy)
     ui->pushButton_refresh->setEnabled(!busy);
     ui->pushButton_prevWeek->setEnabled(!busy);
     ui->pushButton_nextWeek->setEnabled(!busy);
+    ui->pushButton_syncAll->setEnabled(!busy);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::startBatchSync(const QDate &from, const QDate &to)
+{
+#ifndef GC_WASM_BUILD
+    auto *account = qApp->property("Account").value<Account *>();
+    if (!account || account->intervals_icu_api_key.isEmpty() ||
+        account->intervals_icu_athlete_id.isEmpty()) {
+        emit syncFailed(tr("Intervals.icu credentials are not configured. "
+                           "Please set them in Preferences → Cloud Sync."));
+        return;
+    }
+
+    if (m_syncCalendarReply) {
+        m_syncCalendarReply->abort();
+        m_syncCalendarReply->deleteLater();
+        m_syncCalendarReply = nullptr;
+    }
+    if (m_syncDownloadReply) {
+        m_syncDownloadReply->abort();
+        m_syncDownloadReply->deleteLater();
+        m_syncDownloadReply = nullptr;
+    }
+    m_syncQueue.clear();
+    m_syncCount = 0;
+    m_syncTotal = 0;
+
+    setBusy(true);
+    setStatus(tr("Sync: fetching calendar…"));
+
+    m_syncCalendarReply = m_service->fetchCalendar(from, to);
+    connect(m_syncCalendarReply, &QNetworkReply::finished,
+            this, &TabIntervalsIcu::onSyncCalendarFetched);
+#else
+    Q_UNUSED(from) Q_UNUSED(to)
+    emit syncFailed(tr("Sync is not available in the web version."));
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onSyncAllClicked()
+{
+    startBatchSync(m_weekStart, m_weekStart.addDays(6));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onSyncCalendarFetched()
+{
+#ifndef GC_WASM_BUILD
+    if (!m_syncCalendarReply) return;
+
+    if (m_syncCalendarReply->error() != QNetworkReply::NoError) {
+        const QString err = m_syncCalendarReply->errorString();
+        m_syncCalendarReply->deleteLater();
+        m_syncCalendarReply = nullptr;
+        setBusy(false);
+        setStatus(tr("Sync failed: %1").arg(err));
+        emit syncFailed(err);
+        return;
+    }
+
+    const QByteArray data = m_syncCalendarReply->readAll();
+    m_syncCalendarReply->deleteLater();
+    m_syncCalendarReply = nullptr;
+
+    const QList<IntervalsIcuService::CalendarEvent> allEvents =
+        IntervalsIcuService::parseEvents(data);
+
+    for (const IntervalsIcuService::CalendarEvent &ev : allEvents) {
+        if (!ev.workout_id.isEmpty())
+            m_syncQueue.append(ev);
+    }
+
+    m_syncTotal = m_syncQueue.size();
+    m_syncCount = 0;
+
+    if (m_syncQueue.isEmpty()) {
+        setBusy(false);
+        setStatus(tr("Sync: no downloadable workouts found for this week."));
+        emit syncFinished(0);
+        return;
+    }
+
+    setStatus(tr("Sync: downloading %1 workout(s)…").arg(m_syncTotal));
+    downloadNextSyncWorkout();
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::downloadNextSyncWorkout()
+{
+#ifndef GC_WASM_BUILD
+    if (m_syncQueue.isEmpty()) {
+        setBusy(false);
+        setStatus(tr("Sync complete — %1 workout(s) imported.").arg(m_syncCount));
+        emit syncFinished(m_syncCount);
+        return;
+    }
+
+    const IntervalsIcuService::CalendarEvent ev = m_syncQueue.takeFirst();
+    m_pendingSyncWorkoutName = ev.name.trimmed();
+    if (m_pendingSyncWorkoutName.isEmpty())
+        m_pendingSyncWorkoutName = ev.workout_id;
+
+    m_syncDownloadReply = m_service->downloadWorkoutZwo(ev.workout_id);
+    connect(m_syncDownloadReply, &QNetworkReply::finished,
+            this, &TabIntervalsIcu::onSyncWorkoutDownloaded);
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::onSyncWorkoutDownloaded()
+{
+#ifndef GC_WASM_BUILD
+    if (!m_syncDownloadReply) return;
+
+    const QNetworkReply::NetworkError err = m_syncDownloadReply->error();
+    if (err != QNetworkReply::NoError) {
+        qWarning() << "TabIntervalsIcu sync download error for"
+                   << m_pendingSyncWorkoutName << ":" << m_syncDownloadReply->errorString();
+        // Log and continue with remaining queue rather than aborting the whole sync
+        m_syncDownloadReply->deleteLater();
+        m_syncDownloadReply = nullptr;
+        downloadNextSyncWorkout();
+        return;
+    }
+
+    const QByteArray zwoData = m_syncDownloadReply->readAll();
+    m_syncDownloadReply->deleteLater();
+    m_syncDownloadReply = nullptr;
+
+    Workout imported = ImporterWorkoutZwo::importFromByteArray(zwoData, m_pendingSyncWorkoutName);
+    if (!imported.getLstInterval().isEmpty()) {
+        QString safeName = imported.getName();
+        safeName.replace(QRegularExpression(QStringLiteral("[/\\\\:*?\"<>|]")),
+                         QStringLiteral("_"));
+        if (safeName.isEmpty())
+            safeName = m_pendingSyncWorkoutName;
+        safeName.replace(QRegularExpression(QStringLiteral("[^A-Za-z0-9_\\-. ]")),
+                         QStringLiteral("_"));
+
+        const QString workoutDir =
+            Util::getSystemPathWorkout() + QDir::separator() + QStringLiteral("intervals");
+        if (QDir().mkpath(workoutDir)) {
+            QString uniqueName = safeName;
+            for (int n = 1;
+                 QFile::exists(workoutDir + QDir::separator() + uniqueName + QStringLiteral(".workout"));
+                 ++n)
+            {
+                uniqueName = safeName + QStringLiteral("_") + QString::number(n);
+            }
+
+            const QString destPath =
+                workoutDir + QDir::separator() + uniqueName + QStringLiteral(".workout");
+            if (XmlUtil::createWorkoutXml(imported, destPath)) {
+                ++m_syncCount;
+                const int remaining = m_syncQueue.size();
+                if (remaining > 0)
+                    setStatus(tr("Sync: imported '%1' (%2 remaining)…")
+                                  .arg(imported.getName())
+                                  .arg(remaining));
+            }
+        }
+    }
+
+    downloadNextSyncWorkout();
+#endif
 }

@@ -55,6 +55,14 @@ public:
     /// GET /api/v1/athlete/{id}/workouts/{workoutId}.zwo
     QNetworkReply *downloadWorkoutZwo(const QString &workoutId);
 
+    /// POST /api/v1/athlete/0/activities — upload a FIT/TCX file.
+    /// @param filePath  Absolute path to the activity file (.fit or .tcx).
+    /// @param name      Optional activity name (sent as query param).
+    /// @param externalId Optional external_id to prevent duplicate uploads.
+    QNetworkReply *uploadActivity(const QString &filePath,
+                                  const QString &name       = QString(),
+                                  const QString &externalId = QString());
+
     // ── Static parsers ───────────────────────────────────────────────────────
 
     /// Parse a JSON byte array from the /events endpoint into a list of

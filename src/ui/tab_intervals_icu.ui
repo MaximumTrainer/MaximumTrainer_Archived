@@ -215,6 +215,16 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_syncAll">
+       <property name="text">
+        <string>Sync All This Week</string>
+       </property>
+       <property name="toolTip">
+        <string>Download and import all workouts scheduled for this week</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <!-- Status label -->
