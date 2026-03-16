@@ -1109,8 +1109,6 @@ void Util::parseJsonIntervalsIcuAthlete(const QString &data)
 {
     Account *account = qApp->property("Account").value<Account*>();
 
-    qDebug() << "parseJsonIntervalsIcuAthlete: " << data.left(200);
-
     QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
     if (doc.isNull() || !doc.isObject()) {
         qWarning() << "parseJsonIntervalsIcuAthlete: invalid JSON";
@@ -1153,11 +1151,6 @@ void Util::parseJsonIntervalsIcuAthlete(const QString &data)
     const int lthr = obj.value(QStringLiteral("lthr")).toInt(-1);
     if (lthr > 0)
         account->LTHR = lthr;
-
-    qDebug() << "Intervals.icu athlete: name=" << account->display_name
-             << " weight=" << account->weight_kg
-             << " FTP=" << account->FTP
-             << " LTHR=" << account->LTHR;
 }
 
 
@@ -1168,8 +1161,6 @@ void Util::parseJsonIntervalsIcuAthlete(const QString &data)
 void Util::parseJsonIntervalsIcuSettings(const QString &data)
 {
     Account *account = qApp->property("Account").value<Account*>();
-
-    qDebug() << "parseJsonIntervalsIcuSettings: " << data.left(200);
 
     QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
     if (doc.isNull() || !doc.isObject()) {
@@ -1208,9 +1199,6 @@ void Util::parseJsonIntervalsIcuSettings(const QString &data)
         if (!zones.isEmpty())
             account->power_zones = zones;
     }
-
-    qDebug() << "Intervals.icu settings: hrZones=" << account->hr_zones
-             << " powerZones=" << account->power_zones;
 }
 
 

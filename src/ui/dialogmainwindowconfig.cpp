@@ -409,7 +409,15 @@ void DialogMainWindowConfig::accept() {
     // Intervals.icu credentials — stored in account and persisted locally.
     account->intervals_icu_athlete_id = ui->lineEdit_intervalsIcuAthleteId->text().trimmed();
     account->intervals_icu_api_key    = ui->lineEdit_intervalsIcuApiKey->text().trimmed();
-    XmlUtil::saveLocalSaveFile(account);
+    if (!XmlUtil::saveLocalSaveFile(account)) {
+        QMessageBox::warning(this,
+                             tr("Save Failed"),
+                             tr("Could not save Intervals.icu credentials to the local file.\n"
+                                "Your settings may not be remembered after the next restart."));
+        // Do not close the dialog — let the user correct the situation (e.g.
+        // free disk space) or explicitly dismiss.
+        return;
+    }
 
 
     settings->saveGeneralSettings();
