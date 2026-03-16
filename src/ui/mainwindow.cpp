@@ -1011,10 +1011,13 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     XmlUtil::saveLocalSaveFile(account);
 
 
-    // Put updated account data to server
-    replySaveAccount = UserDAO::putAccount(account);
-    QObject::connect(replySaveAccount, SIGNAL(finished()), this, SLOT(postDataAccountFinished()) );
-    loop.exec(); //dont leave until data uploaded to server
+    // Put updated account data to server (skip when running in offline mode –
+    // there is no server to reach and the blocking event loop would time out).
+    if (!account->isOffline) {
+        replySaveAccount = UserDAO::putAccount(account);
+        QObject::connect(replySaveAccount, SIGNAL(finished()), this, SLOT(postDataAccountFinished()) );
+        loop.exec(); //dont leave until data uploaded to server
+    }
 
 
     savingWindow.hide();

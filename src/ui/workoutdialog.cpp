@@ -342,14 +342,16 @@ WorkoutDialog::WorkoutDialog(Workout workout,  QList<Radio> lstRadio, QVector<Us
     ///----------------------------- End Calibration widgets ------------------------
 
 
-    labelPairHr->setText(tr(" Checking Session..."));
-    labelPairHr->setVisible(true);
-    labelPairHr->fadeIn(500);
-
     //-- Check Session_ID is in DB and session is not expired
     numberFailCheckSessionExpired = 0;
-    replyPutAccountToCheckSessionExpired = UserDAO::putAccount(account);
-    connect(replyPutAccountToCheckSessionExpired, SIGNAL(finished()), this, SLOT(slotPutAccountFinished()) );
+    if (!account->isOffline) {
+        labelPairHr->setText(tr(" Checking Session..."));
+        labelPairHr->setVisible(true);
+        labelPairHr->fadeIn(500);
+
+        replyPutAccountToCheckSessionExpired = UserDAO::putAccount(account);
+        connect(replyPutAccountToCheckSessionExpired, SIGNAL(finished()), this, SLOT(slotPutAccountFinished()) );
+    }
 
 
     ///-------------------------- Battery widgets ----------------------
@@ -1560,7 +1562,8 @@ void WorkoutDialog::workoutOver() {
     account->hashWorkoutDone.insert(workout.getName());
 
     // Save data DB (update Achievements, stats etc.)
-    UserDAO::putAccount(account);
+    if (!account->isOffline)
+        UserDAO::putAccount(account);
 }
 
 
@@ -3083,7 +3086,8 @@ void WorkoutDialog::sureYouWantToQuit() {
             }
 
             /// Save data DB (update Achievements, stats etc.)
-            UserDAO::putAccount(account);
+            if (!account->isOffline)
+                UserDAO::putAccount(account);
             QDialog::accept();
         }
         else if (reply == QMessageBox::No) {

@@ -19,6 +19,7 @@
 #include "simplecrypt.h"
 #include "xmlutil.h"
 #include "userdao.h"
+#include "intervalsicudao.h"
 #include "myqwebenginepage.h"
 
 
@@ -48,6 +49,10 @@ DialogLogin::DialogLogin(QWidget *parent) : QDialog(parent), ui(new Ui::DialogLo
 
     gotUpdateDialog = false;
     firstLogin = true;
+    replyIntervalsIcuAthlete  = nullptr;
+    replyIntervalsIcuSettings = nullptr;
+    m_intervalsIcuTimeout     = nullptr;
+    m_pendingIntervalsIcuReplies = 0;
 
 
     ///Set loading icon (wait for login page to show)
@@ -76,6 +81,12 @@ DialogLogin::DialogLogin(QWidget *parent) : QDialog(parent), ui(new Ui::DialogLo
     ui->label_process->setText(tr("Connecting to server..."));
     replyGoogle = ExtRequest::checkGoogleConnection();
     connect(replyGoogle, SIGNAL(finished()), this, SLOT(slotFinishedGoogle()) );
+
+    // Abort the Google connectivity check if it doesn't complete within 10 s.
+    m_googleTimeout = new QTimer(this);
+    m_googleTimeout->setSingleShot(true);
+    connect(m_googleTimeout, &QTimer::timeout, this, &DialogLogin::onGoogleTimeout);
+    m_googleTimeout->start(10000);
 
 
 
@@ -134,8 +145,14 @@ void DialogLogin::showLoadingProgress(int prog) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 void DialogLogin::loginLoaded(bool ok){
-    if (!ok)
+    if (!ok) {
+        // The login page failed to load (common when offline). Still reveal
+        // widget_bottom so the "Work Offline" checkbox and "Start Offline"
+        // button remain accessible.
+        ui->widget_loading->setVisible(false);
+        ui->widget_bottom->setVisible(true);
         return;
+    }
 
     ui->widget_loading->setVisible(false);
     ui->label_loading->setVisible(false);
@@ -196,7 +213,7 @@ void DialogLogin::loginLoaded(bool ok){
             settings->lastLoggedKey = encryptedPw;
             settings->saveGeneralSettings();
 
-            this->accept();
+            fetchIntervalsIcuData();
         });
 
     }
@@ -297,6 +314,15 @@ void DialogLogin::onVersionTimeout() {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::onGoogleTimeout() {
+    if (!replyGoogle) return;
+    LOG_WARN("DialogLogin", QStringLiteral("Connectivity check timed out after 10 s – aborting and offering offline mode"));
+    ui->label_process->setText(tr("Connection timed out."));
+    // Aborting emits finished() → slotFinishedGoogle() handles the rest.
+    replyGoogle->abort();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DialogLogin::slotFinishedGetVersion() {
 
     m_versionTimeout->stop();
@@ -352,25 +378,90 @@ void DialogLogin::slotFinishedGetVersion() {
 //----------------------------------------------------------------------------------------
 void DialogLogin::slotFinishedGoogle() {
 
+    m_googleTimeout->stop();
 
     //success, process data
     if (replyGoogle->error() == QNetworkReply::NoError) {
         ui->label_process->setText(tr("Checking for updates..."));
     }
     else {
-        //Remove for now, testing local
-        qDebug() << "Problem reaching google..." << replyGoogle->errorString();
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Critical);
-        msgBox.setText(tr("No internet connection was detected."));
-        msgBox.setInformativeText(tr("Please verify your internet connection."));
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Save);
-        msgBox.exec();
+        qDebug() << "Problem reaching Google..." << replyGoogle->errorString();
+        LOG_WARN("DialogLogin", QStringLiteral("No internet connection – offering offline mode"));
+
+        const int choice = QMessageBox::question(
+            this,
+            tr("No Internet Connection"),
+            tr("Could not reach the internet.\n\nWould you like to proceed in Offline Mode?"),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::Yes);
+
+        if (choice == QMessageBox::Yes) {
+            loginOffline();
+        }
+        // If the user chose No, leave the checkbox unchecked and let them
+        // wait for the server or close the dialog manually.
     }
     replyGoogle->deleteLater();
 }
 
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::on_checkBox_workOffline_clicked(bool checked)
+{
+    if (checked) {
+        // Hide the web-based login form and expose the "Start Offline" button.
+        ui->webView_login->setVisible(false);
+        ui->pushButton_startOffline->setVisible(true);
+        ui->label_process->setText(tr("Offline mode selected. Click \"Start Offline\" to continue."));
+    } else {
+        // Restore normal online login UI.
+        ui->webView_login->setVisible(true);
+        ui->pushButton_startOffline->setVisible(false);
+        ui->label_process->setText(tr("Loading page..."));
+    }
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::on_pushButton_startOffline_clicked()
+{
+    loginOffline();
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::loginOffline()
+{
+    // Populate the global Account object with safe defaults for a local user.
+    account->isOffline        = true;
+    // ID 0 is used as the offline-user sentinel: 0 is not a valid database
+    // primary key (valid IDs start at 1) and differs from the uninitialized
+    // default of -1, so callers can distinguish offline from unauthenticated.
+    account->id               = 0;
+    account->email            = QStringLiteral("local@offline");
+    // email_clean is used by XmlUtil::parseLocalSaveFile() and saveLocalSaveFile()
+    // to derive the local .save filename.  Give it a fixed, filesystem-safe value
+    // so offline sessions consistently load and write to the same file.
+    account->email_clean      = QStringLiteral("offline_user");
+    account->display_name     = tr("Local User");
+    account->first_name       = tr("Local");
+    account->last_name        = tr("User");
+    // subscription_type_id 1 = Free tier (lowest privilege); ensures that any
+    // feature gated on subscription level behaves conservatively offline.
+    account->subscription_type_id = 1;
+
+    // Load any previously saved local preferences (folder paths, etc.).
+    XmlUtil::parseLocalSaveFile(account);
+
+    LOG_INFO("DialogLogin", QStringLiteral("Offline login accepted – running as LocalUser"));
+    this->accept();
+}
 
 
 
@@ -437,4 +528,155 @@ void DialogLogin::on_comboBox_language_currentIndexChanged(int index) {
 }
 
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Intervals.icu data retrieval
+// ─────────────────────────────────────────────────────────────────────────────
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::fetchIntervalsIcuData()
+{
+    if (account->intervals_icu_athlete_id.isEmpty() || account->intervals_icu_api_key.isEmpty()) {
+        // No credentials stored — skip Intervals.icu and proceed directly.
+        LOG_INFO("DialogLogin", QStringLiteral("No Intervals.icu credentials configured – skipping retrieval"));
+        completeLogin();
+        return;
+    }
+
+    LOG_INFO("DialogLogin", QStringLiteral("Intervals.icu is retrieving all relevant user details"));
+    ui->label_process->setText(tr("Intervals.icu is retrieving all relevant user details..."));
+
+    m_pendingIntervalsIcuReplies = 2;  // athlete + settings
+
+    // Fetch basic profile.
+    replyIntervalsIcuAthlete = IntervalsIcuDAO::getAthlete(
+            account->intervals_icu_athlete_id,
+            account->intervals_icu_api_key);
+    if (replyIntervalsIcuAthlete) {
+        connect(replyIntervalsIcuAthlete, &QNetworkReply::finished,
+                this, &DialogLogin::slotFinishedIntervalsIcuAthlete);
+    } else {
+        LOG_WARN("DialogLogin", QStringLiteral("Intervals.icu getAthlete returned null reply"));
+        m_pendingIntervalsIcuReplies--;
+    }
+
+    // Fetch training-zone settings.
+    replyIntervalsIcuSettings = IntervalsIcuDAO::getAthleteSettings(
+            account->intervals_icu_athlete_id,
+            account->intervals_icu_api_key);
+    if (replyIntervalsIcuSettings) {
+        connect(replyIntervalsIcuSettings, &QNetworkReply::finished,
+                this, &DialogLogin::slotFinishedIntervalsIcuSettings);
+    } else {
+        LOG_WARN("DialogLogin", QStringLiteral("Intervals.icu getAthleteSettings returned null reply"));
+        m_pendingIntervalsIcuReplies--;
+    }
+
+    // If both requests failed immediately (no manager), proceed without waiting.
+    if (m_pendingIntervalsIcuReplies <= 0) {
+        completeLogin();
+        return;
+    }
+
+    // Safety-net: if either reply stalls, proceed after 15 s anyway.
+    m_intervalsIcuTimeout = new QTimer(this);
+    m_intervalsIcuTimeout->setSingleShot(true);
+    connect(m_intervalsIcuTimeout, &QTimer::timeout,
+            this, &DialogLogin::onIntervalsIcuTimeout);
+    m_intervalsIcuTimeout->start(15000);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::slotFinishedIntervalsIcuAthlete()
+{
+    if (!replyIntervalsIcuAthlete) return;
+
+    if (replyIntervalsIcuAthlete->error() == QNetworkReply::NoError) {
+        const QByteArray data = replyIntervalsIcuAthlete->readAll();
+        Util::parseJsonIntervalsIcuAthlete(QString::fromUtf8(data));
+        LOG_INFO("DialogLogin", QStringLiteral("Intervals.icu athlete profile retrieved successfully"));
+    } else {
+        LOG_WARN("DialogLogin",
+                 QStringLiteral("Intervals.icu athlete fetch failed: ")
+                 + replyIntervalsIcuAthlete->errorString());
+    }
+
+    replyIntervalsIcuAthlete->deleteLater();
+    replyIntervalsIcuAthlete = nullptr;
+
+    m_pendingIntervalsIcuReplies--;
+    if (m_pendingIntervalsIcuReplies <= 0) {
+        if (m_intervalsIcuTimeout) m_intervalsIcuTimeout->stop();
+        completeLogin();
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::slotFinishedIntervalsIcuSettings()
+{
+    if (!replyIntervalsIcuSettings) return;
+
+    if (replyIntervalsIcuSettings->error() == QNetworkReply::NoError) {
+        const QByteArray data = replyIntervalsIcuSettings->readAll();
+        Util::parseJsonIntervalsIcuSettings(QString::fromUtf8(data));
+        LOG_INFO("DialogLogin", QStringLiteral("Intervals.icu training zones retrieved successfully"));
+    } else {
+        LOG_WARN("DialogLogin",
+                 QStringLiteral("Intervals.icu settings fetch failed: ")
+                 + replyIntervalsIcuSettings->errorString());
+    }
+
+    replyIntervalsIcuSettings->deleteLater();
+    replyIntervalsIcuSettings = nullptr;
+
+    m_pendingIntervalsIcuReplies--;
+    if (m_pendingIntervalsIcuReplies <= 0) {
+        if (m_intervalsIcuTimeout) m_intervalsIcuTimeout->stop();
+        completeLogin();
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::onIntervalsIcuTimeout()
+{
+    LOG_WARN("DialogLogin",
+             QStringLiteral("Intervals.icu retrieval timed out after 15 s – proceeding with login"));
+    ui->label_process->setText(tr("Intervals.icu retrieval timed out, continuing..."));
+
+    // Set the counter to 0 and null out the pointers BEFORE calling abort(),
+    // because abort() may emit finished() synchronously.  The slots check the
+    // pointer for nullptr at the very top, so they will return early even if
+    // the finished() signal fires inside abort().
+    m_pendingIntervalsIcuReplies = 0;
+
+    if (replyIntervalsIcuAthlete) {
+        auto *reply = replyIntervalsIcuAthlete;
+        replyIntervalsIcuAthlete = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
+    if (replyIntervalsIcuSettings) {
+        auto *reply = replyIntervalsIcuSettings;
+        replyIntervalsIcuSettings = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
+
+    completeLogin();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DialogLogin::completeLogin()
+{
+    // Guard against being called more than once (e.g. if both replies finish
+    // nearly simultaneously after the counter reaches zero).
+    if (!this->isVisible()) return;
+
+    LOG_INFO("DialogLogin", QStringLiteral("Login complete – entering application"));
+    this->accept();
+}
 

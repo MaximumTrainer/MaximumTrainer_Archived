@@ -725,6 +725,55 @@
             </widget>
            </item>
            <item>
+            <widget class="QGroupBox" name="groupBox_intervalsIcu">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="title">
+              <string>Intervals.icu</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_intervalsIcu">
+              <property name="topMargin">
+               <number>9</number>
+              </property>
+              <property name="bottomMargin">
+               <number>9</number>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_intervalsIcuAthleteId">
+                <property name="text">
+                 <string>Athlete ID</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="lineEdit_intervalsIcuAthleteId">
+                <property name="placeholderText">
+                 <string>e.g. i12345</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_intervalsIcuApiKey">
+                <property name="text">
+                 <string>API Key</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="lineEdit_intervalsIcuApiKey">
+                <property name="echoMode">
+                 <enum>QLineEdit::Password</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
             <spacer name="verticalSpacer_3">
              <property name="orientation">
               <enum>Qt::Vertical</enum>

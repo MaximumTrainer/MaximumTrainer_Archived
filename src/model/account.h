@@ -49,6 +49,7 @@ public:
 
 
     //-------------------------- not in DB ----------------------
+    bool isOffline;  ///< true when the user logged in via offline (local) mode
     double userCda;
     QString os;
 
@@ -76,6 +77,12 @@ public:
     bool strava_private_upload;
     QString selfloops_user;
     QString selfloops_pw;
+
+    // Intervals.icu integration
+    QString intervals_icu_athlete_id;  ///< Intervals.icu athlete ID (e.g. "i12345")
+    QString intervals_icu_api_key;     ///< Intervals.icu API key
+    QList<int> hr_zones;               ///< HR zone upper-bounds retrieved from Intervals.icu
+    QList<int> power_zones;            ///< Power zone upper-bounds retrieved from Intervals.icu
 
     QString training_peaks_access_token;
     QString training_peaks_refresh_token;

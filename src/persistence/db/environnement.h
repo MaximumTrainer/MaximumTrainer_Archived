@@ -14,6 +14,14 @@ const static QString date_released = "16/03/2019";  //(dd/mm/yyyy)
 const static QString urlGitHubReleasesApi  = "https://api.github.com/repos/MaximumTrainer/MaximumTrainer_Redux/releases/latest";
 const static QString urlGitHubReleasesPage = "https://github.com/MaximumTrainer/MaximumTrainer_Redux/releases/latest";
 
+/// Intervals.icu REST API base URL
+/// Endpoints:
+///   GET /api/v1/athlete/{id}          — basic profile (name, weight, FTP, LTHR)
+///   GET /api/v1/athlete/{id}/settings — detailed training zones
+/// Authentication: HTTP Basic Auth with username "API_KEY" and the user's API key
+///                 as the password.
+const static QString urlIntervalsIcuApi = "https://intervals.icu/api/v1/athlete/";
+
 
 
 const static QString dev = "http://localhost/index.php/";

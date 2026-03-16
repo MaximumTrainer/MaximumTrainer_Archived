@@ -12,6 +12,7 @@
 #include "environnement.h"
 #include "extrequest.h"
 #include "intervalsicuservice.h"
+#include "xmlutil.h"
 
 
 DialogMainWindowConfig::~DialogMainWindowConfig()
@@ -142,6 +143,8 @@ void DialogMainWindowConfig::initUI() {
     ui->lineEdit_intervalsApiKey->setText(account->intervals_icu_api_key);
     ui->lineEdit_intervalsAthleteId->setText(account->intervals_icu_athlete_id);
     ui->label_intervalsTestResult->clear();
+    ui->lineEdit_intervalsIcuAthleteId->setText(account->intervals_icu_athlete_id);
+    ui->lineEdit_intervalsIcuApiKey->setText(account->intervals_icu_api_key);
 
 }
 
@@ -433,6 +436,19 @@ void DialogMainWindowConfig::accept() {
     account->intervals_icu_api_key    = newApiKey;
     account->intervals_icu_athlete_id = newAthleteId;
     account->saveIntervalsIcuCredentials();
+    // Intervals.icu credentials — stored in account and persisted locally.
+    account->intervals_icu_athlete_id = ui->lineEdit_intervalsIcuAthleteId->text().trimmed();
+    account->intervals_icu_api_key    = ui->lineEdit_intervalsIcuApiKey->text().trimmed();
+    if (!XmlUtil::saveLocalSaveFile(account)) {
+        QMessageBox::warning(this,
+                             tr("Save Failed"),
+                             tr("Could not save Intervals.icu credentials to the local file.\n"
+                                "Your settings may not be remembered after the next restart."));
+        // Do not close the dialog — let the user correct the situation (e.g.
+        // free disk space) or explicitly dismiss.
+        return;
+    }
+
 
     settings->saveGeneralSettings();
 
