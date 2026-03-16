@@ -9,6 +9,7 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QMenu>
 #include <QUrl>
 #include <QString>
 #include <QStringList>
@@ -114,6 +115,9 @@ public:
             "<small>This content requires the desktop app for inline display.<br>"
             "Click the link to open it in a browser tab.</small></center>"
         ).arg(url.host(), url.toString()));
+    }
+    void setHtml(const QString &html, const QUrl & = QUrl()) {
+        m_label->setText(html);
     }
     QUrl url() const { return m_currentUrl; }
     void setPage(QWebEnginePage *page) { if (page) m_page = page; }

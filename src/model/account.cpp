@@ -43,6 +43,9 @@ Account::Account(QObject *parent) : QObject(parent)  {
     settings.beginGroup("account");
     nb_sec_show_interval = settings.value("nb_sec_show_interval", 5 ).toInt();
     nb_sec_show_interval_before = settings.value("nb_sec_show_interval_before", 4 ).toInt();
+    intervals_icu_api_key     = settings.value("intervals_icu_api_key", "").toString();
+    intervals_icu_athlete_id  = settings.value("intervals_icu_athlete_id", "").toString();
+    intervals_icu_auto_upload = settings.value("intervals_icu_auto_upload", false).toBool();
     settings.endGroup();
 
 
@@ -67,6 +70,7 @@ Account::Account(QObject *parent) : QObject(parent)  {
     training_peaks_public_upload = false;
     selfloops_user = "";
     selfloops_pw = "";
+    intervals_icu_auto_upload = false;
     control_trainer_resistance = true;
     stop_pairing_on_found = true;
     nb_sec_pairing = 2;
@@ -180,6 +184,17 @@ void Account::saveNbSecShowIntervalBefore(int nbSec) {
     settings.beginGroup("account");
     settings.setValue("nb_sec_show_interval_before", nb_sec_show_interval_before);
 
+    settings.endGroup();
+}
+
+void Account::saveIntervalsIcuCredentials() {
+
+    QSettings settings;
+
+    settings.beginGroup("account");
+    settings.setValue("intervals_icu_api_key",    intervals_icu_api_key);
+    settings.setValue("intervals_icu_athlete_id", intervals_icu_athlete_id);
+    settings.setValue("intervals_icu_auto_upload", intervals_icu_auto_upload);
     settings.endGroup();
 }
 

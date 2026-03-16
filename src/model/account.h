@@ -19,6 +19,7 @@ public:
 
     void saveNbSecShowInterval(int nbSec);
     void saveNbSecShowIntervalBefore(int nbSec);
+    void saveIntervalsIcuCredentials();
 
 
     int id;
@@ -80,6 +81,7 @@ public:
     // Intervals.icu integration
     QString intervals_icu_athlete_id;  ///< Intervals.icu athlete ID (e.g. "i12345")
     QString intervals_icu_api_key;     ///< Intervals.icu API key
+    bool    intervals_icu_auto_upload; ///< Auto-upload completed activities to Intervals.icu
     QList<int> hr_zones;               ///< HR zone upper-bounds retrieved from Intervals.icu
     QList<int> power_zones;            ///< Power zone upper-bounds retrieved from Intervals.icu
 

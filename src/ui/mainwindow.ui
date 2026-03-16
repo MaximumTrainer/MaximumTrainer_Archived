@@ -127,7 +127,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="stackedWidget_menu_intervalsIcu">
+      <widget class="QWidget" name="stackedWidget_menu_intervals">
        <layout class="QVBoxLayout" name="verticalLayout_8">
         <property name="leftMargin">
          <number>0</number>
@@ -142,46 +142,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTabWidget" name="tabWidget_intervalsIcu">
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <property name="usesScrollButtons">
-           <bool>false</bool>
-          </property>
-          <property name="documentMode">
-           <bool>true</bool>
-          </property>
-          <widget class="QWidget" name="intervalsIcu">
-           <attribute name="title">
-            <string>Intervals.icu</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_12">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QWebEngineView" name="webView_intervalsIcu" native="true">
-              <property name="contextMenuPolicy">
-               <enum>Qt::NoContextMenu</enum>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
+         <widget class="TabIntervalsIcu" name="tab_intervals_icu"/>
         </item>
        </layout>
       </widget>
@@ -566,6 +527,12 @@
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
+  <customwidget>
+   <class>TabIntervalsIcu</class>
+   <extends>QWidget</extends>
+   <header>tab_intervals_icu.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>QWebEngineView</class>
    <extends>QWidget</extends>

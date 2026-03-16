@@ -110,6 +110,46 @@ jobs:
         ./build/tests/logger_tests -v2
 
   # ──────────────────────────────────────────────────────────────────────────
+  # IntervalsIcuService + ImporterWorkoutZwo Unit Tests (Linux)
+  #
+  # Builds and runs two test suites:
+  # • intervals_icu_tests — verifies Authorization header construction, Accept
+  #   header, URL building, query parameters, and null-manager guard.
+  # • importer_workout_zwo_tests — verifies ZWO XML parser for SteadyState,
+  #   Ramp, IntervalsT, FreeRide, and mixed workout structures.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_intervals_icu:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          build-essential
+
+    - name: Build Intervals.icu unit tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        mkdir -p build/tests
+        cd tests/intervals_icu
+        qmake intervals_icu_tests.pro
+        make -j$(nproc)
+        qmake importer_workout_zwo_tests.pro
+        make -j$(nproc)
+
+    - name: Run Intervals.icu unit tests
+      run: |
+        ./build/tests/intervals_icu_tests -v2
+        ./build/tests/importer_workout_zwo_tests -v2
+
+  # ──────────────────────────────────────────────────────────────────────────
   # BTLE Integration Test (Linux)
   #
   # Runs SimulatorHub in a Qt window under Xvfb, takes a screenshot as

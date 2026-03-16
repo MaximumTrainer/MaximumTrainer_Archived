@@ -1,0 +1,28 @@
+// QApplication class stub for headless unit-test builds.
+//
+// workout.cpp and interval.cpp include <QApplication> only to call the static
+// helper QApplication::translate(), which is identical to
+// QCoreApplication::translate() (QApplication inherits it unchanged).
+//
+// Qt's own qobject.h contains  `friend class QApplication;`  — a forward
+// declaration that declares QApplication as a class type.  A type alias
+// (`using QApplication = QCoreApplication`) would conflict with that
+// declaration; a proper class definition does not.
+//
+// By placing this file first in INCLUDEPATH we provide the definition
+// without pulling in QtWidgets (which is not installed in the test CI job).
+// QTEST_MAIN with QT -= gui creates a QCoreApplication for the test runner,
+// which is sufficient because no actual QApplication object is constructed.
+#pragma once
+#include <QCoreApplication>
+
+class QApplication : public QCoreApplication
+{
+public:
+    // Forward all constructors so the class can be instantiated if needed.
+    using QCoreApplication::QCoreApplication;
+
+    // Bring the static translate() into scope; calling
+    // QApplication::translate(...) routes to QCoreApplication::translate().
+    using QCoreApplication::translate;
+};
