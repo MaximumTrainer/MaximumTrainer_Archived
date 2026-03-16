@@ -1,0 +1,12 @@
+// Minimal QApplication stub for headless unit-test builds.
+//
+// workout.cpp and interval.cpp include <QApplication> only to use the
+// QApplication::translate() static helper (inherited from QCoreApplication)
+// and the qApp pointer (available from QCoreApplication).  No actual
+// QApplication object is constructed in tests.
+//
+// By placing this file first in INCLUDEPATH we satisfy the #include without
+// pulling in QtWidgets, which is not needed in the test executable.
+#pragma once
+#include <QCoreApplication>
+using QApplication = QCoreApplication;
