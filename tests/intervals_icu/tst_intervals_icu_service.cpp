@@ -70,6 +70,9 @@ class MockNetworkAccessManager : public QNetworkAccessManager
 {
     Q_OBJECT
 public:
+    explicit MockNetworkAccessManager(QObject *parent = nullptr)
+        : QNetworkAccessManager(parent) {}
+
     QNetworkRequest lastRequest;
     int             callCount = 0;
 
