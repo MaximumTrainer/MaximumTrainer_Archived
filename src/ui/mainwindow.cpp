@@ -81,7 +81,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->webView_settings->setUrl(QUrl(Environnement::getUrlSettings()));
     ui->webView_plan->setUrl(QUrl(Environnement::getUrlPlans()));
     ui->webView_studio->setUrl(QUrl(Environnement::getUrlStudio()));
-    ui->webView_ergDb->setUrl(QUrl("https://www.trainerday.com/"));
+
+    // Initialise the Intervals.icu tab with current credentials
+    ui->tab_intervals_icu->refreshCredentials();
 
 
 
@@ -95,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ftb->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     ftb->insertTab(0, QIcon(":/image/icon/workoutMan"), tr("Workout"));
-    ftb->insertTab(1, QIcon(":/image/icon/images/ergdb-logo-black-rider.png"), tr("Find Workouts"));
+    ftb->insertTab(1, QIcon(":/image/icon/calendar"),   tr("Intervals.icu"));
     ftb->insertTab(2, QIcon(":/image/icon/calendar"),  tr("Plan"));
     ftb->insertTab(3, QIcon(":/image/icon/studio"), tr("Studio"));
     ftb->insertTab(4, QIcon(":/image/icon/user"), tr("Profile"));
@@ -177,6 +179,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     //    dconfig->setModal(true);
     connect(dconfig, SIGNAL(folderWorkoutChanged()), ui->tab_workout1, SLOT(refreshUserWorkout()) );
+    connect(dconfig, &DialogMainWindowConfig::intervalsIcuCredentialsChanged,
+            ui->tab_intervals_icu, &TabIntervalsIcu::refreshCredentials);
 
 
     leftMenuChanged(0);
@@ -197,49 +201,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->webView_settings, SIGNAL(loadFinished(bool)), this, SLOT(fillSettingPage()));
     connect(ui->webView_studio, SIGNAL(loadFinished(bool)), this, SLOT(fillStudioPage()));
 
-#ifndef Q_OS_WASM
-#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
-    connect(ui->webView_ergDb->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadRequest*)),
-                    this, SLOT(downloadRequested(QWebEngineDownloadRequest*)));
-#else
-    connect(ui->webView_ergDb->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadItem*)),
-                    this, SLOT(downloadRequested(QWebEngineDownloadItem*)));
-#endif
-#endif // !Q_OS_WASM
+    // Wire Intervals.icu workout downloaded → refresh workout list and filter
+    connect(ui->tab_intervals_icu, &TabIntervalsIcu::workoutDownloaded,
+            this, &MainWindow::goToWorkoutNameFilterFromIntervals);
 
 }
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
-void MainWindow::downloadRequested(QWebEngineDownloadRequest* download) {
-    qDebug() << "Format: " <<  download->savePageFormat();
-    QString filename = download->downloadFileName();
-    qDebug() << "Path: " << download->downloadDirectory() + QDir::separator() + filename;
-
-    download->setDownloadDirectory(Util::getSystemPathWorkout() + QDir::separator() + "trainerday");
-    download->setDownloadFileName(filename);
-    download->accept();
-
-    this->lastWorkoutNameDownloaded = QFileInfo(filename).completeBaseName();
-    connect(download, SIGNAL(isFinishedChanged()), this, SLOT(goToWorkoutNameFilter()));
-}
-#else
-void MainWindow::downloadRequested(QWebEngineDownloadItem* download) {
-    qDebug() << "Format: " <<  download->savePageFormat();
-    qDebug() << "Path: " << download->path();
-
-    QFileInfo fileInfo(download->path());
-    QString filename(fileInfo.fileName());
-
-    download->setPath(Util::getSystemPathWorkout() + QDir::separator() + "trainerday" + QDir::separator() + filename);
-    qDebug() << "Path: " << download->path();
-    download->accept();
-
-    this->lastWorkoutNameDownloaded = fileInfo.completeBaseName();
-    connect(download, SIGNAL(finished()), this, SLOT(goToWorkoutNameFilter()));
-}
-#endif
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -323,19 +289,17 @@ void MainWindow::goToWorkoutPlanFilter(const QString& plan) {
 
 }
 
-// trigger after a download is finish on TrainerDay tab
+// trigger after a .zwo file downloaded from Intervals.icu is saved
 //---------------------------------------------------------------------------------
-void MainWindow::goToWorkoutNameFilter() {
+void MainWindow::goToWorkoutNameFilterFromIntervals(const QString &workoutName) {
 
     ui->tab_workout1->refreshUserWorkout();
 
-    qDebug() << "mainWindow name" << this->lastWorkoutNameDownloaded;
+    qDebug() << "Intervals.icu workout downloaded:" << workoutName;
 
     ui->tabWidget_workout->setCurrentIndex(0);
-    ui->tab_workout1->setFilterWorkoutName(lastWorkoutNameDownloaded);
+    ui->tab_workout1->setFilterWorkoutName(workoutName);
     ftb->setCurrentIndex(0);
-
-
 }
 
 

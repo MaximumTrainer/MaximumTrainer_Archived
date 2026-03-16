@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "account.h"
 #include "dialoginfowebview.h"
+#include "intervalsicuservice.h"
 
 
 namespace Ui {
@@ -29,6 +30,8 @@ public:
 signals:
     void folderWorkoutChanged();
     void folderCourseChanged();
+    /// Emitted when Intervals.icu credentials are saved so the tab can refresh.
+    void intervalsIcuCredentialsChanged();
 
 
 public slots:
@@ -49,6 +52,9 @@ private slots:
     void trainingPeaksLabelClicked();
     void unlinkTrainingPeaksClicked();
 
+    void onTestIntervalsConnectionClicked();
+    void onTestIntervalsConnectionFinished();
+
 
 private:
     void initUI();
@@ -62,6 +68,9 @@ private:
 
     QNetworkReply *replyStravaDeauthorization;
     QNetworkReply *replyTPDeauthorization;
+
+    QNetworkReply *replyIntervalsTest = nullptr;
+    IntervalsIcuService *m_intervalsService = nullptr;
 
     DialogInfoWebView *stravaConnectView;
     bool stravaConnectViewAlreadyUsed;

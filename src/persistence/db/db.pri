@@ -9,6 +9,7 @@ SOURCES     +=\
     $$PWD/sensordao.cpp \
     $$PWD/radiodao.cpp \
     $$PWD/achievementdao.cpp \
+    $$PWD/intervalsicuservice.cpp \
     $$PWD/intervalsicudao.cpp
 
 HEADERS     += \
@@ -19,6 +20,7 @@ HEADERS     += \
     $$PWD/sensordao.h \
     $$PWD/radiodao.h \
     $$PWD/achievementdao.h \
+    $$PWD/intervalsicuservice.h \
     $$PWD/intervalsicudao.h
 
 
