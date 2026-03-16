@@ -34,10 +34,22 @@ public:
     /// change in the preferences dialog).
     void refreshCredentials();
 
+    /// Fetch calendar for [from, to] and import every event that has a workout
+    /// file.  Results are communicated via syncFinished() / syncFailed().
+    /// Non-blocking — the current week view is not affected.
+    void startBatchSync(const QDate &from, const QDate &to);
+
 signals:
     /// Emitted after a .zwo file has been written to disk.
     /// @param workoutName  base name (without extension) of the saved file.
     void workoutDownloaded(const QString &workoutName);
+
+    /// Emitted when a batch sync completes successfully.
+    /// @param count  number of workouts successfully imported.
+    void syncFinished(int count);
+
+    /// Emitted when a batch sync fails before any imports complete.
+    void syncFailed(const QString &errorMessage);
 
 private slots:
     void onRefreshClicked();
@@ -47,11 +59,17 @@ private slots:
     void onCalendarFetchFinished();
     void onWorkoutDownloadFinished();
 
+    void onSyncAllClicked();
+    void onSyncCalendarFetched();
+    void onSyncWorkoutDownloaded();
+
 private:
     void updateWeekLabel();
     void populateTable(const QList<IntervalsIcuService::CalendarEvent> &events);
     void setStatus(const QString &msg);
     void setBusy(bool busy);
+
+    void downloadNextSyncWorkout();
 
     Ui::TabIntervalsIcu *ui;
 
@@ -65,6 +83,14 @@ private:
     // Parallel list of workout IDs for each table row (empty string = no
     // downloadable workout for that event)
     QList<QString> m_rowWorkoutIds;
+
+    // Batch sync state
+    QNetworkReply *m_syncCalendarReply  = nullptr;
+    QNetworkReply *m_syncDownloadReply  = nullptr;
+    QList<IntervalsIcuService::CalendarEvent> m_syncQueue;
+    QString m_pendingSyncWorkoutName;
+    int m_syncCount  = 0;
+    int m_syncTotal  = 0;
 };
 
 #endif // TAB_INTERVALS_ICU_H

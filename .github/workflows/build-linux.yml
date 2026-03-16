@@ -132,7 +132,7 @@ jobs:
           qtbase5-dev \
           build-essential
 
-    - name: Build IntervalsIcuService unit tests
+    - name: Build Intervals.icu unit tests
       run: |
         export PATH=/usr/lib/qt5/bin:$PATH
         mkdir -p build/tests
@@ -140,7 +140,7 @@ jobs:
         qmake intervals_icu_tests.pro
         make -j$(nproc)
 
-    - name: Run IntervalsIcuService unit tests
+    - name: Run Intervals.icu unit tests
       run: |
         ./build/tests/intervals_icu_tests -v2
 

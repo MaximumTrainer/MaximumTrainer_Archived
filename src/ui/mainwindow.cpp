@@ -3,6 +3,7 @@
 
 #include <QDebug>
 #include <QSettings>
+#include <QDateTime>
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QDesktopServices>
@@ -240,6 +241,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->tab_intervals_icu, &TabIntervalsIcu::workoutDownloaded,
             this, &MainWindow::goToWorkoutNameFilterFromIntervals);
 
+    // Wire batch sync feedback
+    connect(ui->tab_intervals_icu, &TabIntervalsIcu::syncFinished,
+            this, [this](int count) {
+                QSettings().setValue(QStringLiteral("intervalsIcu/lastSync"),
+                                     QDateTime::currentDateTime().toString(Qt::ISODate));
+                ui->tab_workout1->refreshUserWorkout();
+                ui->widget_bottomMenu->setGeneralMessage(
+                    count > 0
+                        ? tr("Intervals.icu sync complete — %1 workout(s) imported.").arg(count)
+                        : tr("Intervals.icu sync complete — no new workouts found."),
+                    6000);
+            });
+    connect(ui->tab_intervals_icu, &TabIntervalsIcu::syncFailed,
+            this, [this](const QString &err) {
+                QMessageBox::warning(this, tr("Intervals.icu Sync Failed"), err);
+            });
 }
 
 
