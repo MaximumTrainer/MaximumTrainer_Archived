@@ -116,6 +116,9 @@ public:
             "Click the link to open it in a browser tab.</small></center>"
         ).arg(url.host(), url.toString()));
     }
+    void setHtml(const QString &html, const QUrl & = QUrl()) {
+        m_label->setText(html);
+    }
     QUrl url() const { return m_currentUrl; }
     void setPage(QWebEnginePage *page) { if (page) m_page = page; }
     QWebEnginePage *page() const { return m_page; }
@@ -123,7 +126,6 @@ public:
     void forward() {}
     void reload() {}
     void stop() {}
-    QMenu *createStandardContextMenu() { return new QMenu(this); }
 
 private:
     QWebEnginePage *m_page;
