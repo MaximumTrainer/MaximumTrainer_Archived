@@ -462,8 +462,13 @@ void Main_WorkoutPage::setFilterPlanName(const QString& plan) {
 
     qDebug() << "setFilterPlanName";
 
+    // Escape backslashes and single quotes so the value is safe inside a JS single-quoted string
+    QString jsPlan = plan;
+    jsPlan.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
+    jsPlan.replace(QLatin1Char('\''), QStringLiteral("\\'"));
+
     QString jsToExecute = "$('#name-workout').val( '' ); ";
-    jsToExecute += QString("$('#plan-workout').val( '%1' ); ").arg(plan);
+    jsToExecute += QString("$('#plan-workout').val( '%1' ); ").arg(jsPlan);
     jsToExecute += "$('#creator-workout').val( '' ); ";
 
     jsToExecute += "$('#select-type-workout option:selected').prop('selected', false); ";
@@ -489,8 +494,13 @@ void Main_WorkoutPage::setFilterWorkoutName(const QString& workoutName) {
 
     qDebug() << "setFilterWorkoutName";
 
+    // Escape backslashes and single quotes so the value is safe inside a JS single-quoted string
+    QString jsWorkoutName = workoutName;
+    jsWorkoutName.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
+    jsWorkoutName.replace(QLatin1Char('\''), QStringLiteral("\\'"));
+
     QString jsToExecute = "$('#plan-workout').val( '' ); ";
-    jsToExecute += QString("$('#name-workout ').val( '%1' ); ").arg(workoutName);
+    jsToExecute += QString("$('#name-workout ').val( '%1' ); ").arg(jsWorkoutName);
     jsToExecute += "$('#creator-workout').val( '' ); ";
 
     jsToExecute += "$('#select-type-workout option:selected').prop('selected', false); ";

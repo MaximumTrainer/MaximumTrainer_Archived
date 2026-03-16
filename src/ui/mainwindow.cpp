@@ -410,16 +410,23 @@ void MainWindow::onIntervalsIcuWorkoutDownloaded() {
 
     // Save the parsed workout to the user's Intervals folder so it appears in the list
     const QString intervalsFolder = Util::getSystemPathWorkout() + QDir::separator() + QStringLiteral("intervals");
-    QDir().mkpath(intervalsFolder);
-    QString filePath = intervalsFolder + QDir::separator() + safeName + QStringLiteral(".workout");
-
-    // If the file already exists, append the workout ID to avoid silent overwrites
-    if (QFile::exists(filePath)) {
-        safeName = safeName + QStringLiteral("_") + m_pendingIntervalsWorkoutId;
-        filePath = intervalsFolder + QDir::separator() + safeName + QStringLiteral(".workout");
+    if (!QDir().mkpath(intervalsFolder)) {
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Could not create intervals folder: %1").arg(intervalsFolder), 5000);
+        return;
     }
 
-    XmlUtil::createWorkoutXml(workout, filePath);
+    // Loop until we find a filename that does not already exist
+    QString uniqueSafeName = safeName;
+    for (int n = 1; QFile::exists(intervalsFolder + QDir::separator() + uniqueSafeName + QStringLiteral(".workout")); ++n)
+        uniqueSafeName = safeName + QStringLiteral("_") + QString::number(n);
+    const QString filePath = intervalsFolder + QDir::separator() + uniqueSafeName + QStringLiteral(".workout");
+
+    if (!XmlUtil::createWorkoutXml(workout, filePath)) {
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Could not save workout to disk: %1").arg(filePath), 5000);
+        return;
+    }
 
     // Refresh the workout list and navigate to the imported workout
     ui->tab_workout1->refreshUserWorkout();
@@ -455,11 +462,12 @@ void MainWindow::reloadPlanWebView() {
 //---------------------------------------------------------------------------------
 void MainWindow::showPlanContextMenu(const QPoint &pos) {
 
-    QMenu menu(this);
-    QAction *refreshAction = menu.addAction(tr("Refresh"));
-    QAction *chosen = menu.exec(ui->webView_plan->mapToGlobal(pos));
-    if (chosen == refreshAction)
-        reloadPlanWebView();
+    // Start from the standard QWebEngine context menu so Copy, Open Link, etc. remain available
+    QMenu *menu = ui->webView_plan->page()->createStandardContextMenu();
+    menu->addSeparator();
+    menu->addAction(tr("Refresh"), this, SLOT(reloadPlanWebView()));
+    menu->exec(ui->webView_plan->mapToGlobal(pos));
+    menu->deleteLater();
 }
 
 // trigger after a download is finish on TrainerDay tab
@@ -628,7 +636,7 @@ void MainWindow::createWebChannelPlan() {
         script.setInjectionPoint(QWebEngineScript::DocumentCreation);
         script.setRunsOnSubFrames(false);
 
-        // Allow all navigation within intervals.icu; open anything else externally
+        // Navigation override: links containing "forum" or "cms" are opened in the system browser
         QStringList lstExternal = {"forum", "cms" };
         MyQWebEnginePage *myPage = new MyQWebEnginePage(ui->webView_plan);
         myPage->setExternalList(lstExternal);

@@ -117,8 +117,16 @@ Workout ImporterWorkoutZwo::importFromByteArray(const QByteArray &data,
 
                 } else if (tag == QStringLiteral("FreeRide")) {
                     int dur = intAttr("Duration");
-                    if (dur > 0)
-                        intervals.append(makeFlatInterval(dur, 0.0));
+                    if (dur > 0) {
+                        // FreeRide has no structured power target — NONE lets the trainer run in free/slope mode
+                        Interval interval(secondsToQTime(dur),
+                                          QString(),
+                                          Interval::NONE, 0.0, 0.0, 20, -1,
+                                          Interval::NONE, 0, 0, 5,
+                                          Interval::NONE, 0.0, 0.0, 15,
+                                          false, 0.0, 0, 0.0);
+                        intervals.append(interval);
+                    }
 
                 } else {
                     qDebug() << "ImporterWorkoutZwo: skipping unrecognised element" << tag;
@@ -126,15 +134,15 @@ Workout ImporterWorkoutZwo::importFromByteArray(const QByteArray &data,
             }
 
         } else if (token == QXmlStreamReader::Characters && !currentTextTag.isEmpty()) {
-            const QString text = xml.text().toString().trimmed();
-            if (!text.isEmpty()) {
-                if (currentTextTag == QStringLiteral("name"))
-                    name = text;
-                else if (currentTextTag == QStringLiteral("author"))
-                    author = text;
-                else if (currentTextTag == QStringLiteral("description"))
-                    description = text;
-            }
+            // QXmlStreamReader may deliver text content in multiple Characters tokens;
+            // accumulate them all to avoid dropping partial text.
+            const QString text = xml.text().toString();
+            if (currentTextTag == QStringLiteral("name"))
+                name += text;
+            else if (currentTextTag == QStringLiteral("author"))
+                author += text;
+            else if (currentTextTag == QStringLiteral("description"))
+                description += text;
 
         } else if (token == QXmlStreamReader::EndElement) {
             const QStringRef endTag = xml.name();
@@ -156,19 +164,27 @@ Workout ImporterWorkoutZwo::importFromByteArray(const QByteArray &data,
     }
 
     if (name.isEmpty()) {
-        if (!workoutName.isEmpty())
-            name = workoutName;
-        else
-            name = QStringLiteral("Intervals.icu Workout");
-    } else if (!workoutName.isEmpty() && name != workoutName) {
-        // Append the workout ID to the name from the ZWO file so that two
-        // different Intervals.icu workouts with the same title do not collide.
-        name = name + QStringLiteral(" (") + workoutName + QStringLiteral(")");
+        const QString trimmedId = workoutName.trimmed();
+        name = trimmedId.isEmpty() ? QStringLiteral("Intervals.icu Workout") : trimmedId;
+    } else {
+        name = name.trimmed();
+        if (name.isEmpty()) {
+            const QString trimmedId = workoutName.trimmed();
+            name = trimmedId.isEmpty() ? QStringLiteral("Intervals.icu Workout") : trimmedId;
+        } else if (!workoutName.isEmpty() && name != workoutName.trimmed()) {
+            // Append the workout ID to the name from the ZWO file so that two
+            // different Intervals.icu workouts with the same title do not collide.
+            name = name + QStringLiteral(" (") + workoutName.trimmed() + QStringLiteral(")");
+        }
     }
     if (author.isEmpty())
         author = QStringLiteral("-");
+    else
+        author = author.trimmed();
     if (description.isEmpty())
         description = QStringLiteral("-");
+    else
+        description = description.trimmed();
 
     if (intervals.isEmpty()) {
         qWarning() << "ImporterWorkoutZwo: no intervals parsed from ZWO data";
