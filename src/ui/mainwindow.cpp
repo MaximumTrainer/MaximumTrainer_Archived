@@ -26,6 +26,7 @@
 #include "importerworkout.h"
 #include "importerworkoutzwo.h"
 #include "intervalsicudao.h"
+#include "intervalsicuservice.h"
 #include "xmlutil.h"
 #include "managerachievement.h"
 #include "simulator_hub.h"
@@ -82,7 +83,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     zoneObject = new ZoneObject(this);         /// Used with QWebView zone page
     planObject = new PlanObject(this);         ///Used with QWebView Plan page
 
-    replyIntervalsIcuZwo = nullptr;
+    replyIntervalsIcuZwo    = nullptr;
+    replyIntervalsIcuUpload = nullptr;
 
 
     createWebChannelPlan();
@@ -1642,6 +1644,22 @@ void MainWindow::checkToUploadFile(const QString& filename, const QString& nameO
         connect(replySelfLoopsUpload, SIGNAL(finished()), this, SLOT(slotSelfLoopsUploadFinished()) );
     }
 
+    // Intervals.icu
+    if (account->intervals_icu_auto_upload &&
+        !account->intervals_icu_api_key.isEmpty() &&
+        !account->intervals_icu_athlete_id.isEmpty()) {
+
+        ui->widget_bottomMenu->setGeneralMessage(tr("Uploading your activity to Intervals.icu..."));
+        IntervalsIcuService *svc = new IntervalsIcuService(this);
+        svc->setCredentials(account->intervals_icu_api_key, account->intervals_icu_athlete_id);
+        const QString externalId = QFileInfo(filename).baseName();
+        replyIntervalsIcuUpload = svc->uploadActivity(filename, nameOnly, externalId);
+        if (replyIntervalsIcuUpload) {
+            connect(replyIntervalsIcuUpload, SIGNAL(finished()), this, SLOT(slotIntervalsIcuUploadFinished()));
+        }
+        svc->deleteLater();
+    }
+
 
 }
 
@@ -1683,6 +1701,34 @@ void MainWindow::slotSelfLoopsUploadFinished()
     }
     replySelfLoopsUpload->deleteLater();
 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void MainWindow::slotIntervalsIcuUploadFinished()
+{
+    qDebug() << "slotIntervalsIcuUploadFinished";
+
+    if (replyIntervalsIcuUpload->error() == QNetworkReply::NoError) {
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Your activity was successfully uploaded to Intervals.icu"), 5000);
+    } else {
+        const int httpStatus = replyIntervalsIcuUpload
+            ->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (httpStatus == 401) {
+            ui->widget_bottomMenu->setGeneralMessage(
+                tr("Intervals.icu upload failed: invalid API key (401)"), 5000);
+        } else if (httpStatus == 409) {
+            ui->widget_bottomMenu->setGeneralMessage(
+                tr("Activity already present on Intervals.icu"), 5000);
+        } else {
+            ui->widget_bottomMenu->setGeneralMessage(
+                "Intervals.icu: " + replyIntervalsIcuUpload->errorString(), 5000);
+        }
+        qWarning() << "Intervals.icu upload error:" << replyIntervalsIcuUpload->errorString()
+                   << "HTTP" << httpStatus;
+    }
+    replyIntervalsIcuUpload->deleteLater();
 }
 
 

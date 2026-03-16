@@ -133,6 +133,8 @@ private slots:
     void slotTrainingPeaksUploadFinished();
     //-SelfLoops
     void slotSelfLoopsUploadFinished();
+    //-Intervals.icu
+    void slotIntervalsIcuUploadFinished();
 
     void on_actionImportCourse_triggered();
 
@@ -196,6 +198,8 @@ private:
     QNetworkReply *replyTrainingPeaksPostFile;
     //SelfLoops
     QNetworkReply *replySelfLoopsUpload;
+    //Intervals.icu
+    QNetworkReply *replyIntervalsIcuUpload;
 
 
     Settings *settings;

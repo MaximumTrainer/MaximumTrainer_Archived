@@ -3,7 +3,13 @@
 #include <QApplication>
 #include <QNetworkRequest>
 #include <QUrl>
+#include <QUrlQuery>
 #include <QByteArray>
+#include <QHttpMultiPart>
+#include <QHttpPart>
+#include <QFile>
+#include <QFileInfo>
+#include <QMimeDatabase>
 #include <QDebug>
 
 static const QString INTERVALS_BASE_URL = "https://intervals.icu/api/v1";
@@ -68,6 +74,58 @@ QNetworkReply *IntervalsIcuService::downloadWorkoutZwo(const QString &workoutId)
     auto *mgr = qApp->property("NetworkManagerWS")
                     .value<QNetworkAccessManager *>();
     return mgr->get(buildRequest(path));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+QNetworkReply *IntervalsIcuService::uploadActivity(const QString &filePath,
+                                                    const QString &name,
+                                                    const QString &externalId)
+{
+    // Build URL with optional query parameters
+    QUrl url(INTERVALS_BASE_URL + "/athlete/0/activities");
+    QUrlQuery q;
+    if (!name.isEmpty())
+        q.addQueryItem("name", name);
+    if (!externalId.isEmpty())
+        q.addQueryItem("external_id", externalId);
+    if (!q.isEmpty())
+        url.setQuery(q);
+
+    QNetworkRequest request;
+    request.setUrl(url);
+
+    const QByteArray credentials =
+        ("API_KEY:" + m_apiKey).toUtf8().toBase64();
+    request.setRawHeader("Authorization", "Basic " + credentials);
+    // Content-Type is set automatically by Qt for multipart requests
+
+    const QString suffix = QFileInfo(filePath).suffix().toLower();
+    const QString mimeType = (suffix == "fit") ? "application/octet-stream"
+                                                : "application/xml";
+
+    QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+    QHttpPart filePart;
+    filePart.setHeader(QNetworkRequest::ContentTypeHeader, mimeType);
+    filePart.setHeader(QNetworkRequest::ContentDispositionHeader,
+                       QString("form-data; name=\"file\"; filename=\"%1\"")
+                           .arg(QFileInfo(filePath).fileName()));
+    QFile *file = new QFile(filePath);
+    if (!file->open(QIODevice::ReadOnly)) {
+        qWarning() << "IntervalsIcuService::uploadActivity: cannot open" << filePath;
+        delete file;
+        delete multiPart;
+        return nullptr;
+    }
+    file->setParent(multiPart);
+    filePart.setBodyDevice(file);
+    multiPart->append(filePart);
+
+    auto *mgr = qApp->property("NetworkManagerWS")
+                    .value<QNetworkAccessManager *>();
+    QNetworkReply *reply = mgr->post(request, multiPart);
+    multiPart->setParent(reply);
+    return reply;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

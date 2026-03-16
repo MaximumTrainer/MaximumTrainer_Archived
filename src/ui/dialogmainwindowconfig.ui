@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>DialogMainWindowConfig</class>
  <widget class="QDialog" name="DialogMainWindowConfig">
@@ -838,6 +838,13 @@
             </property>
             <property name="styleSheet">
              <string notr="true">color: #666; font-style: italic;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0" colspan="2">
+           <widget class="QCheckBox" name="checkBox_intervalsAutoUpload">
+            <property name="text">
+             <string>Auto-upload completed activities to Intervals.icu</string>
             </property>
            </widget>
           </item>
