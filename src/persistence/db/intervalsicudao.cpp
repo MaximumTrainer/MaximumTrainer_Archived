@@ -74,3 +74,42 @@ QNetworkReply* IntervalsIcuDAO::downloadWorkoutZwo(const QString &athleteId, con
 
     return manager->get(request);
 }
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+QNetworkRequest IntervalsIcuDAO::buildBearerRequest(const QString &url, const QString &bearerToken)
+{
+    QNetworkRequest request;
+    request.setUrl(QUrl(url));
+    request.setRawHeader("Authorization", QByteArray("Bearer ") + bearerToken.toUtf8());
+    request.setRawHeader("Accept", "application/json");
+    return request;
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/athlete/{id}  (OAuth2 Bearer token variant)
+QNetworkReply* IntervalsIcuDAO::getAthleteBearer(const QString &athleteId, const QString &bearerToken)
+{
+    QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        qWarning() << "IntervalsIcuDAO::getAthleteBearer: NetworkManagerWS is not available";
+        return nullptr;
+    }
+
+    const QString url = urlIntervalsIcuApi + athleteId;
+    return manager->get(buildBearerRequest(url, bearerToken));
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/athlete/{id}/settings  (OAuth2 Bearer token variant)
+QNetworkReply* IntervalsIcuDAO::getAthleteSettingsBearer(const QString &athleteId, const QString &bearerToken)
+{
+    QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        qWarning() << "IntervalsIcuDAO::getAthleteSettingsBearer: NetworkManagerWS is not available";
+        return nullptr;
+    }
+
+    const QString url = urlIntervalsIcuApi + athleteId + QStringLiteral("/settings");
+    return manager->get(buildBearerRequest(url, bearerToken));
+}

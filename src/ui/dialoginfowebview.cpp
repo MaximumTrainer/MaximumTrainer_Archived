@@ -2,10 +2,13 @@
 #include "ui_dialoginfowebview.h"
 
 #include <QDesktopServices>
+#include <QUrlQuery>
 #include <QWebEngineView>
 #include <QWebEngineProfile>
 #include "util.h"
 #include "account.h"
+#include "extrequest.h"
+#include "environnement.h"
 
 #include "myqwebenginepage.h"
 
@@ -36,6 +39,7 @@ DialogInfoWebView::DialogInfoWebView(QWidget *parent) :
 
     usedForStrava = false;
     usedForTrainingPeaks = false;
+    usedForIntervalsIcu = false;
 
     connect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(pageLoaded(bool)));
 
@@ -58,6 +62,12 @@ void DialogInfoWebView::setUsedForTrainingPeaks(bool used) {
     this->usedForTrainingPeaks = used;
 }
 
+/////////////////////////////////////////////////////////////////////////
+void DialogInfoWebView::setUsedForIntervalsIcu(bool used) {
+
+    this->usedForIntervalsIcu = used;
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -65,7 +75,7 @@ void DialogInfoWebView::pageLoaded(bool ok){
 
     qDebug() << "DialogInfoWebView pageLoaded";
 
-    if (!ok || (!usedForStrava && !usedForTrainingPeaks) )
+    if (!ok || (!usedForStrava && !usedForTrainingPeaks && !usedForIntervalsIcu) )
         return;
 
     qDebug() << "Got here pageLoaded--" << ui->webView->url().toDisplayString();
@@ -125,6 +135,70 @@ void DialogInfoWebView::pageLoaded(bool ok){
 
         }
     }
+    /// ------ Intervals.icu OAuth2 callback ------------------------------------------------
+    else if (usedForIntervalsIcu
+             && ui->webView->url().toDisplayString().contains("/intervals_icu_token_exchange"))  {
+
+        const QString urlStr = ui->webView->url().toDisplayString();
+
+        // If the user denied authorization, bail out early.
+        if (urlStr.contains("error=")) {
+            qDebug() << "Intervals.icu OAuth: user denied authorization or error occurred";
+            emit intervalsIcuLinked(false);
+            this->reject();
+            return;
+        }
+
+        // Case 1: The MaximumTrainer.com backend proxy exchanged the code and
+        // returned a JSON body — read it directly as plain text.
+        // We verify the response contains a JSON object with an "access_token"
+        // field before accepting the result.
+        if (!urlStr.contains("code=")) {
+            ui->webView->page()->toPlainText([=](const QString &response){
+                // Validate that the response looks like a JSON object before parsing.
+                const QString trimmed = response.trimmed();
+                if (!trimmed.startsWith('{')) {
+                    qWarning() << "Intervals.icu token exchange: unexpected non-JSON response";
+                    emit intervalsIcuLinked(false);
+                    this->reject();
+                    return;
+                }
+                Util::parseJsonIntervalsIcuOAuthToken(response);
+                Account *account = qApp->property("Account").value<Account*>();
+                if (account && !account->intervals_icu_access_token.isEmpty()) {
+                    emit intervalsIcuLinked(true);
+                    this->accept();
+                } else {
+                    emit intervalsIcuLinked(false);
+                    this->reject();
+                }
+            });
+            return;
+        }
+
+        // Case 2: The redirect URI still has ?code= in it (i.e. the backend
+        // proxy forwarded it unchanged).  Extract the code and exchange it
+        // client-side by POSTing directly to the Intervals.icu token endpoint.
+        const QUrl redirectUrl(urlStr);
+        const QString code = QUrlQuery(redirectUrl).queryItemValue("code");
+        if (code.isEmpty()) {
+            qDebug() << "Intervals.icu OAuth: no code in redirect URL";
+            emit intervalsIcuLinked(false);
+            this->reject();
+            return;
+        }
+
+        qDebug() << "Intervals.icu OAuth: exchanging code client-side";
+        const QString redirectUri = Environnement::getURLEnvironnement() + "intervals_icu_token_exchange";
+        m_intervalsTokenReply = ExtRequest::intervalsIcuOAuthExchange(code, redirectUri);
+        if (!m_intervalsTokenReply) {
+            emit intervalsIcuLinked(false);
+            this->reject();
+            return;
+        }
+        connect(m_intervalsTokenReply, &QNetworkReply::finished,
+                this, &DialogInfoWebView::slotIntervalsTokenExchangeFinished);
+    }
 
     qDebug() << "end of login here oK";
 
@@ -160,6 +234,34 @@ void DialogInfoWebView::pageLoaded(bool ok){
 void DialogInfoWebView::setUrlWebView(QString url) {
 
     ui->webView->setUrl(QUrl(url));
+}
+
+/////////////////////////////////////////////////////////////////////////
+/// Called when the direct client-side Intervals.icu token exchange POST completes.
+void DialogInfoWebView::slotIntervalsTokenExchangeFinished()
+{
+    if (!m_intervalsTokenReply) return;
+
+    if (m_intervalsTokenReply->error() == QNetworkReply::NoError) {
+        const QByteArray data = m_intervalsTokenReply->readAll();
+        Util::parseJsonIntervalsIcuOAuthToken(QString::fromUtf8(data));
+        Account *account = qApp->property("Account").value<Account*>();
+        if (account && !account->intervals_icu_access_token.isEmpty()) {
+            m_intervalsTokenReply->deleteLater();
+            m_intervalsTokenReply = nullptr;
+            emit intervalsIcuLinked(true);
+            this->accept();
+            return;
+        }
+    } else {
+        qWarning() << "Intervals.icu token exchange failed:"
+                   << m_intervalsTokenReply->errorString();
+    }
+
+    m_intervalsTokenReply->deleteLater();
+    m_intervalsTokenReply = nullptr;
+    emit intervalsIcuLinked(false);
+    this->reject();
 }
 
 

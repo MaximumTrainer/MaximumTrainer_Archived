@@ -121,6 +121,10 @@ public:
     /// Updates the global Account object with hr_zones and power_zones lists.
     static void parseJsonIntervalsIcuSettings(const QString &data);
 
+    /// Intervals.icu OAuth2 — parse a token endpoint response and store the
+    /// access_token, refresh_token, and athlete_id into the global Account.
+    static void parseJsonIntervalsIcuOAuthToken(const QString &data);
+
 
 
 

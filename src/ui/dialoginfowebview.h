@@ -2,6 +2,7 @@
 #define DIALOGINFOWEBVIEW_H
 
 #include <QDialog>
+#include <QNetworkReply>
 #include <QUrl>
 
 namespace Ui {
@@ -21,17 +22,26 @@ public:
     void setTitle(QString title);
     void setUsedForStrava(bool used);
     void setUsedForTrainingPeaks(bool used);
+    /// Configure this dialog as an Intervals.icu OAuth2 flow.
+    /// When set, the dialog watches for an /intervals_icu_token_exchange
+    /// redirect and parses the returned token JSON.
+    void setUsedForIntervalsIcu(bool used);
 
 
 signals:
     void stravaLinked(bool linked);
     void trainingPeaksLinked(bool linked);
+    /// Emitted when the Intervals.icu OAuth2 flow completes (or fails).
+    void intervalsIcuLinked(bool linked);
 
 
 
 
 private slots:
     void pageLoaded(bool ok);
+    /// Handles the direct token-exchange reply when the app falls back to
+    /// exchanging the authorization code client-side.
+    void slotIntervalsTokenExchangeFinished();
 
 private:
     Ui::DialogInfoWebView *ui;
@@ -39,7 +49,11 @@ private:
 
     bool usedForStrava;
     bool usedForTrainingPeaks;
+    bool usedForIntervalsIcu;
     QString emailUser;
+
+    /// Pending reply for the client-side Intervals.icu token exchange (fallback).
+    QNetworkReply *m_intervalsTokenReply = nullptr;
 };
 
 #endif // DIALOGINFOWEBVIEW_H

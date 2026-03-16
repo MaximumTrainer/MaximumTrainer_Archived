@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <QDesktopServices>
+#include <QRegularExpression>
 
 #include "logger.h"
 
@@ -104,6 +105,13 @@ DialogLogin::DialogLogin(QWidget *parent) : QDialog(parent), ui(new Ui::DialogLo
     // --------------------------------------------
 
     connect(ui->webView_login, SIGNAL(loadProgress(int)), this, SLOT(showLoadingProgress(int)));
+
+    // "Login with Intervals.icu" button
+    connect(ui->pushButton_loginIntervalsIcu, &QPushButton::clicked,
+            this, &DialogLogin::onLoginWithIntervalsIcuClicked);
+    // "Register at Intervals.icu" link label
+    connect(ui->label_registerIntervalsIcu, &QLabel::linkActivated,
+            this, [](const QString &url){ QDesktopServices::openUrl(QUrl(url)); });
 
     ui->label_loading->setVisible(false);
     ui->webView_login->setVisible(false);
@@ -464,6 +472,174 @@ void DialogLogin::loginOffline()
 }
 
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Intervals.icu OAuth2 login
+// ─────────────────────────────────────────────────────────────────────────────
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Opens a DialogInfoWebView with the Intervals.icu OAuth2 authorization URL.
+/// The dialog emits intervalsIcuLinked(true) when the token has been obtained.
+void DialogLogin::onLoginWithIntervalsIcuClicked()
+{
+    LOG_INFO("DialogLogin", QStringLiteral("User clicked 'Login with Intervals.icu'"));
+
+    DialogInfoWebView *oauthDialog = new DialogInfoWebView(this);
+    oauthDialog->setTitle(tr("Login with Intervals.icu"));
+    oauthDialog->setUsedForIntervalsIcu(true);
+    oauthDialog->setUrlWebView(Environnement::getURLIntervalsIcuAuthorize());
+
+    connect(oauthDialog, &DialogInfoWebView::intervalsIcuLinked,
+            this, &DialogLogin::onIntervalsIcuOAuthLinked);
+    connect(oauthDialog, &DialogInfoWebView::rejected,
+            this, &DialogLogin::onIntervalsIcuOAuthDialogRejected);
+
+    oauthDialog->exec();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Called when the Intervals.icu OAuth dialog reports a result.
+void DialogLogin::onIntervalsIcuOAuthLinked(bool linked)
+{
+    if (!linked) {
+        LOG_WARN("DialogLogin", QStringLiteral("Intervals.icu OAuth2 authorization denied or failed"));
+        ui->label_process->setText(tr("Intervals.icu authorization failed. Please try again."));
+        return;
+    }
+
+    LOG_INFO("DialogLogin", QStringLiteral("Intervals.icu OAuth2 authorization successful"));
+    m_loggingInViaIntervalsIcu = true;
+    fetchIntervalsIcuDataOAuth();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Called when the user closes the OAuth dialog without completing authorization.
+void DialogLogin::onIntervalsIcuOAuthDialogRejected()
+{
+    if (!m_loggingInViaIntervalsIcu) {
+        // User simply closed the window — no action needed, stay on login page.
+        LOG_INFO("DialogLogin", QStringLiteral("Intervals.icu OAuth dialog closed by user"));
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Fetch the athlete profile and training zones using the OAuth2 Bearer token.
+/// After success (or timeout), calls loginWithIntervalsIcuIdentity().
+void DialogLogin::fetchIntervalsIcuDataOAuth()
+{
+    const QString bearerToken = account->intervals_icu_access_token;
+    if (bearerToken.isEmpty()) {
+        LOG_WARN("DialogLogin", QStringLiteral("fetchIntervalsIcuDataOAuth: no bearer token stored"));
+        loginWithIntervalsIcuIdentity();
+        return;
+    }
+
+    LOG_INFO("DialogLogin", QStringLiteral("Fetching Intervals.icu profile via OAuth Bearer token"));
+    ui->label_process->setText(tr("Retrieving your Intervals.icu profile..."));
+    ui->widget_loading->setVisible(true);
+    ui->webView_login->setVisible(false);
+
+    // Use athlete id "0" = current authenticated user.
+    const QString athleteId = account->intervals_icu_athlete_id.isEmpty()
+                              ? INTERVALS_ICU_CURRENT_USER_ID
+                              : account->intervals_icu_athlete_id;
+
+    m_pendingIntervalsIcuReplies = 2;
+
+    replyIntervalsIcuAthlete = IntervalsIcuDAO::getAthleteBearer(athleteId, bearerToken);
+    if (replyIntervalsIcuAthlete) {
+        connect(replyIntervalsIcuAthlete, &QNetworkReply::finished,
+                this, &DialogLogin::slotFinishedIntervalsIcuAthlete);
+    } else {
+        m_pendingIntervalsIcuReplies--;
+    }
+
+    replyIntervalsIcuSettings = IntervalsIcuDAO::getAthleteSettingsBearer(athleteId, bearerToken);
+    if (replyIntervalsIcuSettings) {
+        connect(replyIntervalsIcuSettings, &QNetworkReply::finished,
+                this, &DialogLogin::slotFinishedIntervalsIcuSettings);
+    } else {
+        m_pendingIntervalsIcuReplies--;
+    }
+
+    if (m_pendingIntervalsIcuReplies <= 0) {
+        loginWithIntervalsIcuIdentity();
+        return;
+    }
+
+    // Safety-net timeout.
+    m_intervalsIcuTimeout = new QTimer(this);
+    m_intervalsIcuTimeout->setSingleShot(true);
+    connect(m_intervalsIcuTimeout, &QTimer::timeout,
+            this, [this]() {
+                LOG_WARN("DialogLogin",
+                         QStringLiteral("OAuth profile fetch timed out – proceeding with login"));
+                m_pendingIntervalsIcuReplies = 0;
+                if (replyIntervalsIcuAthlete) {
+                    auto *r = replyIntervalsIcuAthlete;
+                    replyIntervalsIcuAthlete = nullptr;
+                    r->abort(); r->deleteLater();
+                }
+                if (replyIntervalsIcuSettings) {
+                    auto *r = replyIntervalsIcuSettings;
+                    replyIntervalsIcuSettings = nullptr;
+                    r->abort(); r->deleteLater();
+                }
+                loginWithIntervalsIcuIdentity();
+            });
+    m_intervalsIcuTimeout->start(15000);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Provision the account using the Intervals.icu OAuth identity and complete login.
+void DialogLogin::loginWithIntervalsIcuIdentity()
+{
+    // Guard against double invocation.
+    if (!this->isVisible()) return;
+
+    // The user has authenticated via Intervals.icu OAuth2.
+    // Set up the account in "Intervals.icu mode":
+    //   – No MaximumTrainer.com account (id = 0)
+    //   – Online, authenticated via Intervals.icu
+    account->isOffline = false;
+    account->id        = 0;
+
+    // Derive a stable, filesystem-safe identifier from the athlete ID so that
+    // XmlUtil can persist and load the local .save file correctly.
+    if (!account->intervals_icu_athlete_id.isEmpty()) {
+        // Strip the leading "i" prefix and any non-alphanumeric characters.
+        QString safeId = account->intervals_icu_athlete_id;
+        safeId.remove(QRegularExpression(QStringLiteral("[^a-zA-Z0-9]")));
+        account->email_clean = QStringLiteral("icu_") + safeId;
+        account->email       = account->intervals_icu_athlete_id + QStringLiteral("@intervals.icu");
+    } else {
+        account->email_clean = QStringLiteral("icu_user");
+        account->email       = QStringLiteral("user@intervals.icu");
+    }
+
+    // subscription_type_id 2 = Regular tier (same numeric value used in the
+    // MaximumTrainer.com database schema for non-free, non-studio accounts).
+    account->subscription_type_id = 2;
+
+    // Build display name from data fetched by fetchIntervalsIcuDataOAuth().
+    if (account->display_name.isEmpty()) {
+        if (!account->first_name.isEmpty())
+            account->display_name = account->first_name
+                                    + (account->last_name.isEmpty()
+                                       ? QString()
+                                       : QStringLiteral(" ") + account->last_name);
+        else
+            account->display_name = tr("Intervals.icu User");
+    }
+
+    // Load any previously saved local preferences for this user.
+    XmlUtil::parseLocalSaveFile(account);
+
+    LOG_INFO("DialogLogin",
+             QStringLiteral("Intervals.icu OAuth login complete for athlete: ")
+             + account->intervals_icu_athlete_id);
+    completeLogin();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DialogLogin::on_checkBox_autoLogin_clicked(bool checked)
@@ -608,7 +784,10 @@ void DialogLogin::slotFinishedIntervalsIcuAthlete()
     m_pendingIntervalsIcuReplies--;
     if (m_pendingIntervalsIcuReplies <= 0) {
         if (m_intervalsIcuTimeout) m_intervalsIcuTimeout->stop();
-        completeLogin();
+        if (m_loggingInViaIntervalsIcu)
+            loginWithIntervalsIcuIdentity();
+        else
+            completeLogin();
     }
 }
 
@@ -634,7 +813,10 @@ void DialogLogin::slotFinishedIntervalsIcuSettings()
     m_pendingIntervalsIcuReplies--;
     if (m_pendingIntervalsIcuReplies <= 0) {
         if (m_intervalsIcuTimeout) m_intervalsIcuTimeout->stop();
-        completeLogin();
+        if (m_loggingInViaIntervalsIcu)
+            loginWithIntervalsIcuIdentity();
+        else
+            completeLogin();
     }
 }
 
@@ -665,7 +847,10 @@ void DialogLogin::onIntervalsIcuTimeout()
         reply->deleteLater();
     }
 
-    completeLogin();
+    if (m_loggingInViaIntervalsIcu)
+        loginWithIntervalsIcuIdentity();
+    else
+        completeLogin();
 }
 
 
