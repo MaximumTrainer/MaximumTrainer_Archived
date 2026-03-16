@@ -5,7 +5,7 @@
 #   • IntervalsIcuService (static HTTP-request builder)
 #   • ImporterWorkoutZwo  (ZWO XML parser)
 #
-# Depends only on Qt Core + Qt Widgets + Qt Network + Qt Test — no Bluetooth or QWT.
+# Depends only on Qt Core + Qt Network + Qt Test — no GUI, Bluetooth, or QWT.
 # A local util.h stub (tests/intervals_icu/util.h) shadows the real util.h so
 # that workout.cpp and interval.cpp compile without pulling in QWT or Qt Gui.
 #
@@ -15,7 +15,8 @@
 #   ./build/tests/intervals_icu_tests -v2
 ###############################################################################
 
-QT       += core gui widgets network testlib xml
+QT       += core network testlib xml
+QT       -= gui
 
 CONFIG   += qt c++17 console
 CONFIG   -= app_bundle
