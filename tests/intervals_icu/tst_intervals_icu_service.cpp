@@ -4,10 +4,11 @@
  * Qt Test suite for IntervalsIcuService.
  *
  * Tests run without making real network connections by injecting a
- * MockNetworkAccessManager that captures every QNetworkRequest before
- * any I/O is attempted.  The manager is registered on the QCoreApplication
- * as the "NetworkManagerWS" property, matching the production pattern used
- * by ExtRequest and IntervalsIcuDAO.
+ * MockNetworkAccessManager that captures every QNetworkRequest and returns
+ * an immediately-finished stub QNetworkReply that never touches the network.
+ * The manager is registered on the QCoreApplication as the "NetworkManagerWS"
+ * property, matching the production pattern used by ExtRequest and
+ * IntervalsIcuDAO.
  *
  * Test groups
  * ──────────────────────────────────────────────────────────────────
@@ -25,15 +26,45 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QDate>
+#include <QTimer>
 
 #include "intervals_icu_service.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FinishedReply — a stub QNetworkReply that is immediately finished and never
+// opens a socket or performs any I/O.  It is used by MockNetworkAccessManager
+// to satisfy callers without touching the network.
+// ─────────────────────────────────────────────────────────────────────────────
+class FinishedReply : public QNetworkReply
+{
+    Q_OBJECT
+public:
+    explicit FinishedReply(const QNetworkRequest &req, QObject *parent = nullptr)
+        : QNetworkReply(parent)
+    {
+        setRequest(req);
+        setUrl(req.url());
+        setOperation(QNetworkAccessManager::GetOperation);
+        setAttribute(QNetworkRequest::HttpStatusCodeAttribute, 200);
+        setFinished(true);
+        // Schedule finished() in the next event loop tick so the reply is
+        // fully constructed before any slot runs.
+        QTimer::singleShot(0, this, &FinishedReply::finished);
+    }
+
+    qint64 bytesAvailable() const override { return 0; }
+    bool   isSequential()   const override { return true; }
+    void   abort()                override {}
+
+protected:
+    qint64 readData(char *, qint64) override { return -1; }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MockNetworkAccessManager
 //
-// Overrides createRequest() to record the last request without opening a
-// real socket.  Returns an always-finished QNetworkReply stub so the caller
-// is not left dangling.
+// Overrides createRequest() to record the last request and return a
+// FinishedReply stub.  No base-class delegation — no real I/O is possible.
 // ─────────────────────────────────────────────────────────────────────────────
 class MockNetworkAccessManager : public QNetworkAccessManager
 {
@@ -41,6 +72,12 @@ class MockNetworkAccessManager : public QNetworkAccessManager
 public:
     QNetworkRequest lastRequest;
     int             callCount = 0;
+
+    void reset()
+    {
+        callCount   = 0;
+        lastRequest = QNetworkRequest();
+    }
 
 protected:
     QNetworkReply* createRequest(Operation op,
@@ -51,9 +88,7 @@ protected:
         Q_UNUSED(outgoingData)
         lastRequest = request;
         ++callCount;
-        // Delegate to base — it will produce a reply immediately (no real
-        // socket opened in test environment because no event loop is run).
-        return QNetworkAccessManager::createRequest(op, request, outgoingData);
+        return new FinishedReply(request, this);
     }
 };
 
@@ -122,7 +157,7 @@ void TstIntervalsIcuService::cleanupTestCase()
 
 void TstIntervalsIcuService::init()
 {
-    m_manager->callCount = 0;
+    m_manager->reset();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -132,7 +167,9 @@ void TstIntervalsIcuService::init()
 void TstIntervalsIcuService::testGetAthlete_authHeader()
 {
     QNetworkReply *reply = IntervalsIcuService::getAthlete(ATHLETE_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QByteArray header = m_manager->lastRequest.rawHeader("Authorization");
     QCOMPARE(header, expectedBasicHeader(API_KEY));
@@ -143,7 +180,9 @@ void TstIntervalsIcuService::testGetEvents_authHeader()
     QNetworkReply *reply = IntervalsIcuService::getEvents(
         ATHLETE_ID, API_KEY,
         QDate(2024, 1, 1), QDate(2024, 1, 31));
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QByteArray header = m_manager->lastRequest.rawHeader("Authorization");
     QCOMPARE(header, expectedBasicHeader(API_KEY));
@@ -152,7 +191,9 @@ void TstIntervalsIcuService::testGetEvents_authHeader()
 void TstIntervalsIcuService::testGetWorkouts_authHeader()
 {
     QNetworkReply *reply = IntervalsIcuService::getWorkouts(ATHLETE_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QByteArray header = m_manager->lastRequest.rawHeader("Authorization");
     QCOMPARE(header, expectedBasicHeader(API_KEY));
@@ -162,7 +203,9 @@ void TstIntervalsIcuService::testDownloadZwo_authHeader()
 {
     QNetworkReply *reply = IntervalsIcuService::downloadWorkoutZwo(
         ATHLETE_ID, WORKOUT_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QByteArray header = m_manager->lastRequest.rawHeader("Authorization");
     QCOMPARE(header, expectedBasicHeader(API_KEY));
@@ -172,7 +215,9 @@ void TstIntervalsIcuService::testDownloadMrc_authHeader()
 {
     QNetworkReply *reply = IntervalsIcuService::downloadWorkoutMrc(
         ATHLETE_ID, WORKOUT_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QByteArray header = m_manager->lastRequest.rawHeader("Authorization");
     QCOMPARE(header, expectedBasicHeader(API_KEY));
@@ -185,7 +230,9 @@ void TstIntervalsIcuService::testDownloadMrc_authHeader()
 void TstIntervalsIcuService::testGetAthlete_acceptHeader()
 {
     QNetworkReply *reply = IntervalsIcuService::getAthlete(ATHLETE_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QByteArray header = m_manager->lastRequest.rawHeader("Accept");
     QCOMPARE(header, QByteArray("application/json"));
@@ -198,7 +245,9 @@ void TstIntervalsIcuService::testGetAthlete_acceptHeader()
 void TstIntervalsIcuService::testGetAthlete_url()
 {
     QNetworkReply *reply = IntervalsIcuService::getAthlete(ATHLETE_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QString url = m_manager->lastRequest.url().toString();
     QVERIFY(url.contains(QStringLiteral("/athlete/") + ATHLETE_ID));
@@ -210,7 +259,9 @@ void TstIntervalsIcuService::testGetEvents_url()
     QNetworkReply *reply = IntervalsIcuService::getEvents(
         ATHLETE_ID, API_KEY,
         QDate(2024, 1, 1), QDate(2024, 1, 31));
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QString url = m_manager->lastRequest.url().toString();
     QVERIFY(url.contains(QStringLiteral("/athlete/") + ATHLETE_ID + QStringLiteral("/events")));
@@ -219,7 +270,9 @@ void TstIntervalsIcuService::testGetEvents_url()
 void TstIntervalsIcuService::testGetWorkouts_url()
 {
     QNetworkReply *reply = IntervalsIcuService::getWorkouts(ATHLETE_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QString url = m_manager->lastRequest.url().toString();
     QVERIFY(url.contains(QStringLiteral("/athlete/") + ATHLETE_ID + QStringLiteral("/workouts")));
@@ -230,7 +283,9 @@ void TstIntervalsIcuService::testDownloadZwo_url()
 {
     QNetworkReply *reply = IntervalsIcuService::downloadWorkoutZwo(
         ATHLETE_ID, WORKOUT_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QString url = m_manager->lastRequest.url().toString();
     QVERIFY(url.contains(QStringLiteral("/workouts/") + WORKOUT_ID + QStringLiteral("/file.zwo")));
@@ -240,7 +295,9 @@ void TstIntervalsIcuService::testDownloadMrc_url()
 {
     QNetworkReply *reply = IntervalsIcuService::downloadWorkoutMrc(
         ATHLETE_ID, WORKOUT_ID, API_KEY);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QString url = m_manager->lastRequest.url().toString();
     QVERIFY(url.contains(QStringLiteral("/workouts/") + WORKOUT_ID + QStringLiteral("/file.mrc")));
@@ -256,7 +313,9 @@ void TstIntervalsIcuService::testGetEvents_queryParams()
     const QDate end(2024, 3, 31);
 
     QNetworkReply *reply = IntervalsIcuService::getEvents(ATHLETE_ID, API_KEY, start, end);
-    if (reply) reply->deleteLater();
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
 
     const QUrl url = m_manager->lastRequest.url();
     QVERIFY(url.hasQuery());

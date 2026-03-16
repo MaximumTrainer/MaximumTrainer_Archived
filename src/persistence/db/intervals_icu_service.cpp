@@ -1,6 +1,6 @@
 #include "intervals_icu_service.h"
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QByteArray>
 #include <QString>
 #include <QUrl>
