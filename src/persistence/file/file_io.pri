@@ -5,12 +5,14 @@ SOURCES += \
     $$PWD/xmlutil.cpp \
     $$PWD/fitactivitycreator.cpp \
     $$PWD/importerworkout.cpp \
+    $$PWD/importerworkoutzwo.cpp \
     $$PWD/gpxparser.cpp
 
 HEADERS += \ 
     $$PWD/xmlutil.h \
     $$PWD/fitactivitycreator.h \
     $$PWD/importerworkout.h \
+    $$PWD/importerworkoutzwo.h \
     $$PWD/gpxparser.h
 
 

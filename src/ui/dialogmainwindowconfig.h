@@ -29,6 +29,7 @@ public:
 signals:
     void folderWorkoutChanged();
     void folderCourseChanged();
+    void intervalsIcuCredentialsSaved();
 
 
 public slots:

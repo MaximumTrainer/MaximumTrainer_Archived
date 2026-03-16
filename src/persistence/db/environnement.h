@@ -16,11 +16,18 @@ const static QString urlGitHubReleasesPage = "https://github.com/MaximumTrainer/
 
 /// Intervals.icu REST API base URL
 /// Endpoints:
-///   GET /api/v1/athlete/{id}          — basic profile (name, weight, FTP, LTHR)
-///   GET /api/v1/athlete/{id}/settings — detailed training zones
+///   GET /api/v1/athlete/{id}                             — basic profile (name, weight, FTP, LTHR)
+///   GET /api/v1/athlete/{id}/settings                   — detailed training zones
+///   GET /api/v1/athlete/{id}/workouts/{workoutId}.zwo   — download workout as ZWO file
 /// Authentication: HTTP Basic Auth with username "API_KEY" and the user's API key
 ///                 as the password.
 const static QString urlIntervalsIcuApi = "https://intervals.icu/api/v1/athlete/";
+
+/// Intervals.icu athlete calendar web URL.
+/// Use QString::arg(athleteId) to substitute the athlete ID placeholder.
+/// Example: urlIntervalsIcuCalendar.arg("i12345")
+///   → "https://intervals.icu/athlete/i12345/calendar"
+const static QString urlIntervalsIcuCalendar = "https://intervals.icu/athlete/%1/calendar";
 
 
 

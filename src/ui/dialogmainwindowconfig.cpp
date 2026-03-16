@@ -421,6 +421,7 @@ void DialogMainWindowConfig::accept() {
 
 
     settings->saveGeneralSettings();
+    emit intervalsIcuCredentialsSaved();
     QDialog::accept();
 }
 

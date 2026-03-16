@@ -152,6 +152,10 @@ private slots:
     void createWebChannelSettings();
     void createWebChannelStudio();
 
+    void reloadPlanWebView();
+    void onIntervalsIcuWorkoutDownloaded();
+    void showPlanContextMenu(const QPoint &pos);
+
 private:
     void loadSettings();
     void saveSettings();
@@ -214,6 +218,9 @@ private:
     bool isInsideWorkout;
 
     QString lastWorkoutNameDownloaded;
+
+    QNetworkReply *replyIntervalsIcuZwo;
+    QString        m_pendingIntervalsWorkoutId;
 
 };
 
