@@ -88,10 +88,6 @@ public:
     QString training_peaks_refresh_token;
     bool training_peaks_public_upload;
 
-    // Intervals.icu integration
-    QString intervals_icu_api_key;
-    QString intervals_icu_athlete_id;
-
     bool control_trainer_resistance;
     bool stop_pairing_on_found;
     int nb_sec_pairing;

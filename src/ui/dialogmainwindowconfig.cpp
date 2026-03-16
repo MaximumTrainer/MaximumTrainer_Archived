@@ -143,8 +143,6 @@ void DialogMainWindowConfig::initUI() {
     ui->lineEdit_intervalsApiKey->setText(account->intervals_icu_api_key);
     ui->lineEdit_intervalsAthleteId->setText(account->intervals_icu_athlete_id);
     ui->label_intervalsTestResult->clear();
-    ui->lineEdit_intervalsIcuAthleteId->setText(account->intervals_icu_athlete_id);
-    ui->lineEdit_intervalsIcuApiKey->setText(account->intervals_icu_api_key);
 
 }
 
@@ -435,10 +433,7 @@ void DialogMainWindowConfig::accept() {
 
     account->intervals_icu_api_key    = newApiKey;
     account->intervals_icu_athlete_id = newAthleteId;
-    account->saveIntervalsIcuCredentials();
-    // Intervals.icu credentials — stored in account and persisted locally.
-    account->intervals_icu_athlete_id = ui->lineEdit_intervalsIcuAthleteId->text().trimmed();
-    account->intervals_icu_api_key    = ui->lineEdit_intervalsIcuApiKey->text().trimmed();
+    account->saveIntervalsIcuCredentials();  // persist to QSettings (fast, no-fail path)
     if (!XmlUtil::saveLocalSaveFile(account)) {
         QMessageBox::warning(this,
                              tr("Save Failed"),
