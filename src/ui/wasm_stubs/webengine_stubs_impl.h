@@ -9,6 +9,7 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QMenu>
 #include <QUrl>
 #include <QString>
 #include <QStringList>
@@ -122,6 +123,7 @@ public:
     void forward() {}
     void reload() {}
     void stop() {}
+    QMenu *createStandardContextMenu() { return new QMenu(this); }
 
 private:
     QWebEnginePage *m_page;

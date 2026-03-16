@@ -429,7 +429,7 @@ void MainWindow::reloadPlanWebView() {
 void MainWindow::showPlanContextMenu(const QPoint &pos) {
 
     // Start from the standard QWebEngine context menu so Copy, Open Link, etc. remain available
-    QMenu *menu = ui->webView_plan->page()->createStandardContextMenu();
+    QMenu *menu = ui->webView_plan->createStandardContextMenu();
     menu->addSeparator();
     menu->addAction(tr("Refresh"), this, SLOT(reloadPlanWebView()));
     menu->exec(ui->webView_plan->mapToGlobal(pos));
