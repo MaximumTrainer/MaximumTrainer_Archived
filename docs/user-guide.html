@@ -432,7 +432,7 @@
           <div class="guide-card">
             <div class="card-icon">📋</div>
             <h4>Workout Library</h4>
-            <p>Thousands of free workouts from TrainerDay.com, plus import your own .erg / .mrc files.</p>
+            <p>Sync structured workouts from <a href="https://intervals.icu" target="_blank" rel="noopener">Intervals.icu</a>, plus import your own .erg / .mrc / .zwo files.</p>
           </div>
           <div class="guide-card">
             <div class="card-icon">☁️</div>
@@ -627,26 +627,26 @@
         <figure class="guide-screenshot">
           <img src="assets/screenshots/screenshot_main_window.png"
                alt="Main window — workout list with structured interval plans" />
-          <figcaption>Main window — workout library with the TrainerDay browser in the sidebar</figcaption>
+          <figcaption>Main window — workout library with the Intervals.icu calendar sync in the sidebar</figcaption>
         </figure>
 
-        <h3>Option A — TrainerDay.com integrated browser</h3>
+        <h3>Option A — Intervals.icu calendar sync</h3>
         <p>
-          Maximum Trainer includes a built-in browser for the
-          <a href="https://www.trainerday.com/" target="_blank" rel="noopener">TrainerDay.com</a>
-          workout library — thousands of free, coach-designed structured interval workouts for every
-          discipline and fitness level.
+          Maximum Trainer integrates directly with
+          <a href="https://intervals.icu" target="_blank" rel="noopener">Intervals.icu</a>
+          — the popular free training platform — to pull your scheduled workouts into the app.
         </p>
         <ol class="steps">
-          <li>Click the <strong>Find Workouts</strong> tab in the left sidebar of the main window.</li>
-          <li>Browse or search the TrainerDay.com catalogue directly inside the app.</li>
-          <li>Double-click a workout to download it to your local library.</li>
+          <li>Open <strong>Preferences → Cloud Sync</strong> and enter your Intervals.icu API key and Athlete ID.</li>
+          <li>Click <strong>Intervals.icu</strong> in the left sidebar of the main window.</li>
+          <li>Use <strong>Refresh</strong> to load your planned workouts for the current week.</li>
+          <li>Select a workout and click <strong>Load Selected Workout</strong> to download it to your local library.</li>
           <li>The workout appears in your library list immediately, ready to start.</li>
         </ol>
 
         <div class="callout">
-          <strong>Tip:</strong> Use the search box to filter by duration, workout type (base, sweet spot,
-          VO2max, etc.), or creator name. An internet connection is required to browse the online catalogue.
+          <strong>Tip:</strong> Find your API key at intervals.icu → Settings → API. An internet connection
+          is required to sync with Intervals.icu. The WASM (web) version runs in offline mode only.
         </div>
 
         <h3>Option B — Browse existing library</h3>
@@ -662,7 +662,7 @@
         <h2>📂 Importing Workouts</h2>
         <p>
           If you already have workout files from another application (TrainerRoad, Zwift Companion,
-          ErgDB, etc.), you can import them directly into Maximum Trainer.
+          Intervals.icu, etc.), you can import them directly into Maximum Trainer.
         </p>
 
         <h3>Supported import formats</h3>
@@ -670,7 +670,7 @@
           <table class="guide-table">
             <thead><tr><th>Format</th><th>Extension</th><th>Source applications</th></tr></thead>
             <tbody>
-              <tr><td>CyclingPeaks / TrainerRoad ERG</td><td><code>.erg</code></td><td>TrainerRoad, ErgDB, custom scripts</td></tr>
+              <tr><td>CyclingPeaks / TrainerRoad ERG</td><td><code>.erg</code></td><td>TrainerRoad, custom scripts</td></tr>
               <tr><td>CyclingPeaks MRC</td><td><code>.mrc</code></td><td>TrainerRoad, PerfPro, various</td></tr>
             </tbody>
           </table>

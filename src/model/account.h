@@ -19,6 +19,7 @@ public:
 
     void saveNbSecShowInterval(int nbSec);
     void saveNbSecShowIntervalBefore(int nbSec);
+    void saveIntervalsIcuCredentials();
 
 
     int id;

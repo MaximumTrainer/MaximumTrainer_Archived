@@ -11,6 +11,8 @@ SOURCES     +=\
     $$PWD/achievementdao.cpp \
     $$PWD/intervalsicudao.cpp \
     $$PWD/intervals_icu_service.cpp
+    $$PWD/intervalsicuservice.cpp \
+    $$PWD/intervalsicudao.cpp
 
 HEADERS     += \
     $$PWD/userdao.h \
@@ -22,6 +24,8 @@ HEADERS     += \
     $$PWD/achievementdao.h \
     $$PWD/intervalsicudao.h \
     $$PWD/intervals_icu_service.h
+    $$PWD/intervalsicuservice.h \
+    $$PWD/intervalsicudao.h
 
 
 

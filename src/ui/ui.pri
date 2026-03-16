@@ -17,6 +17,7 @@ $$PWD/workoutdialog.cpp \
     $$PWD/dialogmainwindowconfig.cpp \
     $$PWD/dialoginfowebview.cpp \
     $$PWD/dialog_connection_method.cpp \
+    $$PWD/tab_intervals_icu.cpp \
     #$$PWD/main_coursepage.cpp
 
 HEADERS += $$PWD/mainwindow.h\
@@ -31,6 +32,7 @@ $$PWD/workoutdialog.h \
     $$PWD/dialogmainwindowconfig.h \
     $$PWD/dialoginfowebview.h \
     $$PWD/dialog_connection_method.h \
+    $$PWD/tab_intervals_icu.h \
     #$$PWD/main_coursepage.h
 
 FORMS    += $$PWD/mainwindow.ui \
@@ -43,6 +45,7 @@ FORMS    += $$PWD/mainwindow.ui \
     $$PWD/savingwindow.ui \
     $$PWD/dialogmainwindowconfig.ui \
     $$PWD/dialoginfowebview.ui \
+    $$PWD/tab_intervals_icu.ui \
     #$$PWD/main_coursepage.ui
 
 

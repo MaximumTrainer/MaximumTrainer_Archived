@@ -4,12 +4,6 @@
 #include <QMainWindow>
 #include <QTranslator>
 #include <QNetworkReply>
-#include <QWebEngineView>
-#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
-#include <QWebEngineDownloadRequest>
-#else
-#include <QWebEngineDownloadItem>
-#endif
 #include <QThread>
 
 #include "zoneobject.h"
@@ -22,6 +16,7 @@
 #include "savingwindow.h"
 #include "userstudio.h"
 #include "myconstants.h"
+#include "tab_intervals_icu.h"
 #ifdef GC_WASM_BUILD
 #include "btle_hub_wasm.h"
 #else
@@ -56,12 +51,6 @@ signals :
 
 public slots:
 
-#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
-    void downloadRequested(QWebEngineDownloadRequest*);
-#else
-    void downloadRequested(QWebEngineDownloadItem*);
-#endif
-
     void executeWorkout(Workout workout);
 
     //Coming from Studio QWebView ----------
@@ -86,7 +75,7 @@ public slots:
     void leftMenuChanged(int tabSelected);
 
     void goToWorkoutPlanFilter(const QString& plan);
-    void goToWorkoutNameFilter();
+    void goToWorkoutNameFilterFromIntervals(const QString &workoutName);
     void exportWorkoutToPdf(const Workout& workout);
 
 
@@ -212,8 +201,6 @@ private:
     int currentIndexLeftMenu;
     bool ftpChanged;
     bool isInsideWorkout;
-
-    QString lastWorkoutNameDownloaded;
 
 };
 
