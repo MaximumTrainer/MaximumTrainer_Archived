@@ -23,6 +23,8 @@
 #include "mycreatorplot.h"
 #include "reportutil.h"
 #include "importerworkout.h"
+#include "importerworkoutzwo.h"
+#include "xmlutil.h"
 #include "managerachievement.h"
 #include "simulator_hub.h"
 #include "dialog_connection_method.h"
@@ -81,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->webView_settings->setUrl(QUrl(Environnement::getUrlSettings()));
     ui->webView_plan->setUrl(QUrl(Environnement::getUrlPlans()));
     ui->webView_studio->setUrl(QUrl(Environnement::getUrlStudio()));
-    ui->webView_ergDb->setUrl(QUrl("https://www.trainerday.com/"));
+    ui->webView_intervalsIcu->setUrl(QUrl(Environnement::urlIntervalsIcu));
 
 
 
@@ -95,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ftb->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     ftb->insertTab(0, QIcon(":/image/icon/workoutMan"), tr("Workout"));
-    ftb->insertTab(1, QIcon(":/image/icon/images/ergdb-logo-black-rider.png"), tr("Find Workouts"));
+    ftb->insertTab(1, QIcon(":/image/icon/upload"), tr("Intervals.icu"));
     ftb->insertTab(2, QIcon(":/image/icon/calendar"),  tr("Plan"));
     ftb->insertTab(3, QIcon(":/image/icon/studio"), tr("Studio"));
     ftb->insertTab(4, QIcon(":/image/icon/user"), tr("Profile"));
@@ -199,10 +201,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 #ifndef Q_OS_WASM
 #if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
-    connect(ui->webView_ergDb->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadRequest*)),
+    connect(ui->webView_intervalsIcu->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadRequest*)),
                     this, SLOT(downloadRequested(QWebEngineDownloadRequest*)));
 #else
-    connect(ui->webView_ergDb->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadItem*)),
+    connect(ui->webView_intervalsIcu->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadItem*)),
                     this, SLOT(downloadRequested(QWebEngineDownloadItem*)));
 #endif
 #endif // !Q_OS_WASM
@@ -215,14 +217,32 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 void MainWindow::downloadRequested(QWebEngineDownloadRequest* download) {
     qDebug() << "Format: " <<  download->savePageFormat();
     QString filename = download->downloadFileName();
-    qDebug() << "Path: " << download->downloadDirectory() + QDir::separator() + filename;
+    QString downloadDir = Util::getSystemPathWorkout() + QDir::separator() + "intervals_icu";
+    QDir().mkpath(downloadDir);
+    qDebug() << "Path: " << downloadDir + QDir::separator() + filename;
 
-    download->setDownloadDirectory(Util::getSystemPathWorkout() + QDir::separator() + "trainerday");
+    download->setDownloadDirectory(downloadDir);
     download->setDownloadFileName(filename);
     download->accept();
 
     this->lastWorkoutNameDownloaded = QFileInfo(filename).completeBaseName();
-    connect(download, SIGNAL(isFinishedChanged()), this, SLOT(goToWorkoutNameFilter()));
+
+    if (QFileInfo(filename).suffix().toLower() == "zwo") {
+        connect(download, &QWebEngineDownloadRequest::isFinishedChanged, this, [this, downloadDir, filename]() {
+            QString filePath = downloadDir + QDir::separator() + filename;
+            Workout imported = ImporterWorkoutZwo::importFromFile(filePath);
+            if (!imported.getName().isEmpty()) {
+                XmlUtil::createWorkoutXml(imported,
+                    Util::getSystemPathWorkout() + QDir::separator() + imported.getName() + ".workout");
+                this->lastWorkoutNameDownloaded = imported.getName();
+                goToWorkoutNameFilter();
+            } else {
+                qWarning() << "downloadRequested: failed to import .zwo file:" << filePath;
+            }
+        });
+    } else {
+        connect(download, SIGNAL(isFinishedChanged()), this, SLOT(goToWorkoutNameFilter()));
+    }
 }
 #else
 void MainWindow::downloadRequested(QWebEngineDownloadItem* download) {
@@ -231,13 +251,31 @@ void MainWindow::downloadRequested(QWebEngineDownloadItem* download) {
 
     QFileInfo fileInfo(download->path());
     QString filename(fileInfo.fileName());
+    QString downloadDir = Util::getSystemPathWorkout() + QDir::separator() + "intervals_icu";
+    QDir().mkpath(downloadDir);
 
-    download->setPath(Util::getSystemPathWorkout() + QDir::separator() + "trainerday" + QDir::separator() + filename);
+    download->setPath(downloadDir + QDir::separator() + filename);
     qDebug() << "Path: " << download->path();
     download->accept();
 
     this->lastWorkoutNameDownloaded = fileInfo.completeBaseName();
-    connect(download, SIGNAL(finished()), this, SLOT(goToWorkoutNameFilter()));
+
+    if (fileInfo.suffix().toLower() == "zwo") {
+        connect(download, &QWebEngineDownloadItem::finished, this, [this, downloadDir, filename]() {
+            QString filePath = downloadDir + QDir::separator() + filename;
+            Workout imported = ImporterWorkoutZwo::importFromFile(filePath);
+            if (!imported.getName().isEmpty()) {
+                XmlUtil::createWorkoutXml(imported,
+                    Util::getSystemPathWorkout() + QDir::separator() + imported.getName() + ".workout");
+                this->lastWorkoutNameDownloaded = imported.getName();
+                goToWorkoutNameFilter();
+            } else {
+                qWarning() << "downloadRequested: failed to import .zwo file:" << filePath;
+            }
+        });
+    } else {
+        connect(download, SIGNAL(finished()), this, SLOT(goToWorkoutNameFilter()));
+    }
 }
 #endif
 
@@ -323,7 +361,7 @@ void MainWindow::goToWorkoutPlanFilter(const QString& plan) {
 
 }
 
-// trigger after a download is finish on TrainerDay tab
+// trigger after a download is finished on Intervals.icu tab
 //---------------------------------------------------------------------------------
 void MainWindow::goToWorkoutNameFilter() {
 

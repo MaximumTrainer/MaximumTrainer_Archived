@@ -21,6 +21,7 @@ const static QString urlGitHubReleasesPage = "https://github.com/MaximumTrainer/
 /// Authentication: HTTP Basic Auth with username "API_KEY" and the user's API key
 ///                 as the password.
 const static QString urlIntervalsIcuApi = "https://intervals.icu/api/v1/athlete/";
+const static QString urlIntervalsIcu = "https://intervals.icu/";
 
 
 
