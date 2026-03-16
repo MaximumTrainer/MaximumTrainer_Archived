@@ -23,10 +23,16 @@
 #include "mycreatorplot.h"
 #include "reportutil.h"
 #include "importerworkout.h"
+#include "importerworkoutzwo.h"
+#include "intervalsicudao.h"
+#include "xmlutil.h"
 #include "managerachievement.h"
 #include "simulator_hub.h"
 #include "dialog_connection_method.h"
 
+#include <QDir>
+#include <QMenu>
+#include <QRegularExpression>
 #include <QWebEngineProfile>
 #include <QWebEngineScript>
 #include <QWebEnginePage>
@@ -46,6 +52,11 @@
 
 
 MainWindow::~MainWindow() {
+    if (replyIntervalsIcuZwo) {
+        replyIntervalsIcuZwo->abort();
+        replyIntervalsIcuZwo->deleteLater();
+        replyIntervalsIcuZwo = nullptr;
+    }
     delete ui;
 
     qDebug() << "Desctructor MainWindow";
@@ -70,16 +81,39 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     zoneObject = new ZoneObject(this);         /// Used with QWebView zone page
     planObject = new PlanObject(this);         ///Used with QWebView Plan page
 
+    replyIntervalsIcuZwo = nullptr;
+
 
     createWebChannelPlan();
     createWebChannelZone();
     createWebChannelSettings();
     createWebChannelStudio();
 
+    // Right-click context menu on the Plan (Intervals.icu calendar) view
+    ui->webView_plan->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->webView_plan, SIGNAL(customContextMenuRequested(QPoint)),
+            this, SLOT(showPlanContextMenu(QPoint)));
+
     ui->webView_zones->setUrl(QUrl(Environnement::getUrlZones()));
     ui->webView_achiev->setUrl(QUrl(Environnement::getUrlAchievement()));
     ui->webView_settings->setUrl(QUrl(Environnement::getUrlSettings()));
-    ui->webView_plan->setUrl(QUrl(Environnement::getUrlPlans()));
+
+    // Load Intervals.icu athlete calendar, or show a setup prompt if no credentials configured
+    if (!account->intervals_icu_athlete_id.isEmpty()) {
+        ui->webView_plan->setUrl(QUrl(urlIntervalsIcuCalendar.arg(account->intervals_icu_athlete_id)));
+    } else {
+        ui->webView_plan->setHtml(
+            QStringLiteral(
+                "<html><body style='font-family:sans-serif;text-align:center;padding-top:60px;'>"
+                "<h2>Intervals.icu Calendar</h2>"
+                "<p>No Intervals.icu credentials configured.</p>"
+                "<p>Open <b>Preferences</b> and enter your athlete ID and API key "
+                "in the Connectivity section.</p>"
+                "</body></html>"
+            )
+        );
+    }
+
     ui->webView_studio->setUrl(QUrl(Environnement::getUrlStudio()));
 
     // Initialise the Intervals.icu tab with current credentials
@@ -179,6 +213,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     //    dconfig->setModal(true);
     connect(dconfig, SIGNAL(folderWorkoutChanged()), ui->tab_workout1, SLOT(refreshUserWorkout()) );
+    connect(dconfig, SIGNAL(intervalsIcuCredentialsSaved()), this, SLOT(reloadPlanWebView()) );
     connect(dconfig, &DialogMainWindowConfig::intervalsIcuCredentialsChanged,
             ui->tab_intervals_icu, &TabIntervalsIcu::refreshCredentials);
 
@@ -278,25 +313,181 @@ void MainWindow::exportWorkoutToPdf(const Workout& workout) {
 }
 
 //---------------------------------------------------------------------------------
-void MainWindow::goToWorkoutPlanFilter(const QString& plan) {
+void MainWindow::goToWorkoutPlanFilter(const QString& workoutId) {
 
-    qDebug() << "mainWindow Plan" << plan;
+    qDebug() << "mainWindow Plan workout ID" << workoutId;
 
+    if (account->intervals_icu_athlete_id.isEmpty() || account->intervals_icu_api_key.isEmpty()) {
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Intervals.icu credentials not configured. Open Preferences to set them."), 5000);
+        return;
+    }
+
+    if (replyIntervalsIcuZwo) {
+        replyIntervalsIcuZwo->abort();
+        replyIntervalsIcuZwo->deleteLater();
+        replyIntervalsIcuZwo = nullptr;
+    }
+
+    replyIntervalsIcuZwo = IntervalsIcuDAO::downloadWorkoutZwo(
+        account->intervals_icu_athlete_id,
+        workoutId,
+        account->intervals_icu_api_key);
+
+    if (!replyIntervalsIcuZwo) {
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Failed to start Intervals.icu workout download."), 5000);
+        return;
+    }
+
+    m_pendingIntervalsWorkoutId = workoutId;
+    ui->widget_bottomMenu->setGeneralMessage(tr("Downloading workout from Intervals.icu..."));
+    connect(replyIntervalsIcuZwo, SIGNAL(finished()), this, SLOT(onIntervalsIcuWorkoutDownloaded()));
+}
+
+
+//---------------------------------------------------------------------------------
+void MainWindow::onIntervalsIcuWorkoutDownloaded() {
+
+    if (!replyIntervalsIcuZwo) return;
+
+    const QNetworkReply::NetworkError err = replyIntervalsIcuZwo->error();
+    if (err != QNetworkReply::NoError) {
+        qWarning() << "IntervalsIcu ZWO download error:" << replyIntervalsIcuZwo->errorString();
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Could not download workout from Intervals.icu: %1")
+                .arg(replyIntervalsIcuZwo->errorString()), 5000);
+        replyIntervalsIcuZwo->deleteLater();
+        replyIntervalsIcuZwo = nullptr;
+        return;
+    }
+
+    const QByteArray data = replyIntervalsIcuZwo->readAll();
+    replyIntervalsIcuZwo->deleteLater();
+    replyIntervalsIcuZwo = nullptr;
+
+    Workout workout = ImporterWorkoutZwo::importFromByteArray(data, m_pendingIntervalsWorkoutId);
+    if (workout.getLstInterval().isEmpty()) {
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Workout import failed: no intervals found in the downloaded file."), 5000);
+        return;
+    }
+
+    // Sanitize the workout name so it is safe to use as a filename
+    QString safeName = workout.getName();
+    safeName.replace(QRegularExpression(QStringLiteral("[/\\\\:*?\"<>|]")), QStringLiteral("_"));
+    if (safeName.isEmpty())
+        safeName = QStringLiteral("intervals_") + m_pendingIntervalsWorkoutId;
+
+    // Save the parsed workout to the user's Intervals folder so it appears in the list
+    const QString intervalsFolder = Util::getSystemPathWorkout() + QDir::separator() + QStringLiteral("intervals");
+    if (!QDir().mkpath(intervalsFolder)) {
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Could not create intervals folder: %1").arg(intervalsFolder), 5000);
+        return;
+    }
+
+    // Loop until we find a filename that does not already exist
+    QString uniqueSafeName = safeName;
+    for (int n = 1; QFile::exists(intervalsFolder + QDir::separator() + uniqueSafeName + QStringLiteral(".workout")); ++n)
+        uniqueSafeName = safeName + QStringLiteral("_") + QString::number(n);
+    const QString filePath = intervalsFolder + QDir::separator() + uniqueSafeName + QStringLiteral(".workout");
+
+    if (!XmlUtil::createWorkoutXml(workout, filePath)) {
+        ui->widget_bottomMenu->setGeneralMessage(
+            tr("Could not save workout to disk: %1").arg(filePath), 5000);
+        return;
+    }
+
+    // Refresh the workout list and navigate to the imported workout
+    ui->tab_workout1->refreshUserWorkout();
     ui->tabWidget_workout->setCurrentIndex(0);
-    ui->tab_workout1->setFilterPlanName(plan);
+    ui->tab_workout1->setFilterWorkoutName(workout.getName());
     ftb->setCurrentIndex(0);
-    //    ui->tab_workout1
 
+    ui->widget_bottomMenu->setGeneralMessage(
+        tr("Workout '%1' imported from Intervals.icu.").arg(workout.getName()), 5000);
+}
+
+
+//---------------------------------------------------------------------------------
+void MainWindow::reloadPlanWebView() {
+
+    if (!account->intervals_icu_athlete_id.isEmpty()) {
+        ui->webView_plan->setUrl(QUrl(urlIntervalsIcuCalendar.arg(account->intervals_icu_athlete_id)));
+    } else {
+        ui->webView_plan->setHtml(
+            QStringLiteral(
+                "<html><body style='font-family:sans-serif;text-align:center;padding-top:60px;'>"
+                "<h2>Intervals.icu Calendar</h2>"
+                "<p>No Intervals.icu credentials configured.</p>"
+                "<p>Open <b>Preferences</b> and enter your athlete ID and API key "
+                "in the Connectivity section.</p>"
+                "</body></html>"
+            )
+        );
+    }
+}
+
+
+//---------------------------------------------------------------------------------
+void MainWindow::showPlanContextMenu(const QPoint &pos) {
+
+    QMenu *menu = new QMenu(ui->webView_plan);
+    menu->addAction(tr("Refresh"), this, SLOT(reloadPlanWebView()));
+    menu->exec(ui->webView_plan->mapToGlobal(pos));
+    menu->deleteLater();
 }
 
 // trigger after a .zwo file downloaded from Intervals.icu is saved
 //---------------------------------------------------------------------------------
 void MainWindow::goToWorkoutNameFilterFromIntervals(const QString &workoutName) {
 
-    ui->tab_workout1->refreshUserWorkout();
-
     qDebug() << "Intervals.icu workout downloaded:" << workoutName;
 
+    // Parse the raw .zwo file saved by TabIntervalsIcu and convert it to .workout format
+    const QString zwoDir  = Util::getSystemPathWorkout() + QDir::separator() + QStringLiteral("intervals_icu");
+    const QString zwoPath = zwoDir + QDir::separator() + workoutName + QStringLiteral(".zwo");
+
+    QFile zwoFile(zwoPath);
+    if (zwoFile.open(QIODevice::ReadOnly)) {
+        const QByteArray zwoData = zwoFile.readAll();
+        zwoFile.close();
+
+        Workout imported = ImporterWorkoutZwo::importFromByteArray(zwoData, workoutName);
+        if (!imported.getLstInterval().isEmpty()) {
+            // Sanitise name for filesystem use
+            QString safeName = imported.getName();
+            safeName.replace(QRegularExpression(QStringLiteral("[/\\\\:*?\"<>|]")), QStringLiteral("_"));
+            if (safeName.isEmpty())
+                safeName = workoutName;
+
+            const QString workoutDir = Util::getSystemPathWorkout() + QDir::separator() + QStringLiteral("intervals");
+            QDir().mkpath(workoutDir);
+
+            // Find a unique filename
+            QString uniqueName = safeName;
+            for (int n = 1; QFile::exists(workoutDir + QDir::separator() + uniqueName + QStringLiteral(".workout")); ++n)
+                uniqueName = safeName + QStringLiteral("_") + QString::number(n);
+
+            const QString destPath = workoutDir + QDir::separator() + uniqueName + QStringLiteral(".workout");
+            if (XmlUtil::createWorkoutXml(imported, destPath)) {
+                ui->tab_workout1->refreshUserWorkout();
+                ui->tabWidget_workout->setCurrentIndex(0);
+                ui->tab_workout1->setFilterWorkoutName(imported.getName());
+                ftb->setCurrentIndex(0);
+                ui->widget_bottomMenu->setGeneralMessage(
+                    tr("Workout '%1' imported from Intervals.icu.").arg(imported.getName()), 5000);
+                return;
+            }
+        }
+        qWarning() << "goToWorkoutNameFilterFromIntervals: ZWO parse/save failed for" << zwoPath;
+    } else {
+        qWarning() << "goToWorkoutNameFilterFromIntervals: could not open ZWO file" << zwoPath;
+    }
+
+    // Fallback: refresh list even if parsing failed
+    ui->tab_workout1->refreshUserWorkout();
     ui->tabWidget_workout->setCurrentIndex(0);
     ui->tab_workout1->setFilterWorkoutName(workoutName);
     ftb->setCurrentIndex(0);
@@ -453,7 +644,7 @@ void MainWindow::createWebChannelPlan() {
         script.setInjectionPoint(QWebEngineScript::DocumentCreation);
         script.setRunsOnSubFrames(false);
 
-        // External links
+        // Navigation override: links containing "forum" or "cms" are opened in the system browser
         QStringList lstExternal = {"forum", "cms" };
         MyQWebEnginePage *myPage = new MyQWebEnginePage(ui->webView_plan);
         myPage->setExternalList(lstExternal);
