@@ -59,7 +59,7 @@ Workout ImporterWorkoutZwo::importFromByteArray(const QByteArray &data,
         QXmlStreamReader::TokenType token = xml.readNext();
 
         if (token == QXmlStreamReader::StartElement) {
-            const QStringRef tag = xml.name();
+            const auto tag = xml.name();
 
             if (tag == QStringLiteral("workout_file")) {
                 insideWorkoutFile = true;
@@ -145,7 +145,7 @@ Workout ImporterWorkoutZwo::importFromByteArray(const QByteArray &data,
                 description += text;
 
         } else if (token == QXmlStreamReader::EndElement) {
-            const QStringRef endTag = xml.name();
+            const auto endTag = xml.name();
             if (endTag == QStringLiteral("name")
                 || endTag == QStringLiteral("author")
                 || endTag == QStringLiteral("description"))
