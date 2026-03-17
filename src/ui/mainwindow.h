@@ -136,6 +136,8 @@ private slots:
     //-Intervals.icu
     void slotIntervalsIcuUploadFinished();
 
+    void onNetworkOnlineChanged(bool isOnline);
+
     void on_actionImportCourse_triggered();
 
     void createWebChannelPlan();

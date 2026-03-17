@@ -118,6 +118,61 @@ void TabIntervalsIcu::refreshCredentials()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+void TabIntervalsIcu::setOnlineMode(bool isOnline)
+{
+#ifndef GC_WASM_BUILD
+    if (isOnline) {
+        // Restore the normal online UI
+        ui->label_offline->setVisible(false);
+        ui->pushButton_refresh->setVisible(true);
+        ui->pushButton_prevWeek->setVisible(true);
+        ui->pushButton_nextWeek->setVisible(true);
+        ui->pushButton_loadWorkout->setVisible(true);
+        ui->pushButton_syncAll->setVisible(true);
+        ui->label_week->setVisible(true);
+        ui->tableWidget_calendar->setVisible(true);
+        ui->label_status->setVisible(true);
+        refreshCredentials();
+    } else {
+        // Abort any in-flight requests before hiding controls
+        if (m_calendarReply) {
+            m_calendarReply->abort();
+            m_calendarReply->deleteLater();
+            m_calendarReply = nullptr;
+        }
+        if (m_downloadReply) {
+            m_downloadReply->abort();
+            m_downloadReply->deleteLater();
+            m_downloadReply = nullptr;
+        }
+        if (m_syncCalendarReply) {
+            m_syncCalendarReply->abort();
+            m_syncCalendarReply->deleteLater();
+            m_syncCalendarReply = nullptr;
+        }
+        if (m_syncDownloadReply) {
+            m_syncDownloadReply->abort();
+            m_syncDownloadReply->deleteLater();
+            m_syncDownloadReply = nullptr;
+        }
+
+        // Show offline banner and hide all interactive controls
+        ui->label_offline->setText(tr("Intervals.icu sync is not available while offline. "
+                                      "Please check your internet connection."));
+        ui->label_offline->setVisible(true);
+        ui->pushButton_refresh->setVisible(false);
+        ui->pushButton_prevWeek->setVisible(false);
+        ui->pushButton_nextWeek->setVisible(false);
+        ui->pushButton_loadWorkout->setVisible(false);
+        ui->pushButton_syncAll->setVisible(false);
+        ui->label_week->setVisible(false);
+        ui->tableWidget_calendar->setVisible(false);
+        ui->label_status->setVisible(false);
+    }
+#endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 void TabIntervalsIcu::onRefreshClicked()
 {
 #ifndef GC_WASM_BUILD

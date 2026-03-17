@@ -34,6 +34,12 @@ public:
     /// change in the preferences dialog).
     void refreshCredentials();
 
+    /// Update the widget for the current network state.
+    /// When \a isOnline is false the calendar controls are hidden and an
+    /// offline banner is shown (mirrors the WASM compile-time behaviour).
+    /// Has no effect in WASM builds (always offline there).
+    void setOnlineMode(bool isOnline);
+
     /// Fetch calendar for [from, to] and import every event that has a workout
     /// file.  Results are communicated via syncFinished() / syncFailed().
     /// Non-blocking — the current week view is not affected.
