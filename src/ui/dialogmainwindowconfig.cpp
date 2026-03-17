@@ -532,3 +532,11 @@ void DialogMainWindowConfig::onTestIntervalsConnectionFinished()
     replyIntervalsTest = nullptr;
 #endif
 }
+
+//---------------------------------------------------------------------------------------------
+void DialogMainWindowConfig::setOnlineMode(bool isOnline)
+{
+#ifndef GC_WASM_BUILD
+    ui->groupBox_intervals->setVisible(isOnline);
+#endif
+}

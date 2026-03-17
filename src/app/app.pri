@@ -7,6 +7,7 @@ SOURCES += $$PWD/main.cpp\
     $$PWD/globalvars.cpp \
     $$PWD/simplecrypt.cpp \
     $$PWD/reportutil.cpp \
+    $$PWD/networkmonitor.cpp \
 
 # SoundPlayer: full SFML implementation on native, no-op stub on Wasm
 contains(QMAKE_PLATFORM, wasm) {
@@ -29,7 +30,8 @@ HEADERS += $$PWD/util.h \
     $$PWD/globalvars.h \
     $$PWD/simplecrypt.h \
     $$PWD/reportutil.h \
-    $$PWD/myconstants.h
+    $$PWD/myconstants.h \
+    $$PWD/networkmonitor.h
 
 
 

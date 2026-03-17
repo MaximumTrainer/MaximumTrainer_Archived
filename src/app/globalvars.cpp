@@ -9,6 +9,7 @@
 #include "calibration_types.h"
 #include "trackpoint.h"
 #include "userstudio.h"
+#include "networkmonitor.h"
 
 #include <QWebEngineSettings>
 #include <QWebEngineProfile>
@@ -95,7 +96,9 @@ GlobalVars::GlobalVars(QObject *parent) :
     qApp->setProperty("NetworkManager", QVariant::fromValue<QNetworkAccessManager*>(manager));
     qApp->setProperty("NetworkManagerWS", QVariant::fromValue<QNetworkAccessManager*>(managerWS));
 
-
+    // Initialise the network connectivity monitor now that the network managers
+    // are registered.  The first probe fires after a 3-second startup delay.
+    NetworkMonitor::instance();
 }
 
 //----------------------------------------------------------------------------------

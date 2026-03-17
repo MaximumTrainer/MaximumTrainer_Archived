@@ -37,6 +37,10 @@ signals:
 public slots:
     void stravaLinked(bool);
     void trainingPeaksLinked(bool);
+    /// Update the Intervals.icu section visibility based on network state.
+    /// When \a isOnline is false the groupBox_intervals is hidden so the
+    /// user cannot attempt to test credentials that will time out.
+    void setOnlineMode(bool isOnline);
 
 
 private slots:

@@ -31,6 +31,7 @@
 #include "managerachievement.h"
 #include "simulator_hub.h"
 #include "dialog_connection_method.h"
+#include "networkmonitor.h"
 
 #include <QDir>
 #include <QMenu>
@@ -223,6 +224,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     leftMenuChanged(0);
     enableStudioMode(account->enable_studio_mode);
+
+
+    // ── Network connectivity monitoring ─────────────────────────────────────
+    // Connect the NetworkMonitor singleton so we can hide all Intervals.icu
+    // UI surfaces (sidebar tab, calendar widget, preferences section) when the
+    // application goes offline, and restore them on reconnect.
+    NetworkMonitor *netmon = NetworkMonitor::instance();
+    connect(netmon, &NetworkMonitor::onlineChanged,
+            this, &MainWindow::onNetworkOnlineChanged);
+    connect(netmon, &NetworkMonitor::onlineChanged,
+            ui->tab_intervals_icu, &TabIntervalsIcu::setOnlineMode);
+    connect(netmon, &NetworkMonitor::onlineChanged,
+            dconfig, &DialogMainWindowConfig::setOnlineMode);
+
+    // Apply the current (initial) online state immediately so the UI matches
+    // before the first timed probe fires.
+    onNetworkOnlineChanged(netmon->isOnline());
 
 
 
@@ -1647,7 +1665,8 @@ void MainWindow::checkToUploadFile(const QString& filename, const QString& nameO
     // Intervals.icu
     if (account->intervals_icu_auto_upload &&
         !account->intervals_icu_api_key.isEmpty() &&
-        !account->intervals_icu_athlete_id.isEmpty()) {
+        !account->intervals_icu_athlete_id.isEmpty() &&
+        NetworkMonitor::instance()->isOnline()) {
 
         ui->widget_bottomMenu->setGeneralMessage(tr("Uploading your activity to Intervals.icu..."));
         IntervalsIcuService *svc = new IntervalsIcuService(this);
@@ -1729,6 +1748,26 @@ void MainWindow::slotIntervalsIcuUploadFinished()
                    << "HTTP" << httpStatus;
     }
     replyIntervalsIcuUpload->deleteLater();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void MainWindow::onNetworkOnlineChanged(bool isOnline)
+{
+#ifndef GC_WASM_BUILD
+    // Enable or disable the Intervals.icu sidebar tab (index 1).
+    // setTabEnabled grays out the tab entry when offline so users see it is
+    // temporarily unavailable rather than it simply vanishing.
+    ftb->setTabEnabled(1, isOnline);
+
+    // If the user is currently on the Intervals.icu tab and we just went
+    // offline, navigate back to the Workout tab so they land on something
+    // functional.
+    if (!isOnline && currentIndexLeftMenu == 1) {
+        ftb->setCurrentIndex(0);
+        leftMenuChanged(0);
+    }
+#endif
 }
 
 
