@@ -1117,6 +1117,13 @@ void Util::parseJsonIntervalsIcuAthlete(const QString &data)
 
     QJsonObject obj = doc.object();
 
+    // Athlete ID — update the stored ID when the response includes it.
+    // This is important for the OAuth flow where we query with id="0" (current user)
+    // and need to record the real athlete ID returned by the server.
+    const QString athleteId = obj.value(QStringLiteral("id")).toString();
+    if (!athleteId.isEmpty())
+        account->intervals_icu_athlete_id = athleteId;
+
     // Name fields — Intervals.icu may return separate firstname/lastname or a
     // combined name field depending on the API version; handle both.
     const QString firstname = obj.value(QStringLiteral("firstname")).toString(
@@ -1202,3 +1209,43 @@ void Util::parseJsonIntervalsIcuSettings(const QString &data)
 }
 
 
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Parse the Intervals.icu OAuth2 token endpoint response.
+// Expected JSON:
+//   { "access_token": "…", "refresh_token": "…", "athlete_id": "i12345",
+//     "expires_in": 3600, "token_type": "Bearer" }
+// Stores access_token, refresh_token, and athlete_id into the global Account.
+void Util::parseJsonIntervalsIcuOAuthToken(const QString &data)
+{
+    Account *account = qApp->property("Account").value<Account*>();
+    if (!account) {
+        qWarning() << "parseJsonIntervalsIcuOAuthToken: Account not found";
+        return;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+    if (doc.isNull() || !doc.isObject()) {
+        qWarning() << "parseJsonIntervalsIcuOAuthToken: invalid JSON received from token endpoint";
+        return;
+    }
+
+    QJsonObject obj = doc.object();
+
+    const QString accessToken  = obj.value(QStringLiteral("access_token")).toString();
+    const QString refreshToken = obj.value(QStringLiteral("refresh_token")).toString();
+    // Intervals.icu returns the athlete ID as "athlete_id" in the token response.
+    const QString athleteId    = obj.value(QStringLiteral("athlete_id")).toString();
+
+    if (!accessToken.isEmpty())
+        account->intervals_icu_access_token = accessToken;
+
+    if (!refreshToken.isEmpty())
+        account->intervals_icu_refresh_token = refreshToken;
+
+    if (!athleteId.isEmpty())
+        account->intervals_icu_athlete_id = athleteId;
+
+    qDebug() << "parseJsonIntervalsIcuOAuthToken: athlete_id =" << account->intervals_icu_athlete_id;
+}

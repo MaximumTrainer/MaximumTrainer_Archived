@@ -46,6 +46,9 @@ Account::Account(QObject *parent) : QObject(parent)  {
     intervals_icu_api_key     = settings.value("intervals_icu_api_key", "").toString();
     intervals_icu_athlete_id  = settings.value("intervals_icu_athlete_id", "").toString();
     intervals_icu_auto_upload = settings.value("intervals_icu_auto_upload", false).toBool();
+    // OAuth2 tokens — loaded to restore an existing OAuth session across restarts.
+    intervals_icu_access_token  = settings.value("intervals_icu_access_token",  "").toString();
+    intervals_icu_refresh_token = settings.value("intervals_icu_refresh_token", "").toString();
     settings.endGroup();
 
 
@@ -195,6 +198,9 @@ void Account::saveIntervalsIcuCredentials() {
     settings.setValue("intervals_icu_api_key",    intervals_icu_api_key);
     settings.setValue("intervals_icu_athlete_id", intervals_icu_athlete_id);
     settings.setValue("intervals_icu_auto_upload", intervals_icu_auto_upload);
+    // OAuth2 tokens — persisted so they survive an app restart.
+    settings.setValue("intervals_icu_access_token",  intervals_icu_access_token);
+    settings.setValue("intervals_icu_refresh_token", intervals_icu_refresh_token);
     settings.endGroup();
 }
 

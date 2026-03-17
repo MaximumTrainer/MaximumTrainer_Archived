@@ -30,6 +30,32 @@ const static QString urlIntervalsIcu = "https://intervals.icu/";
 ///   → "https://intervals.icu/athlete/i12345/calendar"
 const static QString urlIntervalsIcuCalendar = "https://intervals.icu/athlete/%1/calendar";
 
+/// Intervals.icu OAuth2 Authorization Code Flow
+/// Client ID 259 is registered for MaximumTrainer.
+///
+/// Required scopes and their purpose:
+///   ACTIVITY:READ   — fetch completed activities for history and data sync
+///   WELLNESS:READ   — fetch wellness metrics (weight, HRV, sleep, etc.)
+///   CALENDAR:READ   — fetch planned workouts from the athlete calendar
+///   SETTINGS:READ   — read training zones (HR zones, power zones)
+///
+/// The redirect_uri is appended at runtime by Environnement::getURLIntervalsIcuAuthorize().
+const static QString urlIntervalsIcuOAuthAuthorize(
+    "https://intervals.icu/oauth/authorize?"
+    "client_id=259"
+    "&response_type=code"
+    "&scope=ACTIVITY:READ+WELLNESS:READ+CALENDAR:READ+SETTINGS:READ");
+
+const static QString CLIENT_ID_ICV  = "259";
+const static QString URL_TOKEN_ICV  = "https://intervals.icu/oauth/token";
+
+/// Sentinel athlete ID meaning "the currently authenticated OAuth2 user".
+/// Pass this to Bearer-token API calls when the real athlete ID is not yet known.
+const static QString INTERVALS_ICU_CURRENT_USER_ID = "0";
+
+/// Registration page for users who do not yet have an Intervals.icu account.
+const static QString urlIntervalsIcuRegister = "https://intervals.icu/register";
+
 
 
 const static QString dev = "http://localhost/index.php/";
@@ -161,6 +187,10 @@ public:
     static QString getURLGoogleMap();
     static QString getURLStravaAuthorize();
     static QString getURLTrainingPeaksAuthorize();
+    /// Build the Intervals.icu OAuth2 authorization URL.
+    /// @param state  Per-request CSRF token; pass an empty string to omit.
+    static QString getURLIntervalsIcuAuthorize(const QString &state = QString());
+    static QString getUrlIntervalsIcuRegister();
 
 
     static QString getUrlLogin();

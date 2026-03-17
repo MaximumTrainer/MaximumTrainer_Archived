@@ -117,6 +117,8 @@ jobs:
   #   header, URL building, query parameters, and null-manager guard.
   # • importer_workout_zwo_tests — verifies ZWO XML parser for SteadyState,
   #   Ramp, IntervalsT, FreeRide, and mixed workout structures.
+  # • intervals_icu_dao_bearer_tests — verifies the OAuth2 Bearer-token methods
+  #   added to IntervalsIcuDAO (getAthleteBearer, getAthleteSettingsBearer).
   # ──────────────────────────────────────────────────────────────────────────
   test_intervals_icu:
     runs-on: ubuntu-22.04
@@ -143,11 +145,14 @@ jobs:
         make -j$(nproc)
         qmake importer_workout_zwo_tests.pro
         make -j$(nproc)
+        qmake intervals_icu_dao_bearer_tests.pro
+        make -j$(nproc)
 
     - name: Run Intervals.icu unit tests
       run: |
         ./build/tests/intervals_icu_tests -v2
         ./build/tests/importer_workout_zwo_tests -v2
+        ./build/tests/intervals_icu_dao_bearer_tests -v2
 
   # ──────────────────────────────────────────────────────────────────────────
   # BTLE Integration Test (Linux)

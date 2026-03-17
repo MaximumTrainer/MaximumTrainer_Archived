@@ -362,3 +362,36 @@ QNetworkReply* ExtRequest::selfloopsUploadFile(QString email, QString password, 
 }
 
 
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// POST https://intervals.icu/oauth/token
+/// Exchanges an authorization code for an OAuth2 access + refresh token pair.
+/// This is invoked when the MaximumTrainer.com backend proxy is unavailable and
+/// the app performs the token exchange directly (client-side fallback).
+///
+/// Note: A client_secret is omitted because Intervals.icu client 259 is
+/// registered as a public client (no client secret required).  This is a
+/// plain Authorization Code flow without PKCE.  The preferred production
+/// path is the MaximumTrainer.com backend proxy (/intervals_icu_token_exchange)
+/// which keeps any server-side secrets out of the distributed binary.
+QNetworkReply* ExtRequest::intervalsIcuOAuthExchange(const QString &code, const QString &redirectUri)
+{
+    QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        qWarning() << "ExtRequest::intervalsIcuOAuthExchange: NetworkManagerWS not available";
+        return nullptr;
+    }
+
+    QUrlQuery postData;
+    postData.addQueryItem("grant_type",    "authorization_code");
+    postData.addQueryItem("client_id",     CLIENT_ID_ICV);
+    postData.addQueryItem("code",          code);
+    postData.addQueryItem("redirect_uri",  redirectUri);
+
+    QNetworkRequest request;
+    request.setUrl(QUrl(URL_TOKEN_ICV));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+
+    return managerWS->post(request, postData.toString(QUrl::FullyEncoded).toUtf8());
+}

@@ -33,6 +33,14 @@ public:
     //-- SelfLoops
     static QNetworkReply* selfloopsUploadFile(QString email, QString password, QString pathToFile, QString note);
 
+    //-- Intervals.icu OAuth2
+    /// Exchange an authorization code for an access token by POSTing directly
+    /// to the Intervals.icu token endpoint.  This is used as a client-side
+    /// fallback when the MaximumTrainer.com backend proxy is unavailable.
+    /// @param code        The authorization code received from the redirect URI.
+    /// @param redirectUri The exact redirect_uri used in the authorization request.
+    static QNetworkReply* intervalsIcuOAuthExchange(const QString &code, const QString &redirectUri);
+
 };
 
 #endif // EXTREQUEST_H

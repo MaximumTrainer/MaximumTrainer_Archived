@@ -13,6 +13,8 @@
 #include "account.h"
 #include "settings.h"
 
+class DialogInfoWebView;
+
 
 namespace Ui {
 class DialogLogin;
@@ -60,7 +62,12 @@ private slots:
     void slotFinishedIntervalsIcuSettings();
     void onIntervalsIcuTimeout();
 
-
+    /// Called when the user clicks "Login with Intervals.icu".
+    void onLoginWithIntervalsIcuClicked();
+    /// Called when the Intervals.icu OAuth2 dialog reports success or failure.
+    void onIntervalsIcuOAuthLinked(bool linked);
+    /// Called when the Intervals.icu OAuth2 dialog is rejected (user closed it).
+    void onIntervalsIcuOAuthDialogRejected();
 
     void on_comboBox_language_currentIndexChanged(int index);
     void on_checkBox_autoLogin_clicked(bool checked);
@@ -76,6 +83,15 @@ private:
     /// their Intervals.icu credentials.  Falls through to completeLogin() if
     /// no credentials are configured.
     void fetchIntervalsIcuData();
+
+    /// Fetch the athlete profile and training zones from Intervals.icu using
+    /// the OAuth2 Bearer token obtained during the OAuth login flow.
+    /// Called after a successful Intervals.icu OAuth2 authorization.
+    void fetchIntervalsIcuDataOAuth();
+
+    /// Provision and complete the login using an Intervals.icu OAuth identity.
+    /// Sets up the Account object and loads any previously saved local data.
+    void loginWithIntervalsIcuIdentity();
 
     /// Final step of the login flow: accept the dialog and hand control back
     /// to MainWindow.
@@ -106,7 +122,9 @@ private:
     bool gotUpdateDialog;
     int  m_pendingIntervalsIcuReplies;  ///< how many Intervals.icu replies we are still waiting for
 
-
+    /// Keeps track of whether the current in-progress login is from the
+    /// Intervals.icu OAuth2 flow (as opposed to the MaximumTrainer.com flow).
+    bool m_loggingInViaIntervalsIcu = false;
 
 };
 

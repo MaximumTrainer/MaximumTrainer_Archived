@@ -315,11 +315,52 @@ QLabel#label_logo, #label_logo2 {
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>311</width>
+          <width>40</width>
           <height>20</height>
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_loginIntervalsIcu">
+        <property name="toolTip">
+         <string>Log in using your Intervals.icu account via OAuth2</string>
+        </property>
+        <property name="text">
+         <string>Login with Intervals.icu</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton#pushButton_loginIntervalsIcu {
+    background-color: #e87722;
+    color: white;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-weight: bold;
+}
+QPushButton#pushButton_loginIntervalsIcu:hover {
+    background-color: #cf5e0c;
+}
+QPushButton#pushButton_loginIntervalsIcu:pressed {
+    background-color: #a84a09;
+}</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_registerIntervalsIcu">
+        <property name="toolTip">
+         <string>Create a free Intervals.icu account</string>
+        </property>
+        <property name="text">
+         <string>&lt;a href=&quot;https://intervals.icu/register&quot;&gt;No Intervals.icu account? Register here&lt;/a&gt;</string>
+        </property>
+        <property name="openExternalLinks">
+         <bool>true</bool>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QLabel" name="label_loading">
