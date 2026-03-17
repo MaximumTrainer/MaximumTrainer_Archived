@@ -12,7 +12,8 @@
 
 #include "account.h"
 #include "settings.h"
-#include "dialoginfowebview.h"
+
+class DialogInfoWebView;
 
 
 namespace Ui {

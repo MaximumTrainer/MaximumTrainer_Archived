@@ -189,7 +189,7 @@ void TstIntervalsIcuDaoBearer::testGetAthleteBearer_url()
 
     const QString url = m_manager->lastRequest.url().toString();
     QVERIFY(url.startsWith(QStringLiteral("https://intervals.icu/api/v1/athlete/")));
-    QVERIFY(url.endsWith(QStringLiteral(ATHLETE_ID)));
+    QVERIFY(url.endsWith(QString(ATHLETE_ID)));
 }
 
 void TstIntervalsIcuDaoBearer::testGetAthleteSettingsBearer_url()

@@ -286,10 +286,15 @@ QString Environnement::getURLTrainingPeaksAuthorize() {
 /// Build the full Intervals.icu OAuth2 authorization URL, including the
 /// redirect_uri that points back to the MaximumTrainer.com backend proxy so
 /// it can exchange the authorization code for an access token securely.
-QString Environnement::getURLIntervalsIcuAuthorize() {
+/// @param state  A per-request random token for CSRF protection.  The caller
+///               must store this value and validate it matches the state
+///               parameter on the redirect callback.
+QString Environnement::getURLIntervalsIcuAuthorize(const QString &state) {
 
     QString myURL = urlIntervalsIcuOAuthAuthorize;
     myURL += "&redirect_uri=" + getURLEnvironnement() + "intervals_icu_token_exchange";
+    if (!state.isEmpty())
+        myURL += "&state=" + state;
     return myURL;
 }
 

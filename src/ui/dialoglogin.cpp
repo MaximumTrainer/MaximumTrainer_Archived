@@ -6,6 +6,7 @@
 #include <QKeyEvent>
 #include <QDesktopServices>
 #include <QRegularExpression>
+#include <QUuid>
 
 #include "logger.h"
 
@@ -21,6 +22,7 @@
 #include "xmlutil.h"
 #include "userdao.h"
 #include "intervalsicudao.h"
+#include "dialoginfowebview.h"
 #include "myqwebenginepage.h"
 
 
@@ -109,9 +111,8 @@ DialogLogin::DialogLogin(QWidget *parent) : QDialog(parent), ui(new Ui::DialogLo
     // "Login with Intervals.icu" button
     connect(ui->pushButton_loginIntervalsIcu, &QPushButton::clicked,
             this, &DialogLogin::onLoginWithIntervalsIcuClicked);
-    // "Register at Intervals.icu" link label
-    connect(ui->label_registerIntervalsIcu, &QLabel::linkActivated,
-            this, [](const QString &url){ QDesktopServices::openUrl(QUrl(url)); });
+    // label_registerIntervalsIcu uses openExternalLinks=true in the .ui, so
+    // no extra linkActivated connection is needed here.
 
     ui->label_loading->setVisible(false);
     ui->webView_login->setVisible(false);
@@ -483,10 +484,15 @@ void DialogLogin::onLoginWithIntervalsIcuClicked()
 {
     LOG_INFO("DialogLogin", QStringLiteral("User clicked 'Login with Intervals.icu'"));
 
+    // Generate a per-login CSRF state token (64 bits of entropy, 16 hex chars).
+    const QString oauthState = QUuid::createUuid().toString(QUuid::Id128).left(16);
+
     DialogInfoWebView *oauthDialog = new DialogInfoWebView(this);
+    oauthDialog->setAttribute(Qt::WA_DeleteOnClose);
     oauthDialog->setTitle(tr("Login with Intervals.icu"));
     oauthDialog->setUsedForIntervalsIcu(true);
-    oauthDialog->setUrlWebView(Environnement::getURLIntervalsIcuAuthorize());
+    oauthDialog->setExpectedOAuthState(oauthState);
+    oauthDialog->setUrlWebView(Environnement::getURLIntervalsIcuAuthorize(oauthState));
 
     connect(oauthDialog, &DialogInfoWebView::intervalsIcuLinked,
             this, &DialogLogin::onIntervalsIcuOAuthLinked);
@@ -566,7 +572,12 @@ void DialogLogin::fetchIntervalsIcuDataOAuth()
         return;
     }
 
-    // Safety-net timeout.
+    // Safety-net timeout.  Stop and replace any existing timer to avoid
+    // stale timers firing if the user retries OAuth login in the same session.
+    if (m_intervalsIcuTimeout) {
+        m_intervalsIcuTimeout->stop();
+        m_intervalsIcuTimeout->deleteLater();
+    }
     m_intervalsIcuTimeout = new QTimer(this);
     m_intervalsIcuTimeout->setSingleShot(true);
     connect(m_intervalsIcuTimeout, &QTimer::timeout,
@@ -603,10 +614,11 @@ void DialogLogin::loginWithIntervalsIcuIdentity()
     account->isOffline = false;
     account->id        = 0;
 
-    // Derive a stable, filesystem-safe identifier from the athlete ID so that
+    // Build a stable, filesystem-safe identifier from the athlete ID so that
     // XmlUtil can persist and load the local .save file correctly.
     if (!account->intervals_icu_athlete_id.isEmpty()) {
-        // Strip the leading "i" prefix and any non-alphanumeric characters.
+        // Keep only alphanumeric characters (removes punctuation, retains the "i" prefix).
+        // e.g. "i12345" → "i12345", "i123-abc" → "i123abc"
         QString safeId = account->intervals_icu_athlete_id;
         safeId.remove(QRegularExpression(QStringLiteral("[^a-zA-Z0-9]")));
         account->email_clean = QStringLiteral("icu_") + safeId;
@@ -633,6 +645,9 @@ void DialogLogin::loginWithIntervalsIcuIdentity()
 
     // Load any previously saved local preferences for this user.
     XmlUtil::parseLocalSaveFile(account);
+
+    // Persist the OAuth tokens so the session survives an app restart.
+    account->saveIntervalsIcuCredentials();
 
     LOG_INFO("DialogLogin",
              QStringLiteral("Intervals.icu OAuth login complete for athlete: ")
@@ -755,6 +770,10 @@ void DialogLogin::fetchIntervalsIcuData()
     }
 
     // Safety-net: if either reply stalls, proceed after 15 s anyway.
+    if (m_intervalsIcuTimeout) {
+        m_intervalsIcuTimeout->stop();
+        m_intervalsIcuTimeout->deleteLater();
+    }
     m_intervalsIcuTimeout = new QTimer(this);
     m_intervalsIcuTimeout->setSingleShot(true);
     connect(m_intervalsIcuTimeout, &QTimer::timeout,

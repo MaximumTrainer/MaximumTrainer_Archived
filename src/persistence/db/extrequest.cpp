@@ -368,13 +368,13 @@ QNetworkReply* ExtRequest::selfloopsUploadFile(QString email, QString password, 
 /// POST https://intervals.icu/oauth/token
 /// Exchanges an authorization code for an OAuth2 access + refresh token pair.
 /// This is invoked when the MaximumTrainer.com backend proxy is unavailable and
-/// the app performs the token exchange directly (public-client / PKCE flow).
+/// the app performs the token exchange directly (client-side fallback).
 ///
-/// Note: A client_secret is intentionally omitted here.  Intervals.icu client 259
-/// is registered as a public client that supports the Authorization Code flow
-/// without a client secret (compatible with PKCE).  The preferred production
+/// Note: A client_secret is omitted because Intervals.icu client 259 is
+/// registered as a public client (no client secret required).  This is a
+/// plain Authorization Code flow without PKCE.  The preferred production
 /// path is the MaximumTrainer.com backend proxy (/intervals_icu_token_exchange)
-/// which can securely hold any additional credentials server-side.
+/// which keeps any server-side secrets out of the distributed binary.
 QNetworkReply* ExtRequest::intervalsIcuOAuthExchange(const QString &code, const QString &redirectUri)
 {
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();

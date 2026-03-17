@@ -14,6 +14,13 @@
 
 DialogInfoWebView::~DialogInfoWebView()
 {
+    // Abort any in-flight client-side token exchange so it doesn't update
+    // the global Account after the dialog has been destroyed.
+    if (m_intervalsTokenReply) {
+        m_intervalsTokenReply->abort();
+        m_intervalsTokenReply->deleteLater();
+        m_intervalsTokenReply = nullptr;
+    }
     delete ui;
 }
 
@@ -66,6 +73,12 @@ void DialogInfoWebView::setUsedForTrainingPeaks(bool used) {
 void DialogInfoWebView::setUsedForIntervalsIcu(bool used) {
 
     this->usedForIntervalsIcu = used;
+}
+
+/////////////////////////////////////////////////////////////////////////
+void DialogInfoWebView::setExpectedOAuthState(const QString &state) {
+
+    m_expectedOAuthState = state;
 }
 
 
@@ -180,12 +193,24 @@ void DialogInfoWebView::pageLoaded(bool ok){
         // proxy forwarded it unchanged).  Extract the code and exchange it
         // client-side by POSTing directly to the Intervals.icu token endpoint.
         const QUrl redirectUrl(urlStr);
-        const QString code = QUrlQuery(redirectUrl).queryItemValue("code");
+        const QUrlQuery redirectQuery(redirectUrl);
+        const QString code = redirectQuery.queryItemValue("code");
         if (code.isEmpty()) {
             qDebug() << "Intervals.icu OAuth: no code in redirect URL";
             emit intervalsIcuLinked(false);
             this->reject();
             return;
+        }
+
+        // Validate CSRF state if one was set at authorization time.
+        if (!m_expectedOAuthState.isEmpty()) {
+            const QString returnedState = redirectQuery.queryItemValue("state");
+            if (returnedState != m_expectedOAuthState) {
+                qWarning() << "Intervals.icu OAuth: state mismatch — possible CSRF attack";
+                emit intervalsIcuLinked(false);
+                this->reject();
+                return;
+            }
         }
 
         qDebug() << "Intervals.icu OAuth: exchanging code client-side";

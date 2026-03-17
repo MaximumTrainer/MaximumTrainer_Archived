@@ -187,7 +187,9 @@ public:
     static QString getURLGoogleMap();
     static QString getURLStravaAuthorize();
     static QString getURLTrainingPeaksAuthorize();
-    static QString getURLIntervalsIcuAuthorize();
+    /// Build the Intervals.icu OAuth2 authorization URL.
+    /// @param state  Per-request CSRF token; pass an empty string to omit.
+    static QString getURLIntervalsIcuAuthorize(const QString &state = QString());
     static QString getUrlIntervalsIcuRegister();
 
 

@@ -26,6 +26,10 @@ public:
     /// When set, the dialog watches for an /intervals_icu_token_exchange
     /// redirect and parses the returned token JSON.
     void setUsedForIntervalsIcu(bool used);
+    /// Store the CSRF state token that was included in the authorization URL.
+    /// When set, the state is validated against the value returned in the
+    /// redirect URL (client-side fallback path) before the code is exchanged.
+    void setExpectedOAuthState(const QString &state);
 
 
 signals:
@@ -50,6 +54,7 @@ private:
     bool usedForStrava;
     bool usedForTrainingPeaks;
     bool usedForIntervalsIcu;
+    QString m_expectedOAuthState; ///< CSRF state token sent in the authorize URL
     QString emailUser;
 
     /// Pending reply for the client-side Intervals.icu token exchange (fallback).
