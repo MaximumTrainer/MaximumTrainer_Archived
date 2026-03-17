@@ -340,22 +340,40 @@ void DialogLogin::slotFinishedGetVersion() {
                  + QStringLiteral("  Latest: ") + latestVersion);
 
         if (!latestVersion.isEmpty() && Util::isVersionNewer(Environnement::getVersion(), latestVersion)) {
-            gotUpdateDialog = true;
             LOG_INFO("DialogLogin", QStringLiteral("Update available – showing dialog"));
             ui->label_process->setText(tr("Update available!"));
             UpdateDialog up(latestVersion, this);
-            up.exec();
-        } else {
-            ui->label_process->setText(tr("Loading page..."));
-            ui->webView_login->setUrl(QUrl(Environnement::getUrlLogin()));
-            connect(ui->webView_login, SIGNAL(loadFinished(bool)), this, SLOT(loginLoaded(bool)));
+            if (up.exec() == QDialog::Accepted) {
+                // User chose to download — browser has been opened.
+                gotUpdateDialog = true;
+            } else {
+                // User declined the update — fall through to normal login.
+                LOG_INFO("DialogLogin", QStringLiteral("User declined update – proceeding to login"));
+            }
         }
 
+        // Cleanup the version reply regardless of outcome.
+        replyVersion->deleteLater();
+        replyVersion = nullptr;
+
         if (gotUpdateDialog) {
-            replyVersion->deleteLater();
-            replyVersion = nullptr;
+            // Abort the Google connectivity check — it is no longer needed.
+            if (replyGoogle) {
+                m_googleTimeout->stop();
+                replyGoogle->abort();
+                replyGoogle->deleteLater();
+                replyGoogle = nullptr;
+            }
+            // Close the login dialog so the user can finish the download.
             return QDialog::reject();
         }
+
+        // No update available, or user declined — load the login page.
+        ui->label_process->setText(tr("Loading page..."));
+        ui->webView_login->setUrl(QUrl(Environnement::getUrlLogin()));
+        connect(ui->webView_login, SIGNAL(loadFinished(bool)), this, SLOT(loginLoaded(bool)));
+
+        return;
 
     } else {
         const QString errMsg = replyVersion->errorString();
