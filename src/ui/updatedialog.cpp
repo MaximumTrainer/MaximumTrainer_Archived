@@ -19,7 +19,7 @@ UpdateDialog::UpdateDialog(const QString &latestVersion, QWidget *parent) : QDia
     ui->buttonBox->addButton(tr("Download"), QDialogButtonBox::AcceptRole);
     ui->buttonBox->addButton(tr("Use Software As-Is"), QDialogButtonBox::RejectRole);
     ui->label_firstLabelVersion->setText(
-        tr("There is a new version available") + " (" + latestVersion + ")");
+        tr("There is a new version available (%1)").arg(latestVersion));
 
     QString linkNews = "<a href='" + urlGitHubReleasesPage + "'>";
     linkNews += tr("See new version release notes") + "</a>";

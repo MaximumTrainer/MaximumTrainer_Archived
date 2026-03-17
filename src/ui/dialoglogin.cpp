@@ -357,6 +357,13 @@ void DialogLogin::slotFinishedGetVersion() {
         replyVersion = nullptr;
 
         if (gotUpdateDialog) {
+            // Abort the Google connectivity check — it is no longer needed.
+            if (replyGoogle) {
+                m_googleTimeout->stop();
+                replyGoogle->abort();
+                replyGoogle->deleteLater();
+                replyGoogle = nullptr;
+            }
             // Close the login dialog so the user can finish the download.
             return QDialog::reject();
         }
