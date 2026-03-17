@@ -13,9 +13,12 @@ DEFINES += APP_VERSION=\\\"$$GIT_VERSION\\\"
 # populate the Windows RC file so the version appears in the .exe "Details" tab
 # of the file-properties dialog.  The leading "v" is stripped and any
 # git-describe suffix (e.g. "-14-gabcdef") is removed, leaving "MAJOR.MINOR.PATCH".
+# If the result is not a proper dotted-numeric version (e.g. a bare commit hash
+# is returned by git-describe when no tag is found), fall back to "0.0.0" so the
+# MSVC linker /VERSION option never receives a non-numeric argument.
 NUMERIC_VERSION = $$replace(GIT_VERSION, ^[vV], "")
 NUMERIC_VERSION = $$section(NUMERIC_VERSION, -, 0, 0)
-isEmpty(NUMERIC_VERSION): NUMERIC_VERSION = "0.0.0"
+!contains(NUMERIC_VERSION, ^[0-9]+\\.[0-9]+): NUMERIC_VERSION = "0.0.0"
 VERSION = $$NUMERIC_VERSION
 
 qtHaveModule(uitools):!embedded: QT += uitools
