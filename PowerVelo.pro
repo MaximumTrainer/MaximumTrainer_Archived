@@ -9,6 +9,15 @@ GIT_VERSION = $$system(git describe --tags --match "v[0-9]*" --always)
 isEmpty(GIT_VERSION): GIT_VERSION = "v0.0.0"
 DEFINES += APP_VERSION=\\\"$$GIT_VERSION\\\"
 
+# Derive qmake's VERSION variable from GIT_VERSION.  This is used by qmake to
+# populate the Windows RC file so the version appears in the .exe "Details" tab
+# of the file-properties dialog.  The leading "v" is stripped and any
+# git-describe suffix (e.g. "-14-gabcdef") is removed, leaving "MAJOR.MINOR.PATCH".
+NUMERIC_VERSION = $$replace(GIT_VERSION, ^[vV], "")
+NUMERIC_VERSION = $$section(NUMERIC_VERSION, -, 0, 0)
+isEmpty(NUMERIC_VERSION): NUMERIC_VERSION = "0.0.0"
+VERSION = $$NUMERIC_VERSION
+
 qtHaveModule(uitools):!embedded: QT += uitools
 else: DEFINES += QT_NO_UITOOLS
 

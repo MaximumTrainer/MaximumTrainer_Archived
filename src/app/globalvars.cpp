@@ -3,6 +3,7 @@
 #include <QNetworkAccessManager>
 
 #include "account.h"
+#include "environnement.h"
 #include "settings.h"
 #include "soundplayer.h"
 #include "sensor.h"
@@ -34,6 +35,7 @@ GlobalVars::GlobalVars(QObject *parent) :
     QCoreApplication::setOrganizationName("Max++ inc.");
     QCoreApplication::setOrganizationDomain("maximumtrainer.com");
     QCoreApplication::setApplicationName("MaximumTrainer");
+    QCoreApplication::setApplicationVersion(Environnement::getVersion());
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
