@@ -1,5 +1,6 @@
 #include "networkmonitor.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 
 #ifndef GC_WASM_BUILD
