@@ -63,6 +63,13 @@ jobs:
         qmake runtime_validation_tests.pro
         make -j$(sysctl -n hw.logicalcpu)
 
+    - name: Build offline mode test
+      run: |
+        mkdir -p build/tests
+        cd tests/integration
+        qmake offline_mode_tests.pro
+        make -j$(sysctl -n hw.logicalcpu)
+
     - name: Bind rpath for Qt frameworks and OpenSSL
       run: |
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
@@ -116,3 +123,52 @@ jobs:
       with:
         name: runtime-validation-screenshot-macos
         path: build/tests/screenshot-macos-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Offline Mode Integration Test – macOS
+  #
+  # Verifies that MaximumTrainer's core offline functionality works on macOS
+  # without a network connection and without physical Bluetooth hardware:
+  #   • Local workout XML files can be created and parsed from disk.
+  #   • SimulatorHub broadcasts realistic CSC (0x1816) and Power (0x1818)
+  #     cycling data (cadence, speed, power) within expected ranges.
+  #   • A labelled 1280×720 screenshot is captured showing the offline mode
+  #     indicator and live BTLE sensor metrics.
+  #   • Accumulated data points are written to a TSV activity file,
+  #     confirming offline data persistence.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_offline_mode:
+    runs-on: macos-latest
+    needs: build_mac
+    permissions:
+      contents: read
+
+    steps:
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/offline_mode_tests
+
+    - name: Run offline mode test
+      run: ./build/tests/offline_mode_tests -v2
+
+    - name: Upload offline mode screenshot and activity file
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: offline-mode-artefacts-macos
+        path: |
+          build/tests/offline-mode-macos-*.png
+          build/tests/activity-macos-*.tsv
