@@ -585,7 +585,17 @@ private slots:
                      QString("Failed to save screenshot to: %1").arg(imgPath)));
         qDebug().noquote() << "[Screenshot] Saved:" << imgPath;
 
+        // -- Fail-fast assert immediately after screenshot -------------------
+        // Checked here so that the screenshot (which captures the error state)
+        // is always saved before the test aborts.  Data-integrity checks below
+        // only run when the simulator was confirmed to be working.
+        QVERIFY2(!timedOut,
+                 "FAIL-FAST: SimulatorHub did not emit cycling data within "
+                 "10 seconds. See screenshot in build artefacts.");
+
         // -- Write accumulated data points to TSV (offline data integrity) ---
+        // Only reached when !timedOut, so recordedCount() >= 2 is guaranteed
+        // by the simulator having run for at least 2 ticks.
         QVERIFY2(window.recordedCount() >= 2,
                  qPrintable(
                      QString("Expected >= 2 recorded data points, got %1")
@@ -613,11 +623,6 @@ private slots:
         qDebug().noquote() << "[DataIntegrity] Activity file saved:"
                            << tsvPath
                            << "| data points:" << window.recordedCount();
-
-        // -- Fail-fast assert after screenshot (captures error state) --------
-        QVERIFY2(!timedOut,
-                 "FAIL-FAST: SimulatorHub did not emit cycling data within "
-                 "10 seconds. See screenshot in build artefacts.");
 
         // -- Assert all cycling channels are realistic -----------------------
         QVERIFY2(window.cadence() >= 80 && window.cadence() <= 100,
