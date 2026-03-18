@@ -67,6 +67,8 @@ jobs:
         make -j$(nproc)
         qmake runtime_validation_tests.pro
         make -j$(nproc)
+        qmake offline_mode_tests.pro
+        make -j$(nproc)
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -258,3 +260,62 @@ jobs:
       with:
         name: runtime-validation-screenshot-linux
         path: build/tests/screenshot-linux-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Offline Mode Integration Test – Linux
+  #
+  # Verifies that MaximumTrainer's core offline functionality works without a
+  # network connection and without physical Bluetooth hardware:
+  #   • Local workout XML files can be created and parsed from disk.
+  #   • SimulatorHub broadcasts realistic CSC (0x1816) and Power (0x1818)
+  #     cycling data (cadence, speed, power) within expected ranges.
+  #   • A labelled 1280×720 screenshot is captured showing the offline mode
+  #     indicator and live BTLE sensor metrics.
+  #   • Accumulated data points are written to a TSV activity file,
+  #     confirming offline data persistence.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_offline_mode:
+    runs-on: ubuntu-22.04
+    needs: build_linux
+    permissions:
+      contents: read
+
+    steps:
+    - name: Install runtime dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          libqt5core5a \
+          libqt5gui5 \
+          libqt5widgets5 \
+          libqt5test5 \
+          xvfb \
+          libfontconfig1 \
+          libxrender1 \
+          libxext6 \
+          libgl1-mesa-dev
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: linux
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/offline_mode_tests
+
+    - name: Run offline mode test with Xvfb (1280×800 display)
+      run: |
+        Xvfb :99 -screen 0 1280x800x24 &
+        sleep 1
+        export DISPLAY=:99
+        ./build/tests/offline_mode_tests -v2
+
+    - name: Upload offline mode screenshot and activity file
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: offline-mode-artefacts-linux
+        path: |
+          build/tests/offline-mode-linux-*.png
+          build/tests/activity-linux-*.tsv

@@ -177,12 +177,24 @@ jobs:
         nmake
       shell: powershell
 
-    - name: Deploy Qt for test binary
+    - name: Build offline mode test
+      run: |
+        New-Item -ItemType Directory -Force -Path build\tests | Out-Null
+        Set-Location tests\integration
+        qmake offline_mode_tests.pro
+        nmake
+      shell: powershell
+
+    - name: Deploy Qt for test binaries
       run: |
         & "$env:QTDIR\bin\windeployqt.exe" --release `
             --no-translations `
             --no-system-d3d-compiler `
             build\tests\runtime_validation_tests.exe
+        & "$env:QTDIR\bin\windeployqt.exe" --release `
+            --no-translations `
+            --no-system-d3d-compiler `
+            build\tests\offline_mode_tests.exe
       shell: powershell
 
     - name: Upload artifact
@@ -222,3 +234,42 @@ jobs:
       with:
         name: runtime-validation-screenshot-windows
         path: build\tests\screenshot-windows-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Offline Mode Integration Test – Windows
+  #
+  # Verifies that MaximumTrainer's core offline functionality works on Windows
+  # without a network connection and without physical Bluetooth hardware:
+  #   • Local workout XML files can be created and parsed from disk.
+  #   • SimulatorHub broadcasts realistic CSC (0x1816) and Power (0x1818)
+  #     cycling data (cadence, speed, power) within expected ranges.
+  #   • A labelled 1280×720 screenshot is captured showing the offline mode
+  #     indicator and live BTLE sensor metrics.
+  #   • Accumulated data points are written to a TSV activity file,
+  #     confirming offline data persistence.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_offline_mode:
+    runs-on: windows-latest
+    needs: build_windows
+    permissions:
+      contents: read
+
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows
+        path: build
+
+    - name: Run offline mode test
+      run: .\build\tests\offline_mode_tests.exe -v2
+      shell: powershell
+
+    - name: Upload offline mode screenshot and activity file
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: offline-mode-artefacts-windows
+        path: |
+          build\tests\offline-mode-windows-*.png
+          build\tests\activity-windows-*.tsv
