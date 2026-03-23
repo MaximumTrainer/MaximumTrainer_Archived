@@ -319,7 +319,9 @@ jobs:
         path: |
           build/tests/offline-mode-linux-*.png
           build/tests/activity-linux-*.tsv
-  # Intervals.icu Live Integration Tests (Linux)
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Intervals.icu Live Integration Tests – Linux
   #
   # Makes real HTTP requests to https://intervals.icu/api/v1 using the shared
   # test account.  Requires GitHub Secrets to be configured:
@@ -348,7 +350,7 @@ jobs:
           qtbase5-dev \
           build-essential
 
-    - name: Build Intervals.icu integration tests
+    - name: Build integration tests
       run: |
         export PATH=/usr/lib/qt5/bin:$PATH
         mkdir -p build/tests

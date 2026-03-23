@@ -145,7 +145,36 @@ jobs:
 
     steps:
     - name: Install Qt
-  # Intervals.icu Live Integration Tests (macOS)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/offline_mode_tests
+
+    - name: Run offline mode test
+      run: ./build/tests/offline_mode_tests -v2
+
+    - name: Upload offline mode screenshot and activity file
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: offline-mode-artefacts-macos
+        path: |
+          build/tests/offline-mode-macos-*.png
+          build/tests/activity-macos-*.tsv
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Intervals.icu Live Integration Tests – macOS
   #
   # Makes real HTTP requests to https://intervals.icu/api/v1 using the shared
   # test account.  Requires GitHub Secrets to be configured:
@@ -175,34 +204,16 @@ jobs:
         target: 'desktop'
         arch: 'clang_64'
 
-    - name: Download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: macos
-        path: build
-
-    - name: Make test binary executable
-      run: chmod +x build/tests/offline_mode_tests
-
-    - name: Run offline mode test
-      run: ./build/tests/offline_mode_tests -v2
-
-    - name: Upload offline mode screenshot and activity file
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: offline-mode-artefacts-macos
-        path: |
-          build/tests/offline-mode-macos-*.png
-          build/tests/activity-macos-*.tsv
     - name: Install OpenSSL
       run: brew install openssl@3
 
-    - name: Build Intervals.icu integration tests
+    - name: Build integration tests
       run: |
         mkdir -p build/tests
         cd tests/intervals_icu_integration
-        qmake intervals_icu_integration_tests.pro
+        qmake intervals_icu_integration_tests.pro \
+          QMAKE_LFLAGS+="-L$(brew --prefix openssl@3)/lib" \
+          QMAKE_CXXFLAGS+="-I$(brew --prefix openssl@3)/include"
         make -j$(sysctl -n hw.logicalcpu)
 
     - name: Run Intervals.icu integration tests
