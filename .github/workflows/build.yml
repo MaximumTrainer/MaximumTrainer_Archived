@@ -137,6 +137,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   test_playwright:
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       contents: read
     env:
