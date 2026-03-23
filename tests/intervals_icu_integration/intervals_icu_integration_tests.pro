@@ -39,4 +39,5 @@ SOURCES += \
     tst_intervals_icu_integration.cpp
 
 HEADERS += \
+    tst_intervals_icu_integration.h \
     ../../src/persistence/db/intervals_icu_service.h

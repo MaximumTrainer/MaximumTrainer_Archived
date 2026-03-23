@@ -20,12 +20,12 @@
  * testGetAthlete    – GET /athlete/{id} → 200 OK, JSON "id" matches athleteId
  * testGetEvents     – GET /athlete/{id}/events?... → 200 OK, JSON array
  * testGetWorkouts   – GET /athlete/{id}/workouts → 200 OK, JSON array
- * testBadApiKey     – GET /athlete/{id} with wrong key → HTTP 401
+ * testBadApiKey     – GET /athlete/{id} with wrong key → HTTP 4xx (401 or 403)
  */
 
-#include <QtTest/QtTest>
+#include "tst_intervals_icu_integration.h"
+
 #include <QCoreApplication>
-#include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QJsonArray>
@@ -41,7 +41,6 @@ static constexpr int TIMEOUT_MS = 30'000;  // 30 s per request
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: spin the event loop until the reply finishes or the timeout fires.
-// Returns true if the reply finished within the time limit.
 // ─────────────────────────────────────────────────────────────────────────────
 static bool waitForReply(QNetworkReply *reply)
 {
@@ -53,118 +52,99 @@ static bool waitForReply(QNetworkReply *reply)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-class TstIntervalsIcuIntegration : public QObject
+// Test slot implementations
+// ─────────────────────────────────────────────────────────────────────────────
+
+void TstIntervalsIcuIntegration::initTestCase()
 {
-    Q_OBJECT
+    m_apiKey    = qEnvironmentVariable("INTERVALS_ICU_API_KEY");
+    m_athleteId = qEnvironmentVariable("INTERVALS_ICU_ATHLETE_ID");
 
-    QString m_apiKey;
-    QString m_athleteId;
-    QNetworkAccessManager *m_manager = nullptr;
-
-private slots:
-
-    // ─── Setup ───────────────────────────────────────────────────────────────
-
-    void initTestCase()
-    {
-        m_apiKey    = qEnvironmentVariable("INTERVALS_ICU_API_KEY");
-        m_athleteId = qEnvironmentVariable("INTERVALS_ICU_ATHLETE_ID");
-
-        if (m_apiKey.isEmpty() || m_athleteId.isEmpty()) {
-            QSKIP("Set INTERVALS_ICU_API_KEY and INTERVALS_ICU_ATHLETE_ID to run "
-                  "live Intervals.icu integration tests.");
-        }
-
-        m_manager = new QNetworkAccessManager(this);
-        qApp->setProperty("NetworkManagerWS",
-                          QVariant::fromValue<QNetworkAccessManager*>(m_manager));
+    if (m_apiKey.isEmpty() || m_athleteId.isEmpty()) {
+        QSKIP("Set INTERVALS_ICU_API_KEY and INTERVALS_ICU_ATHLETE_ID to run "
+              "live Intervals.icu integration tests.");
     }
 
-    void cleanupTestCase()
-    {
-        qApp->setProperty("NetworkManagerWS", QVariant());
-    }
+    m_manager = new QNetworkAccessManager(this);
+    qApp->setProperty("NetworkManagerWS",
+                      QVariant::fromValue<QNetworkAccessManager*>(m_manager));
+}
 
-    // ─── Tests ───────────────────────────────────────────────────────────────
+void TstIntervalsIcuIntegration::cleanupTestCase()
+{
+    qApp->setProperty("NetworkManagerWS", QVariant());
+}
 
-    // GET /api/v1/athlete/{id}  →  200 OK, body is a JSON object whose "id"
-    // field matches the athlete ID used for authentication.
-    void testGetAthlete()
-    {
-        QNetworkReply *reply = IntervalsIcuService::getAthlete(m_athleteId, m_apiKey);
-        QVERIFY2(reply, "getAthlete returned nullptr — NetworkManagerWS not registered");
+void TstIntervalsIcuIntegration::testGetAthlete()
+{
+    QNetworkReply *reply = IntervalsIcuService::getAthlete(m_athleteId, m_apiKey);
+    QVERIFY2(reply, "getAthlete returned nullptr — NetworkManagerWS not registered");
 
-        QVERIFY2(waitForReply(reply), "getAthlete timed out after 30 s");
-        QCOMPARE(reply->error(), QNetworkReply::NoError);
+    QVERIFY2(waitForReply(reply), "getAthlete timed out after 30 s");
+    QCOMPARE(reply->error(), QNetworkReply::NoError);
 
-        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        QCOMPARE(status, 200);
+    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    QCOMPARE(status, 200);
 
-        const QJsonObject obj = QJsonDocument::fromJson(reply->readAll()).object();
-        QVERIFY2(!obj.isEmpty(), "getAthlete: response body is not a JSON object");
-        QCOMPARE(obj.value(QStringLiteral("id")).toString(), m_athleteId);
+    const QJsonObject obj = QJsonDocument::fromJson(reply->readAll()).object();
+    QVERIFY2(!obj.isEmpty(), "getAthlete: response body is not a JSON object");
+    QCOMPARE(obj.value(QStringLiteral("id")).toString(), m_athleteId);
 
-        reply->deleteLater();
-    }
+    reply->deleteLater();
+}
 
-    // GET /api/v1/athlete/{id}/events?oldest=...&newest=...  →  200 OK, JSON array.
-    // Uses a ±7-day window around today so at least the request round-trips cleanly.
-    void testGetEvents()
-    {
-        const QDate today = QDate::currentDate();
-        QNetworkReply *reply = IntervalsIcuService::getEvents(
-            m_athleteId, m_apiKey,
-            today.addDays(-7),
-            today.addDays(7));
-        QVERIFY2(reply, "getEvents returned nullptr — NetworkManagerWS not registered");
+void TstIntervalsIcuIntegration::testGetEvents()
+{
+    const QDate today = QDate::currentDate();
+    QNetworkReply *reply = IntervalsIcuService::getEvents(
+        m_athleteId, m_apiKey,
+        today.addDays(-7),
+        today.addDays(7));
+    QVERIFY2(reply, "getEvents returned nullptr — NetworkManagerWS not registered");
 
-        QVERIFY2(waitForReply(reply), "getEvents timed out after 30 s");
-        QCOMPARE(reply->error(), QNetworkReply::NoError);
+    QVERIFY2(waitForReply(reply), "getEvents timed out after 30 s");
+    QCOMPARE(reply->error(), QNetworkReply::NoError);
 
-        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        QCOMPARE(status, 200);
+    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    QCOMPARE(status, 200);
 
-        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-        QVERIFY2(doc.isArray(), "getEvents: response body is not a JSON array");
+    const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+    QVERIFY2(doc.isArray(), "getEvents: response body is not a JSON array");
 
-        reply->deleteLater();
-    }
+    reply->deleteLater();
+}
 
-    // GET /api/v1/athlete/{id}/workouts  →  200 OK, JSON array.
-    void testGetWorkouts()
-    {
-        QNetworkReply *reply = IntervalsIcuService::getWorkouts(m_athleteId, m_apiKey);
-        QVERIFY2(reply, "getWorkouts returned nullptr — NetworkManagerWS not registered");
+void TstIntervalsIcuIntegration::testGetWorkouts()
+{
+    QNetworkReply *reply = IntervalsIcuService::getWorkouts(m_athleteId, m_apiKey);
+    QVERIFY2(reply, "getWorkouts returned nullptr — NetworkManagerWS not registered");
 
-        QVERIFY2(waitForReply(reply), "getWorkouts timed out after 30 s");
-        QCOMPARE(reply->error(), QNetworkReply::NoError);
+    QVERIFY2(waitForReply(reply), "getWorkouts timed out after 30 s");
+    QCOMPARE(reply->error(), QNetworkReply::NoError);
 
-        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        QCOMPARE(status, 200);
+    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    QCOMPARE(status, 200);
 
-        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-        QVERIFY2(doc.isArray(), "getWorkouts: response body is not a JSON array");
+    const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+    QVERIFY2(doc.isArray(), "getWorkouts: response body is not a JSON array");
 
-        reply->deleteLater();
-    }
+    reply->deleteLater();
+}
 
-    // GET /api/v1/athlete/{id} with a deliberately wrong API key  →  HTTP 401.
-    // Qt does not treat HTTP 4xx responses as QNetworkReply::NetworkError, so the
-    // status code is read directly from the reply attribute.
-    void testBadApiKey()
-    {
-        QNetworkReply *reply = IntervalsIcuService::getAthlete(
-            m_athleteId, QStringLiteral("invalid-key-xyz"));
-        QVERIFY2(reply, "getAthlete(bad key) returned nullptr — NetworkManagerWS not registered");
+void TstIntervalsIcuIntegration::testBadApiKey()
+{
+    QNetworkReply *reply = IntervalsIcuService::getAthlete(
+        m_athleteId, QStringLiteral("invalid-key-xyz"));
+    QVERIFY2(reply, "getAthlete(bad key) returned nullptr — NetworkManagerWS not registered");
 
-        QVERIFY2(waitForReply(reply), "getAthlete(bad key) timed out after 30 s");
+    QVERIFY2(waitForReply(reply), "getAthlete(bad key) timed out after 30 s");
 
-        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        QCOMPARE(status, 401);
+    // intervals.icu returns 401 or 403 depending on endpoint/version for bad credentials.
+    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    QVERIFY2(status == 401 || status == 403,
+             qPrintable(QStringLiteral("Expected 401 or 403, got %1").arg(status)));
 
-        reply->deleteLater();
-    }
-};
+    reply->deleteLater();
+}
 
 QTEST_MAIN(TstIntervalsIcuIntegration)
-#include "tst_intervals_icu_integration.moc"
