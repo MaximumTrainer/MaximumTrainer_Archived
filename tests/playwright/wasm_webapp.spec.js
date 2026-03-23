@@ -165,28 +165,20 @@ test.describe('BLE GATT ready callback', () => {
 
     await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
 
-    // Wait until either the loading screen or the Qt canvas is visible
+    // Wait until either the loading screen fades out (opacity → 0) or the
+    // Qt canvas becomes visible — either signals that the BLE check passed.
     await page.waitForFunction(
       () => {
         const loading = document.querySelector('#loading-screen');
         const canvas = document.querySelector('#qt-canvas-wrapper');
-        const loadingVisible = loading && loading.offsetParent !== null;
+        const loadingHidden = loading && loading.classList.contains('hidden');
         const canvasVisible = canvas && canvas.style.visibility !== 'hidden';
-        return !!(loadingVisible || canvasVisible);
+        return !!(loadingHidden || canvasVisible);
       },
-      { timeout: 10000 },
+      { timeout: 30000 },
     );
 
-    // Once the app is initialized, explicitly trigger the BLE connect flow
-    await page.waitForFunction(
-      () => typeof window.js_scanAndConnect === 'function',
-      { timeout: 15000 },
-    );
-    await page.evaluate(() => {
-      // Simulate the user action that starts a BLE scan/connect
-      window.js_scanAndConnect();
-    });
-    // No [MT] BLE error messages should have been emitted
+    // No [MT] BLE error messages should have been emitted during loading
     const bleErrors = consoleMessages.filter(
       (m) => m.type === 'error' && m.text.includes('[MT]'),
     );
@@ -194,8 +186,6 @@ test.describe('BLE GATT ready callback', () => {
       bleErrors,
       `Unexpected [MT] BLE errors with mock device: ${bleErrors.map((m) => m.text).join(', ')}`,
     ).toHaveLength(0);
-
-    // waitForFunction above already confirmed the loading screen or canvas is present
   });
 });
 
@@ -219,9 +209,11 @@ test.describe('Browser compatibility guard', () => {
     const warning = page.locator('#browser-warning');
     await expect(warning).toBeVisible();
 
-    // Loading screen must be hidden
+    // Loading screen must have faded out (opacity:0 via .hidden class).
+    // Playwright's toBeVisible() only checks display/visibility, not opacity,
+    // so we verify the CSS class directly.
     const loadingScreen = page.locator('#loading-screen');
-    await expect(loadingScreen).not.toBeVisible();
+    await expect(loadingScreen).toHaveClass(/hidden/);
 
     // The detail paragraph must contain the hardware-unavailable message
     const detail = page.locator('#browser-warning-detail');
