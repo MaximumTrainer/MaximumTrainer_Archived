@@ -273,3 +273,93 @@ jobs:
         path: |
           build\tests\offline-mode-windows-*.png
           build\tests\activity-windows-*.tsv
+  # Intervals.icu Live Integration Tests (Windows)
+  #
+  # Makes real HTTP requests to https://intervals.icu/api/v1 using the shared
+  # test account.  Requires GitHub Secrets to be configured:
+  #   INTERVALS_ICU_API_KEY    – personal API key (intervals.icu Settings → API)
+  #   INTERVALS_ICU_ATHLETE_ID – athlete ID, e.g. i12345
+  #
+  # Tests call QSKIP gracefully when either secret is absent (fork PRs, local
+  # development without credentials).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_intervals_icu_integration:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      QT_HOME: C:\Qt
+      INTERVALS_ICU_API_KEY:    ${{ secrets.INTERVALS_ICU_API_KEY }}
+      INTERVALS_ICU_ATHLETE_ID: ${{ secrets.INTERVALS_ICU_ATHLETE_ID }}
+
+    steps:
+    - name: MSVC Environment Setup
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        dir: ${{ env.QT_HOME }}
+
+    - name: Set QTDIR
+      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Download OpenSSL 1.1.x DLLs
+      # Qt 5.15.2 requires OpenSSL 1.1.x DLLs for HTTPS/TLS.
+      run: |
+        function Invoke-WebRequestWithRetry {
+          param([string]$Uri, [string]$OutFile, [int]$MaxAttempts = 5, [int]$BackoffSeconds = 5)
+          for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+            try {
+              Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+              return
+            } catch {
+              if ($attempt -eq $MaxAttempts) { throw }
+              Write-Host "Attempt $attempt failed. Retrying in $BackoffSeconds s..."
+              Start-Sleep -Seconds $BackoffSeconds
+              $BackoffSeconds *= 2
+            }
+          }
+        }
+        Invoke-WebRequestWithRetry `
+          -Uri "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-1.1.1w.zip" `
+          -OutFile "$env:TEMP\openssl.zip"
+        Expand-Archive -Path "$env:TEMP\openssl.zip" -DestinationPath "$env:TEMP\openssl" -Force
+        $dll = Get-ChildItem "$env:TEMP\openssl" -Recurse -Filter "libssl-1_1-x64.dll" |
+               Select-Object -First 1
+        if (-not $dll) { Write-Error "libssl-1_1-x64.dll not found in archive"; exit 1 }
+        echo "OPENSSL_BIN=$($dll.DirectoryName)" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Build Intervals.icu integration tests
+      run: |
+        New-Item -ItemType Directory -Force -Path build\tests | Out-Null
+        Set-Location tests\intervals_icu_integration
+        qmake intervals_icu_integration_tests.pro
+        nmake
+      shell: powershell
+
+    - name: Deploy Qt DLLs for test binary
+      run: |
+        & "$env:QTDIR\bin\windeployqt.exe" --release `
+            --no-translations `
+            --no-system-d3d-compiler `
+            build\tests\intervals_icu_integration_tests.exe
+      shell: powershell
+
+    - name: Copy OpenSSL DLLs to test directory
+      run: |
+        foreach ($dll in @("libssl-1_1-x64.dll", "libcrypto-1_1-x64.dll")) {
+          $src = "$env:OPENSSL_BIN\$dll"
+          if (Test-Path $src) { Copy-Item $src "build\tests\" -Force }
+        }
+      shell: powershell
+
+    - name: Run Intervals.icu integration tests
+      run: .\build\tests\intervals_icu_integration_tests.exe -v2
+      shell: powershell

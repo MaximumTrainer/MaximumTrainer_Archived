@@ -145,6 +145,29 @@ jobs:
 
     steps:
     - name: Install Qt
+  # Intervals.icu Live Integration Tests (macOS)
+  #
+  # Makes real HTTP requests to https://intervals.icu/api/v1 using the shared
+  # test account.  Requires GitHub Secrets to be configured:
+  #   INTERVALS_ICU_API_KEY    – personal API key (intervals.icu Settings → API)
+  #   INTERVALS_ICU_ATHLETE_ID – athlete ID, e.g. i12345
+  #
+  # Tests call QSKIP gracefully when either secret is absent (fork PRs, local
+  # development without credentials).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_intervals_icu_integration:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    env:
+      INTERVALS_ICU_API_KEY:    ${{ secrets.INTERVALS_ICU_API_KEY }}
+      INTERVALS_ICU_ATHLETE_ID: ${{ secrets.INTERVALS_ICU_ATHLETE_ID }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt (qtbase only)
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.7.3'
@@ -172,3 +195,15 @@ jobs:
         path: |
           build/tests/offline-mode-macos-*.png
           build/tests/activity-macos-*.tsv
+    - name: Install OpenSSL
+      run: brew install openssl@3
+
+    - name: Build Intervals.icu integration tests
+      run: |
+        mkdir -p build/tests
+        cd tests/intervals_icu_integration
+        qmake intervals_icu_integration_tests.pro
+        make -j$(sysctl -n hw.logicalcpu)
+
+    - name: Run Intervals.icu integration tests
+      run: ./build/tests/intervals_icu_integration_tests -v2

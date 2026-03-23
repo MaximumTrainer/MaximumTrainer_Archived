@@ -14,6 +14,7 @@ jobs:
     uses: ./.github/workflows/build-linux.yml
     permissions:
       contents: read
+    secrets: inherit
 
   # ──────────────────────────────────────────────────────────────────────────
   # Windows build (defined in build-windows.yml)
@@ -22,6 +23,7 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     permissions:
       contents: read
+    secrets: inherit
 
   # ──────────────────────────────────────────────────────────────────────────
   # macOS build (defined in build-mac.yml)
@@ -30,6 +32,7 @@ jobs:
     uses: ./.github/workflows/build-mac.yml
     permissions:
       contents: read
+    secrets: inherit
 
   # ──────────────────────────────────────────────────────────────────────────
   # WASM build (best-effort — runs on every push so WASM issues surface early,
@@ -121,6 +124,48 @@ jobs:
           build-wasm/build/release/MaximumTrainer.js
           build-wasm/build/release/qtloader.js
           build-wasm/build/release/qtlogo.svg
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Playwright E2E Tests — WASM app on GitHub Pages
+  #
+  # Runs the full Playwright suite against the live GitHub Pages deployment at
+  # https://maximumtrainer.github.io/MaximumTrainer_Redux/app/.
+  #
+  # Layer A tests verify UI structure (tabs, widgets) without credentials.
+  # Layer B tests inject Intervals.icu credentials and verify the calendar/
+  # workout list renders; they skip gracefully when secrets are absent.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_playwright:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      INTERVALS_ICU_API_KEY:    ${{ secrets.INTERVALS_ICU_API_KEY }}
+      INTERVALS_ICU_ATHLETE_ID: ${{ secrets.INTERVALS_ICU_ATHLETE_ID }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Playwright and browsers
+      run: |
+        npm install --no-save @playwright/test
+        npx playwright install chromium --with-deps
+
+    - name: Run Playwright tests
+      run: npx playwright test
+
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
 
   # ──────────────────────────────────────────────────────────────────────────
   # Auto-tag a new semantic version on master so that release.yml fires.

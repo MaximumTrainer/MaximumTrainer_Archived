@@ -319,3 +319,42 @@ jobs:
         path: |
           build/tests/offline-mode-linux-*.png
           build/tests/activity-linux-*.tsv
+  # Intervals.icu Live Integration Tests (Linux)
+  #
+  # Makes real HTTP requests to https://intervals.icu/api/v1 using the shared
+  # test account.  Requires GitHub Secrets to be configured:
+  #   INTERVALS_ICU_API_KEY    – personal API key (intervals.icu Settings → API)
+  #   INTERVALS_ICU_ATHLETE_ID – athlete ID, e.g. i12345
+  #
+  # Tests call QSKIP gracefully when either secret is absent (fork PRs, local
+  # development without credentials).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_intervals_icu_integration:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    env:
+      INTERVALS_ICU_API_KEY:    ${{ secrets.INTERVALS_ICU_API_KEY }}
+      INTERVALS_ICU_ATHLETE_ID: ${{ secrets.INTERVALS_ICU_ATHLETE_ID }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt and dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          build-essential
+
+    - name: Build Intervals.icu integration tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        mkdir -p build/tests
+        cd tests/intervals_icu_integration
+        qmake intervals_icu_integration_tests.pro
+        make -j$(nproc)
+
+    - name: Run Intervals.icu integration tests
+      run: ./build/tests/intervals_icu_integration_tests -v2
