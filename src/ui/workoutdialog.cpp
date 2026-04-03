@@ -5,6 +5,8 @@
 #   include <windows.h>
 #endif
 
+#include <stdexcept>
+
 #include <QLibrary>
 #include <QMessageBox>
 #include <QMouseEvent>
