@@ -205,9 +205,8 @@ jobs:
         git add docs/assets/screenshots/*.png
         $status = & git status --porcelain
         if ($status) {
-          git commit -m "docs: update Windows screenshots [skip ci]
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          $msg = "docs: update Windows screenshots [skip ci]`n`nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git commit -m $msg
           git push
           Write-Host "Screenshots committed and pushed."
         } else {
