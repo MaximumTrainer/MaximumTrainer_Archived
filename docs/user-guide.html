@@ -400,6 +400,7 @@
         <li><a href="#studio-mode">Studio Mode</a></li>
         <li><a href="#achievements">Achievements</a></li>
         <li><a href="#tips">Tips &amp; Shortcuts</a></li>
+        <li><a href="#platform-requirements">Platform Requirements</a></li>
       </ul>
       <a href="#top" class="sidebar-back">↑ Back to top</a>
     </aside>
@@ -446,6 +447,17 @@
           installation instructions, see the
           <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux#building" target="_blank" rel="noopener">README on GitHub</a>.
         </p>
+
+        <div class="callout">
+          <strong>Browser version available:</strong> Maximum Trainer also runs directly in Chrome or Edge
+          via <strong>WebAssembly (WASM)</strong> — no installation required. Open
+          <a href="app/" target="_blank">Try in Browser</a> to launch it. The browser version
+          supports BLE sensor connections via the
+          <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API" target="_blank" rel="noopener">Web Bluetooth API</a>,
+          but has no access to local files, no internet radio, and no video playback.
+          The browser must be served over HTTPS and the device must be paired via a user gesture
+          (clicking <strong>Start Workout</strong>).
+        </div>
       </section>
 
       <!-- ── First Launch ───────────────────────────────────────── -->
@@ -637,16 +649,20 @@
           — the popular free training platform — to pull your scheduled workouts into the app.
         </p>
         <ol class="steps">
-          <li>Open <strong>Preferences → Cloud Sync</strong> and enter your Intervals.icu API key and Athlete ID.</li>
-          <li>Click <strong>Intervals.icu</strong> in the left sidebar of the main window.</li>
+          <li>Open <strong>Preferences → Preferences &amp; Profile</strong> and go to the <strong>Connections</strong> tab.</li>
+          <li>Enter your <strong>Intervals.icu API key</strong> and <strong>Athlete ID</strong> (found at intervals.icu → Settings → API), then click <strong>Save</strong>.</li>
+          <li>Click the <strong>Intervals.icu</strong> tab in the left sidebar of the main window.</li>
           <li>Use <strong>Refresh</strong> to load your planned workouts for the current week.</li>
           <li>Select a workout and click <strong>Load Selected Workout</strong> to download it to your local library.</li>
           <li>The workout appears in your library list immediately, ready to start.</li>
         </ol>
 
         <div class="callout">
-          <strong>Tip:</strong> Find your API key at intervals.icu → Settings → API. An internet connection
-          is required to sync with Intervals.icu. The WASM (web) version runs in offline mode only.
+          <strong>Auto-upload:</strong> Enable <strong>Auto-upload to Intervals.icu</strong> in the
+          Connections tab to have completed activities posted to Intervals.icu automatically when you
+          save a workout. An internet connection is required for sync and upload.
+          The WASM (browser) version operates in offline mode only and does not support Intervals.icu
+          sync.
         </div>
 
         <h3>Option B — Browse existing library</h3>
@@ -872,6 +888,10 @@
           battery), Maximum Trainer automatically attempts to reconnect every 5 seconds, up to
           3 times. A notification appears while reconnecting. The workout timer continues so you
           don't lose data — simply wait a moment and the connection will restore.
+          <br /><br />
+          In the <strong>browser (WASM) version</strong>, if automatic reconnection fails a
+          <strong>Reconnect</strong> overlay appears on screen. Click the <strong>Reconnect</strong>
+          button to trigger a new Web Bluetooth scan and re-pair your trainer.
         </div>
       </section>
 
@@ -931,6 +951,11 @@
             <div class="card-icon">📈</div>
             <h4>SelfLoops</h4>
             <p>Upload to the SelfLoops analytics platform for advanced power and performance metrics.</p>
+          </div>
+          <div class="guide-card">
+            <div class="card-icon">📅</div>
+            <h4>Intervals.icu</h4>
+            <p>Sync your planned workouts and optionally auto-upload completed activities — configure in Preferences → Cloud Sync.</p>
           </div>
         </div>
 
@@ -992,7 +1017,7 @@
               </tr>
               <tr>
                 <td><strong>Connections</strong></td>
-                <td>Link/unlink Strava, TrainingPeaks, SelfLoops accounts</td>
+                <td>Link/unlink Strava, TrainingPeaks, SelfLoops accounts; configure Intervals.icu API key, Athlete ID, and auto-upload toggle</td>
               </tr>
               <tr>
                 <td><strong>Radio</strong></td>
@@ -1119,6 +1144,10 @@
                 <td>Ensure the trainer is connected with the <strong>FTMS (0x1826)</strong> profile, not a plain Power profile. A plain Power profile provides data but does not accept load commands.</td>
               </tr>
               <tr>
+                <td>ERG not working in browser (WASM) version</td>
+                <td>The browser version sends an FTMS Request Control handshake automatically after connection. If ERG commands are still ignored, disconnect and reconnect your trainer — some trainers require a fresh GATT connection to accept the control handshake.</td>
+              </tr>
+              <tr>
                 <td>Power readings seem inaccurate</td>
                 <td>Spin-down / calibrate the trainer from its own app, then reconnect in Maximum Trainer. If your trainer uses a built-in power curve, verify the correct model is selected in Preferences → Trainer.</td>
               </tr>
@@ -1140,6 +1169,72 @@
           on GitHub, or open an
           <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux/issues" target="_blank" rel="noopener">issue</a>
           if you believe you've found a bug.
+        </div>
+      </section>
+
+      <!-- ── Platform Requirements ─────────────────────────────── -->
+      <section class="guide-section" id="platform-requirements">
+        <h2>🖥️ Platform Requirements</h2>
+        <p>
+          Maximum Trainer is supported on Windows, macOS, and Linux. The BLE requirements differ
+          slightly per operating system.
+        </p>
+
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Minimum OS</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Windows</strong></td>
+                <td>Windows 10 version 1703 (Creators Update) or later</td>
+                <td>
+                  Requires a Bluetooth 4.0+ adapter with a WDM-compatible driver.
+                  Windows 7, 8, and 8.1 are not supported (missing WinRT BLE APIs).
+                  No special permissions or manifest entries are needed.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Linux</strong></td>
+                <td>Ubuntu 20.04+ / kernel 5.x+</td>
+                <td>
+                  Your user account must be in the <code>bluetooth</code> group:
+                  <code>sudo usermod -aG bluetooth $USER</code> (log out and back in to apply).
+                  The BlueZ daemon must be running: <code>sudo systemctl enable --now bluetooth</code>.
+                  See the <a href="https://github.com/MaximumTrainer/MaximumTrainer_Redux#linux--bluetooth-setup" target="_blank" rel="noopener">Linux Bluetooth Setup</a>
+                  section of the README for full details.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>macOS</strong></td>
+                <td>macOS 10.15 (Catalina) or later</td>
+                <td>
+                  On first connection, macOS will prompt for Bluetooth permission
+                  (<em>NSBluetoothAlwaysUsageDescription</em>). Click <strong>Allow</strong> to
+                  grant access. This permission can be reviewed in
+                  <strong>System Settings → Privacy &amp; Security → Bluetooth</strong>.
+                  Requires a Mac with built-in Bluetooth or a BT 4.0+ adapter.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Browser (WASM)</strong></td>
+                <td>Chrome 85+ or Edge 85+</td>
+                <td>
+                  Requires the
+                  <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API" target="_blank" rel="noopener">Web Bluetooth API</a>
+                  — available in Chrome and Edge (not Firefox or Safari). The page must be served
+                  over HTTPS. BLE pairing must be triggered by a user gesture (clicking
+                  <strong>Start Workout</strong>). No local file access; activities cannot be
+                  exported to a local <code>.fit</code> file in the browser version.
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
