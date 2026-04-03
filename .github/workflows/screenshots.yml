@@ -1,0 +1,216 @@
+name: Capture Windows Screenshots
+
+# Capture Windows-native UI screenshots and commit them to docs/assets/screenshots/.
+# Triggered manually via workflow_dispatch.  The app is built fresh on Windows,
+# launched with --screenshots, and the resulting PNGs are pushed back to the repo.
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Build MaximumTrainer for Windows (mirrors build-windows.yml)
+  # ─────────────────────────────────────────────────────────────────────────
+  build_windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      QT_HOME: C:\Qt
+
+    steps:
+    - name: MSVC Environment Setup
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.15.2'
+        modules: 'qtwebengine'
+        dir: ${{ env.QT_HOME }}
+
+    - name: Set QTDIR
+      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Write PowerShell helpers
+      run: |
+        @'
+        function Invoke-WebRequestWithRetry {
+          param([string]$Uri, [string]$OutFile, [int]$MaxAttempts = 5, [int]$BackoffSeconds = 5)
+          for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+            try {
+              Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+              return
+            } catch {
+              if ($attempt -eq $MaxAttempts) { throw }
+              Write-Host "Attempt $attempt failed: $_. Retrying in $BackoffSeconds seconds..."
+              Start-Sleep -Seconds $BackoffSeconds
+              $BackoffSeconds *= 2
+            }
+          }
+        }
+        '@ | Set-Content C:\helpers.ps1
+      shell: powershell
+
+    - name: Download OpenSSL 1.1.x
+      run: |
+        . C:\helpers.ps1
+        Invoke-WebRequestWithRetry `
+          -Uri "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-1.1.1w.zip" `
+          -OutFile "$env:TEMP\openssl.zip"
+        Expand-Archive -Path "$env:TEMP\openssl.zip" -DestinationPath "$env:TEMP\openssl" -Force
+        $dll = Get-ChildItem "$env:TEMP\openssl" -Recurse -Filter "libssl-1_1-x64.dll" |
+               Select-Object -First 1
+        if (-not $dll) { Write-Error "libssl-1_1-x64.dll not found in archive"; exit 1 }
+        echo "OPENSSL_BIN=$($dll.DirectoryName)" >> $env:GITHUB_ENV
+        Write-Host "OpenSSL DLLs at: $($dll.DirectoryName)"
+      shell: powershell
+
+    - name: Download and install VLC-Qt
+      run: |
+        . C:\helpers.ps1
+        Invoke-WebRequestWithRetry -Uri "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_win64_msvc2015.7z" -OutFile "$env:TEMP\vlcqt.7z"
+        & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt"
+        $vlcqtInstall = "C:/vlcqt"
+        echo "VLCQT_DIR=$vlcqtInstall" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Download and install SFML
+      run: |
+        curl.exe -L -o "$env:TEMP\sfml.zip" "https://github.com/SFML/SFML/releases/download/2.6.1/SFML-2.6.1-windows-vc17-64-bit.zip"
+        Expand-Archive -Path "$env:TEMP\sfml.zip" -DestinationPath "C:\sfml"
+      shell: powershell
+
+    - name: Build QWT
+      run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $qwtInstallDirFwd = $qwtInstallDir -replace '\\', '/'
+        Set-Location ..
+        curl.exe -L -o "$env:TEMP\qwt.tar.bz2" "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
+        7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
+        7z x "$env:TEMP\qwt.tar" -o"." -y
+        Rename-Item "qwt-6.2.0" "qwt-src"
+        Set-Location "qwt-src"
+        (Get-Content "qwtconfig.pri") | ForEach-Object {
+            if ($_ -match 'QWT_INSTALL_PREFIX\s*=') {
+                $_ -replace '(QWT_INSTALL_PREFIX\s*=\s*).*', "`$1$qwtInstallDirFwd"
+            } else { $_ }
+        } | Set-Content "qwtconfig.pri"
+        qmake qwt.pro
+        nmake
+        nmake install
+      shell: powershell
+
+    - name: Create Makefile
+      run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
+        $sfmlDirFwd = $sfmlDir -replace '\\','/'
+        $env:QMAKEFEATURES = "$qwtInstallDir\features"
+        qmake PowerVelo.pro `
+          "VLCQT_INSTALL=$($env:VLCQT_DIR -replace '\\','/')" `
+          "SFML_INSTALL=$sfmlDirFwd"
+      shell: powershell
+
+    - name: Build
+      run: nmake
+
+    - name: Copy QWT runtime DLL
+      run: |
+        $qwtInstallDir = "$env:USERPROFILE\qwt"
+        Copy-Item "$qwtInstallDir\lib\qwt.dll" "build\release\" -Force
+      shell: powershell
+
+    - name: Copy OpenSSL DLLs
+      run: |
+        foreach ($dll in @("libssl-1_1-x64.dll", "libcrypto-1_1-x64.dll")) {
+          $src = "$env:OPENSSL_BIN\$dll"
+          if (Test-Path $src) { Copy-Item $src "build\release\" -Force }
+        }
+      shell: powershell
+
+    - name: Deploy Qt DLLs (windeployqt)
+      run: |
+        & "$env:QTDIR\bin\windeployqt.exe" --release `
+            --no-translations `
+            --no-system-d3d-compiler `
+            build\release\MaximumTrainer.exe
+      shell: powershell
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-screenshots-build
+        path: build\release\
+
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Capture screenshots and commit them back to the repository
+  # ─────────────────────────────────────────────────────────────────────────
+  capture_screenshots:
+    runs-on: windows-latest
+    needs: build_windows
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout (for committing screenshots)
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-screenshots-build
+        path: app
+
+    - name: Capture screenshots
+      run: |
+        New-Item -ItemType Directory -Force -Path screenshots | Out-Null
+        # The built release directory is self-contained after windeployqt.
+        $exe = "app\MaximumTrainer.exe"
+        if (-not (Test-Path $exe)) {
+          Write-Error "MaximumTrainer.exe not found at $exe"; exit 1
+        }
+        # Run the app in screenshot mode; it quits automatically when done.
+        & $exe --screenshots screenshots
+        Write-Host "Screenshots captured:"
+        Get-ChildItem screenshots -Filter "*.png" | ForEach-Object { Write-Host "  $_" }
+      shell: powershell
+      timeout-minutes: 3
+
+    - name: Copy screenshots to docs/assets/screenshots
+      run: |
+        New-Item -ItemType Directory -Force -Path docs\assets\screenshots | Out-Null
+        $pngs = Get-ChildItem screenshots -Filter "*.png"
+        if ($pngs.Count -eq 0) {
+          Write-Error "No screenshots were captured — aborting commit step"; exit 1
+        }
+        foreach ($f in $pngs) {
+          Copy-Item $f.FullName "docs\assets\screenshots\$($f.Name)" -Force
+          Write-Host "Copied: $($f.Name)"
+        }
+      shell: powershell
+
+    - name: Commit and push screenshots
+      run: |
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add docs/assets/screenshots/*.png
+        $status = & git status --porcelain
+        if ($status) {
+          git commit -m "docs: update Windows screenshots [skip ci]
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push
+          Write-Host "Screenshots committed and pushed."
+        } else {
+          Write-Host "No screenshot changes to commit."
+        }
+      shell: powershell

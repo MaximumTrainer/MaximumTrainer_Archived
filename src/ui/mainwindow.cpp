@@ -9,6 +9,8 @@
 #include <QDesktopServices>
 #include <QApplication>
 #include <QFileDialog>
+#include <QTimer>
+#include <QDir>
 
 #include "util.h"
 #include "environnement.h"
@@ -1940,3 +1942,237 @@ void MainWindow::updateTrainerCurve(int trainer_id, QString companyName, QString
     qDebug() << "ok trainerID is now:" << account->powerCurve.getId();
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Screenshot mode
+//
+// Invoked via `--screenshots [dir]` CLI flag.  MainWindow is shown without a
+// login dialog and a timer-driven state machine navigates through the key UI
+// views, capturing one PNG per view.  The app quits automatically when done.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Delays (ms) applied AFTER completing each step, before starting the next.
+// Indexed by the step index that just finished: ssDelays[step] → next step.
+static const int ssDelays[] = {
+    800,   // after step  0 (captured main window)   → switch to Settings
+    1000,  // after step  1 (switched to Settings)    → capture Settings
+    500,   // after step  2 (captured Settings)        → switch to WorkoutCreator
+    1000,  // after step  3 (loaded WorkoutCreator)    → capture WorkoutCreator
+    500,   // after step  4 (captured WorkoutCreator)  → launch WorkoutDialog
+    9000,  // after step  5 (launched WorkoutDialog)   → capture running workout
+    200,   // after step  6 (captured workout)         → close WorkoutDialog
+    600,   // after step  7 (closed WorkoutDialog)     → enable studio mode
+    2000,  // after step  8 (enabled studio mode)      → capture Studio
+    500,   // after step  9 (captured Studio)           → switch to Intervals.icu
+    1500,  // after step 10 (switched to Intervals.icu) → capture Intervals.icu
+};
+
+Workout MainWindow::makeDemoWorkout() const
+{
+    // Build a representative structured threshold workout for screenshots.
+    Interval i1;
+    i1.setTime(QTime(0, 10, 0));
+    i1.setDisplayMsg(tr("Warm-up Build"));
+    i1.setPowerStepType(Interval::PROGRESSIVE);
+    i1.setTargetFTP_start(0.60); i1.setTargetFTP_end(0.75); i1.setTargetFTP_range(10);
+    i1.setRightPowerTarget(-1.0);
+    i1.setCadenceStepType(Interval::FLAT);
+    i1.setTargetCadence_start(85); i1.setTargetCadence_end(90); i1.setTargetCadence_range(5);
+
+    Interval i2;
+    i2.setTime(QTime(0, 8, 0));
+    i2.setDisplayMsg(tr("Threshold Interval"));
+    i2.setPowerStepType(Interval::FLAT);
+    i2.setTargetFTP_start(0.95); i2.setTargetFTP_end(0.95); i2.setTargetFTP_range(5);
+    i2.setRightPowerTarget(-1.0);
+    i2.setCadenceStepType(Interval::FLAT);
+    i2.setTargetCadence_start(90); i2.setTargetCadence_end(90); i2.setTargetCadence_range(5);
+
+    Interval i3;
+    i3.setTime(QTime(0, 4, 0));
+    i3.setDisplayMsg(tr("Recovery"));
+    i3.setPowerStepType(Interval::FLAT);
+    i3.setTargetFTP_start(0.50); i3.setTargetFTP_end(0.50); i3.setTargetFTP_range(10);
+    i3.setRightPowerTarget(-1.0);
+    i3.setCadenceStepType(Interval::FLAT);
+    i3.setTargetCadence_start(80); i3.setTargetCadence_end(80); i3.setTargetCadence_range(10);
+
+    Interval i4;
+    i4.setTime(QTime(0, 8, 0));
+    i4.setDisplayMsg(tr("Threshold Interval"));
+    i4.setPowerStepType(Interval::FLAT);
+    i4.setTargetFTP_start(0.95); i4.setTargetFTP_end(0.95); i4.setTargetFTP_range(5);
+    i4.setRightPowerTarget(-1.0);
+    i4.setCadenceStepType(Interval::FLAT);
+    i4.setTargetCadence_start(90); i4.setTargetCadence_end(90); i4.setTargetCadence_range(5);
+
+    Interval i5;
+    i5.setTime(QTime(0, 5, 0));
+    i5.setDisplayMsg(tr("Cool Down"));
+    i5.setPowerStepType(Interval::PROGRESSIVE);
+    i5.setTargetFTP_start(0.65); i5.setTargetFTP_end(0.50); i5.setTargetFTP_range(10);
+    i5.setRightPowerTarget(-1.0);
+    i5.setCadenceStepType(Interval::FLAT);
+    i5.setTargetCadence_start(85); i5.setTargetCadence_end(85); i5.setTargetCadence_range(10);
+
+    QList<Interval> intervals;
+    intervals << i1 << i2 << i3 << i4 << i5;
+
+    return Workout("screenshot_demo.workout", Workout::USER_MADE, intervals,
+                   tr("My Threshold Workout"), "MaximumTrainer",
+                   tr("A structured threshold workout"), "Base", Workout::T_THRESHOLD);
+}
+
+void MainWindow::startScreenshotMode(const QString &outputDir)
+{
+    qDebug() << "Screenshot mode: output dir =" << outputDir;
+    QDir().mkpath(outputDir);
+    m_ssOutputDir = outputDir;
+    m_ssStep      = 0;
+
+    resize(1280, 720);
+    move(100, 50);
+    QCoreApplication::processEvents();
+
+    // Kick off the first step after the window has had time to fully paint.
+    QTimer::singleShot(2000, this, SLOT(screenshotNextStep()));
+}
+
+void MainWindow::screenshotNextStep()
+{
+    const int step = m_ssStep++;
+
+    switch (step) {
+
+    // ── Step 0: main window – workout list ────────────────────────────────
+    case 0:
+        ftb->setCurrentIndex(0);
+        ui->tabWidget_workout->setCurrentIndex(0);
+        QCoreApplication::processEvents();
+        grab().save(m_ssOutputDir + QLatin1String("/screenshot_main_window.png"), "PNG");
+        qDebug() << "Screenshot: main_window";
+        break;
+
+    // ── Step 1: switch to Settings tab (tab 5) ───────────────────────────
+    case 1:
+        ftb->setCurrentIndex(5);
+        QCoreApplication::processEvents();
+        break;
+
+    // ── Step 2: capture Settings ─────────────────────────────────────────
+    case 2:
+        grab().save(m_ssOutputDir + QLatin1String("/screenshot_settings.png"), "PNG");
+        qDebug() << "Screenshot: settings";
+        break;
+
+    // ── Step 3: switch to WorkoutCreator and load demo workout ───────────
+    case 3:
+        ftb->setCurrentIndex(0);
+        ui->tabWidget_workout->setCurrentIndex(1);
+        ui->tab_create->editWorkout(makeDemoWorkout());
+        QCoreApplication::processEvents();
+        break;
+
+    // ── Step 4: capture WorkoutCreator ───────────────────────────────────
+    case 4:
+        grab().save(m_ssOutputDir + QLatin1String("/screenshot_workout_editor.png"), "PNG");
+        qDebug() << "Screenshot: workout_editor";
+        break;
+
+    // ── Step 5: launch WorkoutDialog with SimulatorHub (non-modal) ───────
+    case 5: {
+        ftb->setCurrentIndex(0);
+        ui->tabWidget_workout->setCurrentIndex(0);
+
+        m_ssSimHub = new SimulatorHub(this);
+        m_ssWorkoutDlg = new WorkoutDialog(makeDemoWorkout(), lstRadio, vecUserStudio, this);
+
+        connect(m_ssSimHub, SIGNAL(signal_hr(int,int)),
+                m_ssWorkoutDlg, SLOT(HrDataReceived(int,int)));
+        connect(m_ssSimHub, SIGNAL(signal_cadence(int,int)),
+                m_ssWorkoutDlg, SLOT(CadenceDataReceived(int,int)));
+        connect(m_ssSimHub, SIGNAL(signal_speed(int,double)),
+                m_ssWorkoutDlg, SLOT(TrainerSpeedDataReceived(int,double)));
+        connect(m_ssSimHub, SIGNAL(signal_power(int,int)),
+                m_ssWorkoutDlg, SLOT(PowerDataReceived(int,int)));
+        connect(m_ssSimHub, SIGNAL(signal_oxygen(int,double,double)),
+                m_ssWorkoutDlg, SLOT(OxygenValueChanged(int,double,double)));
+
+        m_ssSimHub->start();
+        m_ssWorkoutDlg->show();
+        m_ssWorkoutDlg->raise();
+        m_ssWorkoutDlg->activateWindow();
+        QCoreApplication::processEvents();
+        break;
+    }
+
+    // ── Step 6: capture workout running ──────────────────────────────────
+    case 6:
+        if (m_ssWorkoutDlg) {
+            m_ssWorkoutDlg->raise();
+            QCoreApplication::processEvents();
+            m_ssWorkoutDlg->grab().save(
+                m_ssOutputDir + QLatin1String("/screenshot_workout_running.png"), "PNG");
+            qDebug() << "Screenshot: workout_running";
+        }
+        break;
+
+    // ── Step 7: close WorkoutDialog ───────────────────────────────────────
+    case 7:
+        if (m_ssWorkoutDlg) {
+            m_ssWorkoutDlg->close();
+            delete m_ssWorkoutDlg;
+            m_ssWorkoutDlg = nullptr;
+        }
+        if (m_ssSimHub) {
+            m_ssSimHub->stopDecodingMsg();
+            delete m_ssSimHub;
+            m_ssSimHub = nullptr;
+        }
+        QCoreApplication::processEvents();
+        break;
+
+    // ── Step 8: enable studio mode and switch to Studio tab (tab 3) ──────
+    case 8:
+        setNumberUserStudio(6);
+        enableStudioMode(true);
+        ftb->setCurrentIndex(3);
+        raise();
+        activateWindow();
+        QCoreApplication::processEvents();
+        break;
+
+    // ── Step 9: capture studio mode ───────────────────────────────────────
+    case 9:
+        grab().save(m_ssOutputDir + QLatin1String("/screenshot_studio_mode.png"), "PNG");
+        qDebug() << "Screenshot: studio_mode";
+        enableStudioMode(false);
+        break;
+
+    // ── Step 10: switch to Intervals.icu tab (tab 1) ─────────────────────
+    case 10:
+        ftb->setCurrentIndex(1);
+        raise();
+        activateWindow();
+        QCoreApplication::processEvents();
+        break;
+
+    // ── Step 11: capture Intervals.icu (replaces removed History view) ────
+    case 11:
+        grab().save(m_ssOutputDir + QLatin1String("/screenshot_activity_history.png"), "PNG");
+        qDebug() << "Screenshot: activity_history (Intervals.icu tab)";
+        QTimer::singleShot(300, qApp, SLOT(quit()));
+        return; // No further steps — quit is already scheduled.
+
+    default:
+        QTimer::singleShot(300, qApp, SLOT(quit()));
+        return;
+    }
+
+    // Schedule the next step after its delay.
+    const int numDelays = static_cast<int>(sizeof(ssDelays) / sizeof(ssDelays[0]));
+    if (step < numDelays)
+        QTimer::singleShot(ssDelays[step], this, SLOT(screenshotNextStep()));
+    else
+        QTimer::singleShot(300, qApp, SLOT(quit()));
+}

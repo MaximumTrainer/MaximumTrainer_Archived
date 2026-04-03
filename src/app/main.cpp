@@ -96,23 +96,33 @@ int main(int argc, char *argv[]) {
     Z_StyleSheet styleSheetDummy;
     app.setStyleSheet(styleSheetDummy.styleSheet());
 
+    // --screenshots [dir] / /screenshots [dir]: bypass login, capture UI
+    // screenshots to [dir] (default: <appdir>/screenshots), then quit.
+    const QStringList &cliArgs = QCoreApplication::arguments();
+    const bool screenshotMode = cliArgs.contains(QLatin1String("--screenshots"), Qt::CaseInsensitive)
+                             || cliArgs.contains(QLatin1String("/screenshots"),  Qt::CaseInsensitive);
+
 #ifndef Q_OS_WASM
     splash.setStatusMessage(QObject::tr("Applying theme…"));
     splash.setProgress(55);
 
-    splash.setStatusMessage(QObject::tr("Preparing login…"));
-    splash.setProgress(80);
-    // Hide the splash before showing the modal login dialog so the two
-    // windows do not overlap on small displays.
-    splash.hide();
+    if (!screenshotMode) {
+        splash.setStatusMessage(QObject::tr("Preparing login…"));
+        splash.setProgress(80);
+        // Hide the splash before showing the modal login dialog so the two
+        // windows do not overlap on small displays.
+        splash.hide();
 
-    DialogLogin login;
+        DialogLogin login;
 
-    if (login.exec() != QDialog::Accepted) {
-        return 0; // Login refused
-    }
-    if (login.getGotUpdate()) {
-        return 0; // Executed DialogLogin and redirected to download new version
+        if (login.exec() != QDialog::Accepted) {
+            return 0; // Login refused
+        }
+        if (login.getGotUpdate()) {
+            return 0; // Executed DialogLogin and redirected to download new version
+        }
+    } else {
+        splash.hide();
     }
 #endif // Q_OS_WASM
 
@@ -125,6 +135,21 @@ int main(int argc, char *argv[]) {
 
     w.show();
 
+    if (screenshotMode) {
+        // Determine output directory from optional positional argument after the flag.
+        QString outDir = QCoreApplication::applicationDirPath() + QLatin1String("/screenshots");
+        // QList::indexOf has no CaseSensitivity overload; flags are always lowercase.
+        int flagIdx = cliArgs.indexOf(QLatin1String("--screenshots"));
+        if (flagIdx < 0)
+            flagIdx = cliArgs.indexOf(QLatin1String("/screenshots"));
+        if (flagIdx >= 0 && flagIdx + 1 < cliArgs.size()) {
+            const QString &next = cliArgs.at(flagIdx + 1);
+            if (!next.startsWith(QLatin1Char('-')) && !next.startsWith(QLatin1Char('/')))
+                outDir = next;
+        }
+        QMetaObject::invokeMethod(&w, "startScreenshotMode", Qt::QueuedConnection,
+                                  Q_ARG(QString, outDir));
+    }
 
     return app.exec();
 }

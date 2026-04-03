@@ -28,6 +28,9 @@ namespace Ui {
 class MainWindow;
 }
 
+class WorkoutDialog;
+class SimulatorHub;
+
 
 
 class MainWindow : public QMainWindow
@@ -52,6 +55,8 @@ signals :
 public slots:
 
     void executeWorkout(Workout workout);
+
+    void startScreenshotMode(const QString &outputDir);
 
     //Coming from Studio QWebView ----------
     void enableStudioMode(bool enable);
@@ -149,6 +154,9 @@ private slots:
     void onIntervalsIcuWorkoutDownloaded();
     void showPlanContextMenu(const QPoint &pos);
 
+    // Screenshot mode — captures a sequence of PNG files then quits the app.
+    void screenshotNextStep();
+
 private:
     void loadSettings();
     void saveSettings();
@@ -159,6 +167,9 @@ private:
 
     void checkToEnableWindow();
     void sendDataToSettingsOrStudioPage(int deviceType, int numberDeviceFound, QList<int> lstDevicePairedr, QList<int> lstTypeDevicePairedr, bool fromStudioPage);
+
+    // Screenshot mode helpers
+    Workout makeDemoWorkout() const;
 
 private:
     QVector<UserStudio> vecUserStudio;
@@ -216,6 +227,11 @@ private:
 
     QNetworkReply *replyIntervalsIcuZwo;
     QString        m_pendingIntervalsWorkoutId;
+
+    QString        m_ssOutputDir;
+    int            m_ssStep       = 0;
+    WorkoutDialog *m_ssWorkoutDlg = nullptr;
+    SimulatorHub  *m_ssSimHub     = nullptr;
 
 };
 
