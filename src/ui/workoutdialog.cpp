@@ -5,6 +5,7 @@
 #   include <windows.h>
 #endif
 
+#include <QLibrary>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -583,20 +584,43 @@ WorkoutDialog::WorkoutDialog(Workout workout,  QList<Radio> lstRadio, QVector<Us
 
     //Internet Radio Player
 #ifdef GC_HAVE_VLCQT
-    radioPlayer = new MyVlcPlayer(this);
-    radioPlayer->setVisible(false);
-    radioPlayer->setRadio(true);
+    // Guard against libvlc being absent (e.g. on machines without VLC installed
+    // or in CI/screenshot environments). Without libvlc the VlcInstance
+    // constructor would crash, so we only create the player when the library
+    // can actually be loaded.
+    radioPlayer = nullptr;
+    {
+        QLibrary vlcLib(QStringLiteral("libvlc"));
+        if (vlcLib.load()) {
+            vlcLib.unload(); // availability confirmed; VlcInstance reloads it
+            try {
+                radioPlayer = new MyVlcPlayer(this);
+                radioPlayer->setVisible(false);
+                radioPlayer->setRadio(true);
 
-    connect(dconfig, SIGNAL(signal_connectToRadioUrl(QString)), radioPlayer, SLOT(openUrlRadio(QString)) );
-    connect(dconfig, SIGNAL(signal_volumeRadioChanged(int)), radioPlayer, SLOT(changeVolume(int)) );
-    connect(dconfig, SIGNAL(signal_stopPlayingRadio()), radioPlayer, SLOT(stop()) );
+                connect(dconfig, SIGNAL(signal_connectToRadioUrl(QString)), radioPlayer, SLOT(openUrlRadio(QString)) );
+                connect(dconfig, SIGNAL(signal_volumeRadioChanged(int)), radioPlayer, SLOT(changeVolume(int)) );
+                connect(dconfig, SIGNAL(signal_stopPlayingRadio()), radioPlayer, SLOT(stop()) );
 
-    connect(radioPlayer, SIGNAL(playing()), dconfig, SLOT(radioStartedPlaying()) );
-    connect(radioPlayer, SIGNAL(paused()), dconfig, SLOT(radioStoppedPlaying()) );
-    connect(radioPlayer, SIGNAL(stopped()), dconfig, SLOT(radioStoppedPlaying()) );
-    connect(radioPlayer, SIGNAL(playing()), ui->widget_topMenu, SLOT(radioStartedPlaying()) );
-    connect(radioPlayer, SIGNAL(paused()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
-    connect(radioPlayer, SIGNAL(stopped()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
+                connect(radioPlayer, SIGNAL(playing()), dconfig, SLOT(radioStartedPlaying()) );
+                connect(radioPlayer, SIGNAL(paused()), dconfig, SLOT(radioStoppedPlaying()) );
+                connect(radioPlayer, SIGNAL(stopped()), dconfig, SLOT(radioStoppedPlaying()) );
+                connect(radioPlayer, SIGNAL(playing()), ui->widget_topMenu, SLOT(radioStartedPlaying()) );
+                connect(radioPlayer, SIGNAL(paused()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
+                connect(radioPlayer, SIGNAL(stopped()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
+            } catch (const std::exception &e) {
+                qWarning() << "WorkoutDialog: VLC initialization failed:" << e.what();
+                delete radioPlayer;
+                radioPlayer = nullptr;
+            } catch (...) {
+                qWarning() << "WorkoutDialog: VLC initialization failed (unknown exception)";
+                delete radioPlayer;
+                radioPlayer = nullptr;
+            }
+        } else {
+            qWarning() << "WorkoutDialog: libvlc not found; internet radio player disabled";
+        }
+    }
 #endif
 
     connect(dconfig, SIGNAL(radioStatus(QString)), ui->widget_topMenu, SLOT(updateRadioStatus(QString)) );

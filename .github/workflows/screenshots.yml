@@ -47,16 +47,19 @@ jobs:
 
     - name: Capture screenshots
       run: |
-        New-Item -ItemType Directory -Force -Path screenshots | Out-Null
-        & app\MaximumTrainer.exe --screenshots screenshots
+        $ssDir = New-Item -ItemType Directory -Force -Path screenshots | Select-Object -ExpandProperty FullName
+        $exePath = (Resolve-Path "app\MaximumTrainer.exe").Path
+        Write-Host "Launching: $exePath --screenshots $ssDir"
+        $proc = Start-Process -FilePath $exePath -ArgumentList "--screenshots", $ssDir -PassThru -Wait
+        Write-Host "Exit code: $($proc.ExitCode)"
         $pngs = Get-ChildItem screenshots -Filter "*.png"
         Write-Host "Screenshots captured: $($pngs.Count)"
-        $pngs | ForEach-Object { Write-Host "  $($_.Name)" }
+        foreach ($f in $pngs) { Write-Host "  $($f.Name)  $($f.Length) bytes" }
         if ($pngs.Count -eq 0) {
           Write-Error "No screenshots were captured"; exit 1
         }
       shell: powershell
-      timeout-minutes: 3
+      timeout-minutes: 5
 
     - name: Copy screenshots to docs/assets/screenshots
       run: |
