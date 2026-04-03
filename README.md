@@ -255,6 +255,8 @@ make -j$(nproc)
 
 Uses Qt 6.7.3 with Clang. QWT is built from source (non-framework) against Qt 6. VLC-Qt is optional on macOS.
 
+> **macOS Bluetooth permission:** The app's `mac/Info.plist` includes the `NSBluetoothAlwaysUsageDescription` key, which is required by macOS 10.15+ for any app that accesses BLE devices. The first time the app attempts to connect a sensor, macOS will prompt for Bluetooth permission. This permission can be reviewed or revoked in **System Settings → Privacy & Security → Bluetooth**.
+
 ```bash
 # Install Qt 6.7.3 via install-qt-action or the Qt Installer, then:
 brew install sfml

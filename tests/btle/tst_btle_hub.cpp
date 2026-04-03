@@ -83,6 +83,18 @@ private slots:
     void testSimulator_valuesInRange();
     void testSimulator_stopStopsSignals();
 
+    // ── Short-packet rejection (no crash on truncated data) ──────────────────
+    void testHr_tooShort_ignored();
+    void testCsc_tooShort_ignored();
+
+    // ── FTMS multi-field layout (field skipping) ─────────────────────────────
+    void testFtms_allOptionalFieldsBeforePowerSkipped();
+    void testFtms_negativeInstantPower();
+
+    // ── SimulatorHub no-op slot verification ─────────────────────────────────
+    void testSimulator_noOpSetLoad();
+    void testSimulator_noOpSetSlope();
+
 private:
     BtleHub *hub = nullptr;
 };
@@ -636,5 +648,149 @@ void TstBtleHub::testSimulator_stopStopsSignals()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-QTEST_MAIN(TstBtleHub)
+// Short-packet rejection tests — no crash on truncated characteristic data
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * HR Measurement that is too short to hold even the flags byte should be
+ * silently ignored without emitting any signal or crashing.
+ */
+void TstBtleHub::testHr_tooShort_ignored()
+{
+    QSignalSpy spy(hub, &BtleHub::signal_hr);
+    hub->simulateNotification(BTLE_UUID_HR_MEASUREMENT, QByteArray()); // empty
+    hub->simulateNotification(BTLE_UUID_HR_MEASUREMENT, QByteArray(1, 0x00)); // flags-only
+    QCOMPARE(spy.count(), 0);
+}
+
+/**
+ * CSC Measurement with too-short payload for the flags it claims to contain
+ * should be silently ignored.
+ */
+void TstBtleHub::testCsc_tooShort_ignored()
+{
+    QSignalSpy spy(hub, &BtleHub::signal_cadence);
+    // Flags byte claims crank data (bit1), but only 2 bytes follow instead of 5
+    QByteArray shortCsc;
+    shortCsc.append(char(0x02)); // flags: crank data present
+    shortCsc.append(char(0xFF)); // partial crank revs (only 1 byte, needs 4)
+    hub->simulateNotification(BTLE_UUID_CSC_MEASUREMENT, shortCsc);
+    QCOMPARE(spy.count(), 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FTMS multi-field layout tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * FTMS Indoor Bike Data with all optional fields before "Instantaneous Power"
+ * present: speed (bit0=0), average speed (bit1=1), cadence (bit2=0),
+ * average cadence (bit3=1), total distance (bit4=1), resistance (bit5=1).
+ * Verifies the parser correctly skips 2+2+2+2+3+2 = 13 bytes before reaching
+ * the power field at offset 15 (2 flags + 13 skipped bytes).
+ *
+ * Raw packet layout (little-endian):
+ *   [0-1]  flags  = 0x003A  (bits 1,3,4,5 set; bits 0,2,6 clear)
+ *   [2-3]  speed  = 3800  (38.00 km/h)
+ *   [4-5]  avgSpd = 3600
+ *   [6-7]  cad    = 180   (90.0 rpm in 0.5 rpm units)
+ *   [8-9]  avgCad = 160
+ *   [10-12] totalDist = 0x0F4240 = 1 000 000 m (3-byte LE)
+ *   [13-14] resistance = 50
+ *   [15-16] power = 250 W
+ */
+void TstBtleHub::testFtms_allOptionalFieldsBeforePowerSkipped()
+{
+    QSignalSpy spySpd(hub, &BtleHub::signal_speed);
+    QSignalSpy spyCad(hub, &BtleHub::signal_cadence);
+    QSignalSpy spyPwr(hub, &BtleHub::signal_power);
+
+    // flags: bit0=0 (spd present), bit1=1 (avgSpd present), bit2=0 (cad present),
+    //        bit3=1 (avgCad present), bit4=1 (dist present), bit5=1 (res present)
+    // => 0b00111010 = 0x3A, high byte = 0x00
+    QByteArray pkt;
+    auto appendLE16 = [&](quint16 v) {
+        pkt.append(char(v & 0xFF));
+        pkt.append(char((v >> 8) & 0xFF));
+    };
+    appendLE16(0x003A);     // flags
+    appendLE16(3800);       // speed: 38.00 km/h
+    appendLE16(3600);       // average speed (skipped)
+    appendLE16(180);        // cadence: 90.0 rpm
+    appendLE16(160);        // average cadence (skipped)
+    // total distance (3 bytes LE, skipped)
+    pkt.append(char(0x40)); pkt.append(char(0x42)); pkt.append(char(0x0F));
+    appendLE16(50);         // resistance level (skipped)
+    appendLE16(250);        // instantaneous power: 250 W
+
+    hub->simulateNotification(BTLE_UUID_FTMS_BIKE_DATA, pkt);
+
+    QCOMPARE(spySpd.count(), 1);
+    QVERIFY2(qAbs(spySpd.at(0).at(1).toDouble() - 38.0) < SPEED_TOLERANCE,
+             "FTMS speed with all-fields present mismatch");
+
+    QCOMPARE(spyCad.count(), 1);
+    QCOMPARE(spyCad.at(0).at(1).toInt(), 90);
+
+    QCOMPARE(spyPwr.count(), 1);
+    QCOMPARE(spyPwr.at(0).at(1).toInt(), 250);
+}
+
+/**
+ * FTMS Indoor Bike Data with a negative Instantaneous Power value.
+ * Negative power can occur on trainers with regenerative braking or
+ * when the rider free-wheels against a strong tailwind in slope mode.
+ * The field is a signed int16 — verify it is decoded as negative watts.
+ */
+void TstBtleHub::testFtms_negativeInstantPower()
+{
+    QSignalSpy spy(hub, &BtleHub::signal_power);
+
+    // flags 0x0040 = bit6 set (power NOT present) → must clear bit6 for power
+    // Use flags = 0x0000: speed absent flag (bit0=0 means speed IS present),
+    // cadence absent (bit2=0 means cadence IS present), power bit6=0 (power present)
+    // Build a packet with speed+cadence+power, power = -10 W (int16 LE 0xFFF6)
+    QByteArray pkt;
+    pkt.append(char(0x00)); pkt.append(char(0x00)); // flags: spd, cad, pwr present
+    pkt.append(char(0x00)); pkt.append(char(0x00)); // speed = 0 km/h
+    pkt.append(char(0x00)); pkt.append(char(0x00)); // cadence = 0 rpm
+    pkt.append(char(0xF6)); pkt.append(char(0xFF)); // power = -10 (int16 LE)
+
+    hub->simulateNotification(BTLE_UUID_FTMS_BIKE_DATA, pkt);
+
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.at(0).at(1).toInt(), -10);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SimulatorHub no-op slot tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * SimulatorHub::setLoad() and setSlope() are no-ops (the simulator ignores
+ * ERG load commands). Verify they do not crash and do not emit any extra signal.
+ */
+void TstBtleHub::testSimulator_noOpSetLoad()
+{
+    SimulatorHub sim;
+    QSignalSpy spyPwr(&sim, &SimulatorHub::signal_power);
+    // setLoad must not crash even when the simulator is not running
+    sim.setLoad(0, 250.0);
+    sim.setLoad(1, 0.0);
+    // No power signal should be emitted by a load command
+    QTest::qWait(50);
+    QCOMPARE(spyPwr.count(), 0);
+}
+
+void TstBtleHub::testSimulator_noOpSetSlope()
+{
+    SimulatorHub sim;
+    QSignalSpy spySpd(&sim, &SimulatorHub::signal_speed);
+    sim.setSlope(0, 5.0);
+    sim.setSlope(0, -3.0);
+    QTest::qWait(50);
+    QCOMPARE(spySpd.count(), 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 #include "tst_btle_hub.moc"

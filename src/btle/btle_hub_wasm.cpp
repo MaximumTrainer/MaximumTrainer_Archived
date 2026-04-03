@@ -21,12 +21,32 @@ BtleHubWasm::BtleHubWasm(QObject *parent) : QObject(parent)
             m_connected = true;
             emit deviceConnected();
             emit serviceDiscoveryFinished();
+            // Send FTMS Request Control (opcode 0x00) now that GATT is ready.
+            // This handshake is required by the FTMS spec before ERG commands
+            // (Set Target Power 0x05 / Indoor Bike Simulation 0x11) are accepted
+            // by the trainer (Gap 6 fix).
+            WebBluetoothBridge::requestFtmsControl();
         });
 
     WebBluetoothBridge::setConnectionErrorCallback(
         [this](const QString &errorString) {
             m_connected = false;
             emit connectionError(errorString);
+        });
+
+    // Invoked by bleDisconnectedC when the JS auto-reconnect loop is exhausted
+    // (Gap 1 fix – wires the JS callback to the existing C++ handler).
+    WebBluetoothBridge::setDisconnectedCallback(
+        [this]() {
+            onDisconnectedFromBridge();
+        });
+
+    // Invoked by bleReconnectRequestC when the user presses the DOM
+    // "Reconnect" button (Gap 1 fix – routes the button press back into C++).
+    WebBluetoothBridge::setReconnectRequestCallback(
+        [this]() {
+            m_userDisconnect = false;
+            scanForDevice();
         });
 }
 

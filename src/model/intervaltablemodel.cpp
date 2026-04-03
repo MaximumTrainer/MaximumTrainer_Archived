@@ -267,8 +267,8 @@ QVariant IntervalTableModel::data(const QModelIndex &index, int role) const {
         else if(index.column() == 5) {
             return interval.getDisplayMessage();
         }
-        /// Repeat Interval percentage increase
-        /// TODO: only show if a repeat widget is present
+        /// Repeat Interval percentage increase — only shows when values are non-zero,
+        /// which only occurs when a repeat widget covers this row.
         else if (index.column() == 6) {
             QString textToShow = "";
             double repeatPercFtp = interval.getRepeatIncreaseFTP();

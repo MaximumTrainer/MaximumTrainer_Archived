@@ -95,9 +95,7 @@ void myQwtDial::drawScaleContents( QPainter *painter, const QPointF &center, dou
     painter->setPen(QPen( brownColor, 1 ));
     painter->drawPie(rectangle, (306 * 16), (54 * 16) );
 
-
 //    painter->setPen( Qt::NoPen );
-    /// TODO: TEST  -- LABEL WATTS
     QRectF rect( 0.0, 0.0, 2.0 * radius, 2.0 * radius - 10.0 );
     rect.moveCenter( center );
 

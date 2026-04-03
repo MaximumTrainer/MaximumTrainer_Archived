@@ -217,7 +217,6 @@ private:
     void connectDataWorkout();
     void createUserStudioWidget();
 
-    void connectHubs();
     void sendUserInfoToClock();
 
     void showTestResult();

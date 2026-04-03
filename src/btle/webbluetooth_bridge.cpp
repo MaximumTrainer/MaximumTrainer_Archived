@@ -21,6 +21,8 @@
 static BleNotificationCallback    g_notificationCallback;
 static BleConnectedCallback       g_connectedCallback;
 static BleConnectionErrorCallback g_connectionErrorCallback;
+static BleDisconnectedCallback    g_disconnectedCallback;
+static BleReconnectRequestCallback g_reconnectRequestCallback;
 
 // ─── JS callback entry points (called from JS via Module._ble*C) ─────────────
 extern "C" {
@@ -54,6 +56,26 @@ void bleConnectionErrorC(const char *msg)
 {
     if (g_connectionErrorCallback) {
         g_connectionErrorCallback(QString::fromUtf8(msg));
+    }
+}
+
+// Called from JavaScript when auto-reconnect is exhausted and the device
+// is considered permanently disconnected (shown DOM overlay).
+EMSCRIPTEN_KEEPALIVE
+void bleDisconnectedC()
+{
+    if (g_disconnectedCallback) {
+        g_disconnectedCallback();
+    }
+}
+
+// Called from JavaScript when the user presses the DOM "Reconnect" button
+// on the reconnect overlay.
+EMSCRIPTEN_KEEPALIVE
+void bleReconnectRequestC()
+{
+    if (g_reconnectRequestCallback) {
+        g_reconnectRequestCallback();
     }
 }
 
@@ -262,6 +284,16 @@ void setConnectedCallback(BleConnectedCallback cb)
 void setConnectionErrorCallback(BleConnectionErrorCallback cb)
 {
     g_connectionErrorCallback = std::move(cb);
+}
+
+void setDisconnectedCallback(BleDisconnectedCallback cb)
+{
+    g_disconnectedCallback = std::move(cb);
+}
+
+void setReconnectRequestCallback(BleReconnectRequestCallback cb)
+{
+    g_reconnectRequestCallback = std::move(cb);
 }
 
 void scanForDevices()

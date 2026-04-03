@@ -1784,7 +1784,6 @@ void MainWindow::slotTrainingPeaksRefreshFinished()
         qDebug() << "response is :" << arrayData;
         Util::parseJsonTPObject(QString(arrayData));
 
-        //TODO: post file now here, call TP Rest WS
         replyTrainingPeaksPostFile = ExtRequest::trainingPeaksUploadFile(account->training_peaks_access_token, account->training_peaks_public_upload,
                                                                          nameWorkout, descriptionWorkout, filepathWorkout);
         connect(replyTrainingPeaksPostFile, SIGNAL(finished()), this, SLOT(slotTrainingPeaksUploadFinished()) );

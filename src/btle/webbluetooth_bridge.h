@@ -37,6 +37,14 @@ using BleConnectedCallback = std::function<void()>;
 // errorString contains a human-readable description of the failure.
 using BleConnectionErrorCallback = std::function<void(const QString &errorString)>;
 
+// C++ callback type invoked by JS when an unexpected GATT disconnection occurs
+// and all automatic reconnect attempts have been exhausted.
+using BleDisconnectedCallback = std::function<void()>;
+
+// C++ callback type invoked by JS when the user presses the DOM reconnect
+// button (ble-reconnect-btn) after a disconnect.
+using BleReconnectRequestCallback = std::function<void()>;
+
 namespace WebBluetoothBridge {
 
 // Register the C++ callback that JS will invoke on each notification.
@@ -49,6 +57,14 @@ void setConnectedCallback(BleConnectedCallback cb);
 
 // Register the C++ callback invoked if the GATT connection attempt fails.
 void setConnectionErrorCallback(BleConnectionErrorCallback cb);
+
+// Register the C++ callback invoked when an unexpected GATT disconnection
+// occurs (device powered off, went out of range, etc.).
+void setDisconnectedCallback(BleDisconnectedCallback cb);
+
+// Register the C++ callback invoked when the user presses the DOM reconnect
+// button after a disconnect.
+void setReconnectRequestCallback(BleReconnectRequestCallback cb);
 
 // Trigger navigator.bluetooth.requestDevice() – must be called from a
 // user-initiated slot (button click, etc.) to satisfy browser security policy.

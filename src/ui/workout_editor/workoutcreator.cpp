@@ -795,7 +795,6 @@ void WorkoutCreator::createWorkout(const QString& name, const QString& plan, con
     bool exist = Util::checkFileNameAlreadyExist(workout.getFilePath());
 
 
-    /// TODO: ask yes no for overwrite existing file
     if (exist)
     {
         QMessageBox msgBox(this);

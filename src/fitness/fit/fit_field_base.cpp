@@ -1155,7 +1155,6 @@ FIT_BOOL FieldBase::IsValueValid( const FIT_UINT8 fieldArrayIndex, const FIT_UIN
 
         FIT_BOOL readSuccess = GetMemoryValue( fieldArrayIndex, data, baseTypeSize );
 
-        //! TODO Handle Strings
         if ( readSuccess )
         {
             isValid = ( memcmp( invalid, data, baseTypeSize ) != 0 );

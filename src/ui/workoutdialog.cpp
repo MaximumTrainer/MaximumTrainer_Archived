@@ -178,11 +178,6 @@ WorkoutDialog::WorkoutDialog(Workout workout,  QList<Radio> lstRadio, QVector<Us
     sendUserInfoToClock();
     emit startClockSpeed();
 
-    // Connect all sensor hubs
-    connectHubs();
-
-
-
     // Calibration
     connect(ui->widget_topMenu, SIGNAL(startCalibrateFEC()), this, SLOT(startCalibrateFEC()) );
     connect(ui->widget_topMenu, SIGNAL(startCalibrationPM()), this, SLOT(startCalibrationPM()) );
@@ -1693,7 +1688,6 @@ void WorkoutDialog::HrDataReceived(int userID, int value) {
 
         arrDataWorkout[userID-1]->checkUpdateMaxHr(value);
 
-        //averaging 1sec, TODO, check with userID - at(0) replace with userID
         if (nbPointHr1sec.at(userID-1) == 0) {
             averageHr1sec.replace(userID-1, value);
         }
@@ -3428,10 +3422,6 @@ void WorkoutDialog::sendUserInfoToClock() {
 
 
 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-void WorkoutDialog::connectHubs() {
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 void WorkoutDialog::connectDataWorkout() {
