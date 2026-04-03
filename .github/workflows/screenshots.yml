@@ -190,7 +190,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path docs\assets\screenshots | Out-Null
         $pngs = Get-ChildItem screenshots -Filter "*.png"
         if ($pngs.Count -eq 0) {
-          Write-Error "No screenshots were captured — aborting commit step"; exit 1
+          Write-Error "No screenshots were captured - aborting commit step"; exit 1
         }
         foreach ($f in $pngs) {
           Copy-Item $f.FullName "docs\assets\screenshots\$($f.Name)" -Force
