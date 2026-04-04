@@ -22,14 +22,16 @@ TEMPLATE = app
 DESTDIR  = ../../build/tests
 
 # ── BtleHub sources ──────────────────────────────────────────────────────────
-INCLUDEPATH += ../../src/btle
+INCLUDEPATH += ../../src/btle ../../src/app
 
 SOURCES += \
+    ../../src/app/logger.cpp \
     ../../src/btle/btle_hub.cpp \
     ../../src/btle/simulator_hub.cpp \
     tst_btle_hub.cpp
 
 HEADERS += \
+    ../../src/app/logger.h \
     ../../src/btle/btle_hub.h \
     ../../src/btle/simulator_hub.h \
     btle_device_simulator.h

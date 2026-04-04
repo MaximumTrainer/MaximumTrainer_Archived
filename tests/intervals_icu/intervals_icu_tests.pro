@@ -27,6 +27,13 @@ INCLUDEPATH += \
     ../../src/persistence/db \
     ../../src/app
 
+# ── Logger (required by intervals_icu_service.cpp) ────────────────────────────
+SOURCES += \
+    ../../src/app/logger.cpp
+
+HEADERS += \
+    ../../src/app/logger.h
+
 # ── IntervalsIcuService sources ───────────────────────────────────────────────
 SOURCES += \
     ../../src/persistence/db/intervals_icu_service.cpp \

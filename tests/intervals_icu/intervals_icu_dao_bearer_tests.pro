@@ -31,6 +31,13 @@ INCLUDEPATH += \
     ../../src/persistence/db \
     ../../src/app
 
+# ── Logger (required by intervalsicudao.cpp) ──────────────────────────────────
+SOURCES += \
+    ../../src/app/logger.cpp
+
+HEADERS += \
+    ../../src/app/logger.h
+
 # ── IntervalsIcuDAO sources ───────────────────────────────────────────────────
 SOURCES += \
     ../../src/persistence/db/intervalsicudao.cpp \
