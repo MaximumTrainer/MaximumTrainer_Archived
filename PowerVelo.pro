@@ -8,7 +8,7 @@
 GIT_VERSION = $$system(git describe --tags --match "v[0-9]*" --always)
 # Strip any trailing carriage-return that qmake's $$system() may capture on
 # Windows when git writes "\r\n" to stdout.
-GIT_VERSION = $$replace(GIT_VERSION, \r, )
+GIT_VERSION = $$replace(GIT_VERSION, \\r, )
 # If this is not an exact tag commit, git describe appends "-N-gHASH" to the
 # nearest tag (e.g. "v0.0.53-3-gabcdef1").  Strip that suffix so APP_VERSION
 # is always a clean "vX.Y.Z" string; the extra commits are intentionally
