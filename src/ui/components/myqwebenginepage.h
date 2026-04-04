@@ -2,7 +2,6 @@
 #define MYQWEBENGINEPAGE_H
 
 #include <QWebEnginePage>
-#include <QWebEngineCertificateError>
 #include <QDesktopServices>
 #include "logger.h"
 
@@ -58,6 +57,7 @@ protected:
         }
     }
 #else
+#   include <QWebEngineCertificateError>
     bool certificateError(const QWebEngineCertificateError &error) override
     {
         LOG_WARN("WebEngine",
