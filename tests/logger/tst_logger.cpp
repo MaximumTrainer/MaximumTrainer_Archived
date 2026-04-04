@@ -17,6 +17,7 @@
 #include <QSettings>
 #include <QRegularExpression>
 #include <QDir>
+#include <QScopeGuard>
 
 #include "../../src/app/logger.h"
 
@@ -106,6 +107,7 @@ private slots:
 
     // ── Config round-trip ─────────────────────────────────────────────────────
     void testConfig_saveAndLoad();
+    void testConfig_fileLoggingEnabledByDefault();
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -354,6 +356,48 @@ void TstLogger::testConfig_saveAndLoad()
 
     // Restore original level.
     Logger::instance().setLogLevel(saved);
+}
+
+void TstLogger::testConfig_fileLoggingEnabledByDefault()
+{
+    // RAII guard: restore Logger's file-logging state unconditionally so that
+    // a QVERIFY failure in this test cannot leave the Logger in a broken state
+    // and cause subsequent tests to behave unexpectedly.
+    const bool savedEnabled = Logger::instance().isFileLoggingEnabled();
+    const QString savedPath = Logger::instance().logFilePath();
+    auto loggerGuard = qScopeGuard([&] {
+        Logger::instance().setFileLogging(savedEnabled, savedPath);
+    });
+
+    // RAII guard: remove (or restore) the logging/file_enabled QSettings key.
+    // This simulates a fresh install where no user preference has been saved.
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("logging"));
+    const QVariant prevValue = settings.value(QStringLiteral("file_enabled"));
+    settings.remove(QStringLiteral("file_enabled"));
+    settings.endGroup();
+    settings.sync();
+
+    auto settingsGuard = qScopeGuard([&] {
+        QSettings s;
+        s.beginGroup(QStringLiteral("logging"));
+        if (prevValue.isValid())
+            s.setValue(QStringLiteral("file_enabled"), prevValue);
+        else
+            s.remove(QStringLiteral("file_enabled"));
+        s.endGroup();
+        s.sync();
+    });
+
+    // Start from a known-disabled state so we can detect whether
+    // loadConfig() actually enables file logging.
+    Logger::instance().setFileLogging(false);
+
+    // Exercise the real loadConfig() path — it must default to enabled.
+    Logger::instance().loadConfig();
+
+    QVERIFY2(Logger::instance().isFileLoggingEnabled(),
+             "loadConfig() must enable file logging when file_enabled is absent from settings");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

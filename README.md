@@ -300,7 +300,8 @@ You need Qt Linguist to open and generate a new language file (`.qm` file).
 ## Log Files
 
 MaximumTrainer writes diagnostic messages (network errors, BLE events, OAuth login steps) to a log
-file when file logging is enabled. Enable it in **Preferences → Preferences & Profile → Logging**.
+file. File logging is **enabled by default** on first launch; you can adjust the level or disable it
+in **Preferences → Preferences & Profile → Logging**.
 
 | Platform | Default log file path |
 |----------|-----------------------|

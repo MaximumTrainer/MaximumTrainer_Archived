@@ -141,7 +141,7 @@ void Logger::loadConfig()
     const int level = settings.value(QStringLiteral("level"),
                                      static_cast<int>(LogLevel::Info)).toInt();
     const bool fileOn = settings.value(QStringLiteral("file_enabled"),
-                                       false).toBool();
+                                       true).toBool();
     const QString fp  = settings.value(QStringLiteral("file_path"),
                                        QString()).toString();
     settings.endGroup();
