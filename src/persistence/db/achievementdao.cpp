@@ -1,7 +1,7 @@
 #include "achievementdao.h"
 
-
 #include "environnement.h"
+#include "logger.h"
 
 
 
@@ -13,12 +13,14 @@
 QNetworkReply* AchievementDAO::getLstAchievement() {
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
-
+    if (!managerWS) {
+        LOG_WARN("AchievementDAO", QStringLiteral("getLstAchievement: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     const QString url =  Environnement::getURLEnvironnementWS() + "api/achievement_rest/achievement/format/json";
 
-
-    qDebug() << "OK CHECKING ACTIVE LIST WITH URL" << url;
+    LOG_DEBUG("AchievementDAO", QStringLiteral("getLstAchievement: GET ") + url);
 
     QNetworkRequest request;
     request.setUrl(QUrl(url));
@@ -37,15 +39,16 @@ QNetworkReply* AchievementDAO::getLstAchievement() {
 QNetworkReply* AchievementDAO::getLstAchievementForUser(int account_id) {
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
-
-
+    if (!managerWS) {
+        LOG_WARN("AchievementDAO", QStringLiteral("getLstAchievementForUser: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     const QString url =  Environnement::getURLEnvironnementWS() + "api/achievement_rest/achievementuser" +
             "/id/" + QString::number(account_id) +
             "/format/json";
 
-
-    qDebug() << "OK CHECKING ACTIVE LIST WITH URL" << url;
+    LOG_DEBUG("AchievementDAO", QStringLiteral("getLstAchievementForUser: GET ") + url);
 
     QNetworkRequest request;
     request.setUrl(QUrl(url));
@@ -65,27 +68,22 @@ QNetworkReply* AchievementDAO::getLstAchievementForUser(int account_id) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 QNetworkReply* AchievementDAO::putAchievement(int account_id, int achievement_id) {
 
-
-    qDebug() << "putAchievement start";
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
-
+    if (!managerWS) {
+        LOG_WARN("AchievementDAO", QStringLiteral("putAchievement: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     const QString url =  Environnement::getURLEnvironnementWS() + "api/achievement_rest/achievement/";
-    qDebug() << "URL IS:" << url;;
+    LOG_DEBUG("AchievementDAO", QStringLiteral("putAchievement: PUT account_id=")
+              + QString::number(account_id)
+              + QStringLiteral(" achievement_id=") + QString::number(achievement_id));
 
     //Todo: add security so you cant "cheat" achievements?
     QUrlQuery postData;
 
-
-
-    /// ----- Data to put
-    qDebug() << "PUT DATA:" << account_id << "achiemveent_id:" << achievement_id;
-
-
     postData.addQueryItem("account_id", QString::number(account_id));
     postData.addQueryItem("achievement_id", QString::number(achievement_id));
-
-
 
     QNetworkRequest request;
     request.setUrl(url);
@@ -93,6 +91,5 @@ QNetworkReply* AchievementDAO::putAchievement(int account_id, int achievement_id
 
     QNetworkReply *replyPutUser = managerWS->put(request, postData.toString(QUrl::FullyEncoded).toUtf8() );
 
-    qDebug() << "putAccount end";
     return replyPutUser;
 }

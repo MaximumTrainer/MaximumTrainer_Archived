@@ -3,6 +3,11 @@
 
 #include <QDialog>
 #include <QNetworkReply>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QLabel>
 
 #include "settings.h"
 #include "account.h"
@@ -59,9 +64,20 @@ private slots:
     void onTestIntervalsConnectionClicked();
     void onTestIntervalsConnectionFinished();
 
+    /// Logging settings page slots
+    void onLogFileEnabledToggled(bool checked);
+    void onBrowseLogFileClicked();
+    void onOpenLogFileClicked();
+
 
 private:
     void initUI();
+    /// Build the logging settings page and add it to the stacked widget.
+    QWidget *createLoggingPage();
+    /// Populate the logging-settings page controls from the current Logger state.
+    void loadLoggingSettings();
+    /// Persist the logging-settings page controls to Logger + QSettings.
+    void saveLoggingSettings();
 
 
 private:
@@ -78,6 +94,14 @@ private:
 
     DialogInfoWebView *stravaConnectView;
     bool stravaConnectViewAlreadyUsed;
+
+    // Logging settings page widgets (owned by the page widget, not directly by us)
+    QComboBox   *m_comboLogLevel    = nullptr;
+    QCheckBox   *m_checkFileLogging = nullptr;
+    QLineEdit   *m_editLogFilePath  = nullptr;
+    QPushButton *m_btnBrowseLog     = nullptr;
+    QPushButton *m_btnOpenLog       = nullptr;
+    QLabel      *m_labelLogPathHint = nullptr;
 
 };
 

@@ -6,6 +6,12 @@
 #include <QMessageBox>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QFormLayout>
+#include <QGroupBox>
+#include <QDesktopServices>
+#include <QStandardPaths>
 
 #include "util.h"
 #include "dialoginfowebview.h"
@@ -13,6 +19,7 @@
 #include "extrequest.h"
 #include "intervalsicuservice.h"
 #include "xmlutil.h"
+#include "logger.h"
 
 
 DialogMainWindowConfig::~DialogMainWindowConfig()
@@ -54,17 +61,23 @@ DialogMainWindowConfig::DialogMainWindowConfig(QWidget *parent) : QDialog(parent
     QListWidgetItem *item3 = new QListWidgetItem(QIcon(":/image/icon/folder"), tr("Folders"), ui->listWidget_settings);
     QListWidgetItem *item4 = new QListWidgetItem(QIcon(":/image/icon/upload"), tr("Auto Upload"), ui->listWidget_settings);
     QListWidgetItem *item5 = new QListWidgetItem(QIcon(":/image/icon/calendar"), tr("Cloud Sync"), ui->listWidget_settings);
+    QListWidgetItem *item6 = new QListWidgetItem(QIcon(":/image/icon/gear"), tr("Logging"), ui->listWidget_settings);
     item1->setSizeHint(QSize(35,35));
     item2->setSizeHint(QSize(35,35));
     item3->setSizeHint(QSize(35,35));
     item4->setSizeHint(QSize(35,35));
     item5->setSizeHint(QSize(35,35));
+    item6->setSizeHint(QSize(35,35));
 
     ui->listWidget_settings->addItem(item1);
     ui->listWidget_settings->addItem(item2);
     ui->listWidget_settings->addItem(item3);
     ui->listWidget_settings->addItem(item4);
     ui->listWidget_settings->addItem(item5);
+    ui->listWidget_settings->addItem(item6);
+
+    // Add the logging page to the stacked widget
+    ui->stackedWidget->addWidget(createLoggingPage());
 
 
     connect(ui->listWidget_settings, SIGNAL(currentRowChanged(int)), this, SLOT(currentListViewSelectionChanged(int)) );
@@ -452,6 +465,8 @@ void DialogMainWindowConfig::accept() {
     if (intervalsChanged)
         emit intervalsIcuCredentialsChanged();
 
+    saveLoggingSettings();
+
     QDialog::accept();
 }
 
@@ -539,4 +554,161 @@ void DialogMainWindowConfig::setOnlineMode(bool isOnline)
 #ifndef GC_WASM_BUILD
     ui->groupBox_intervals->setVisible(isOnline);
 #endif
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Logging settings page
+// ─────────────────────────────────────────────────────────────────────────────
+
+QWidget *DialogMainWindowConfig::createLoggingPage()
+{
+    QWidget *page = new QWidget(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(page);
+    mainLayout->setContentsMargins(16, 16, 16, 16);
+    mainLayout->setSpacing(12);
+
+    // ── Log level ────────────────────────────────────────────────────────────
+    QGroupBox *levelGroup = new QGroupBox(tr("Log Level"), page);
+    QFormLayout *levelForm = new QFormLayout(levelGroup);
+
+    m_comboLogLevel = new QComboBox(levelGroup);
+    m_comboLogLevel->addItem(tr("Verbose"), static_cast<int>(LogLevel::Verbose));
+    m_comboLogLevel->addItem(tr("Debug"),   static_cast<int>(LogLevel::Debug));
+    m_comboLogLevel->addItem(tr("Info"),    static_cast<int>(LogLevel::Info));
+    m_comboLogLevel->addItem(tr("Warning"), static_cast<int>(LogLevel::Warn));
+    m_comboLogLevel->addItem(tr("Error"),   static_cast<int>(LogLevel::Error));
+    levelForm->addRow(tr("Minimum level:"), m_comboLogLevel);
+    mainLayout->addWidget(levelGroup);
+
+    // ── File logging ─────────────────────────────────────────────────────────
+    QGroupBox *fileGroup = new QGroupBox(tr("File Logging"), page);
+    QVBoxLayout *fileLayout = new QVBoxLayout(fileGroup);
+
+    m_checkFileLogging = new QCheckBox(tr("Write log to file"), fileGroup);
+    fileLayout->addWidget(m_checkFileLogging);
+
+    QHBoxLayout *pathRow = new QHBoxLayout();
+    m_editLogFilePath = new QLineEdit(fileGroup);
+    m_editLogFilePath->setReadOnly(false);
+    m_editLogFilePath->setPlaceholderText(tr("(default path)"));
+    m_btnBrowseLog = new QPushButton(tr("Browse…"), fileGroup);
+    m_btnBrowseLog->setFixedWidth(90);
+    pathRow->addWidget(m_editLogFilePath);
+    pathRow->addWidget(m_btnBrowseLog);
+    fileLayout->addLayout(pathRow);
+
+    m_btnOpenLog = new QPushButton(tr("Open log file"), fileGroup);
+    m_btnOpenLog->setFixedWidth(130);
+    fileLayout->addWidget(m_btnOpenLog, 0, Qt::AlignLeft);
+
+    // Platform-specific default path hint
+    const QString defaultLogDir =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    const QString defaultLogPath = defaultLogDir + QStringLiteral("/MaximumTrainer.log");
+
+#if defined(Q_OS_WIN)
+    // Double %% is intentional: tr() uses QString::arg() which treats % as
+    // a placeholder; %% produces the literal % character in the displayed text,
+    // so the user sees the correct Windows environment variable syntax %APPDATA%.
+    const QString osHint = tr("Windows default: %%APPDATA%%\\MaximumTrainer\\MaximumTrainer.log\n"
+                               "(%1)").arg(defaultLogPath);
+#elif defined(Q_OS_MAC)
+    const QString osHint = tr("macOS default: ~/Library/Application Support/MaximumTrainer/MaximumTrainer.log\n"
+                               "(%1)").arg(defaultLogPath);
+#else
+    const QString osHint = tr("Linux default: ~/.local/share/MaximumTrainer/MaximumTrainer.log\n"
+                               "(%1)").arg(defaultLogPath);
+#endif
+
+    m_labelLogPathHint = new QLabel(osHint, fileGroup);
+    m_labelLogPathHint->setWordWrap(true);
+    m_labelLogPathHint->setStyleSheet(QStringLiteral("color: #777; font-size: 11px;"));
+    fileLayout->addWidget(m_labelLogPathHint);
+
+    mainLayout->addWidget(fileGroup);
+    mainLayout->addStretch();
+
+    connect(m_checkFileLogging, &QCheckBox::toggled,
+            this, &DialogMainWindowConfig::onLogFileEnabledToggled);
+    connect(m_btnBrowseLog, &QPushButton::clicked,
+            this, &DialogMainWindowConfig::onBrowseLogFileClicked);
+    connect(m_btnOpenLog, &QPushButton::clicked,
+            this, &DialogMainWindowConfig::onOpenLogFileClicked);
+
+    loadLoggingSettings();
+    return page;
+}
+
+//---------------------------------------------------------------------------------------------
+void DialogMainWindowConfig::loadLoggingSettings()
+{
+    if (!m_comboLogLevel) return;
+
+    // Log level combo
+    const int currentLevel = static_cast<int>(Logger::instance().logLevel());
+    for (int i = 0; i < m_comboLogLevel->count(); ++i) {
+        if (m_comboLogLevel->itemData(i).toInt() == currentLevel) {
+            m_comboLogLevel->setCurrentIndex(i);
+            break;
+        }
+    }
+
+    // File logging
+    m_checkFileLogging->setChecked(Logger::instance().isFileLoggingEnabled());
+    m_editLogFilePath->setText(Logger::instance().logFilePath());
+
+    const bool enabled = m_checkFileLogging->isChecked();
+    m_editLogFilePath->setEnabled(enabled);
+    m_btnBrowseLog->setEnabled(enabled);
+    m_btnOpenLog->setEnabled(enabled && !Logger::instance().logFilePath().isEmpty());
+}
+
+//---------------------------------------------------------------------------------------------
+void DialogMainWindowConfig::saveLoggingSettings()
+{
+    if (!m_comboLogLevel) return;
+
+    const auto newLevel = static_cast<LogLevel>(
+        m_comboLogLevel->currentData().toInt());
+    Logger::instance().setLogLevel(newLevel);
+
+    const bool fileEnabled = m_checkFileLogging->isChecked();
+    const QString filePath = m_editLogFilePath->text().trimmed();
+    Logger::instance().setFileLogging(fileEnabled, filePath);
+    Logger::instance().saveConfig();
+}
+
+//---------------------------------------------------------------------------------------------
+void DialogMainWindowConfig::onLogFileEnabledToggled(bool checked)
+{
+    if (!m_editLogFilePath) return;
+    m_editLogFilePath->setEnabled(checked);
+    m_btnBrowseLog->setEnabled(checked);
+    m_btnOpenLog->setEnabled(checked && !m_editLogFilePath->text().isEmpty());
+}
+
+//---------------------------------------------------------------------------------------------
+void DialogMainWindowConfig::onBrowseLogFileClicked()
+{
+    const QString current = m_editLogFilePath->text().trimmed();
+    const QString suggested = current.isEmpty()
+        ? QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+              + QStringLiteral("/MaximumTrainer.log")
+        : current;
+
+    const QString path = QFileDialog::getSaveFileName(
+        this, tr("Choose log file location"), suggested,
+        tr("Log files (*.log);;All files (*)"));
+    if (!path.isEmpty()) {
+        m_editLogFilePath->setText(path);
+        m_btnOpenLog->setEnabled(true);
+    }
+}
+
+//---------------------------------------------------------------------------------------------
+void DialogMainWindowConfig::onOpenLogFileClicked()
+{
+    const QString path = m_editLogFilePath->text().trimmed();
+    if (!path.isEmpty())
+        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }

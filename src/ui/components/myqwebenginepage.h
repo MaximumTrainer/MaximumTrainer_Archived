@@ -2,7 +2,9 @@
 #define MYQWEBENGINEPAGE_H
 
 #include <QWebEnginePage>
+#include <QWebEngineCertificateError>
 #include <QDesktopServices>
+#include "logger.h"
 
 class MyQWebEnginePage : public QWebEnginePage
 {
@@ -35,6 +37,35 @@ public:
     void setExternalList(QStringList lst) {
         this->listExternalLink = lst;
     }
+
+protected:
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    /// In Qt 6 the certificate-error signal is preferred; this override
+    /// provides a fallback log for builds that still use the virtual.
+    void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level,
+                                  const QString &message,
+                                  int lineNumber,
+                                  const QString &sourceID) override
+    {
+        if (level == QWebEnginePage::ErrorMessageLevel) {
+            LOG_WARN("WebEngine",
+                     QStringLiteral("JS error [%1:%2] %3")
+                     .arg(sourceID).arg(lineNumber).arg(message));
+        } else {
+            LOG_DEBUG("WebEngine",
+                      QStringLiteral("JS [%1:%2] %3")
+                      .arg(sourceID).arg(lineNumber).arg(message));
+        }
+    }
+#else
+    bool certificateError(const QWebEngineCertificateError &error) override
+    {
+        LOG_WARN("WebEngine",
+                 QStringLiteral("SSL certificate error for %1: %2")
+                 .arg(error.url().toDisplayString(), error.errorDescription()));
+        return false; // reject — do not bypass certificate errors
+    }
+#endif
 
 private:
     QStringList listExternalLink;

@@ -30,6 +30,7 @@
 #include "dialogconfig.h"
 #include "dialogcalibrate.h"
 #include "dialogcalibratepm.h"
+#include "logger.h"
 
 
 
@@ -611,16 +612,16 @@ WorkoutDialog::WorkoutDialog(Workout workout,  QList<Radio> lstRadio, QVector<Us
                 connect(radioPlayer, SIGNAL(paused()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
                 connect(radioPlayer, SIGNAL(stopped()), ui->widget_topMenu, SLOT(radioStoppedPlaying()) );
             } catch (const std::exception &e) {
-                qWarning() << "WorkoutDialog: VLC initialization failed:" << e.what();
+                LOG_WARN("WorkoutDialog", QStringLiteral("VLC initialization failed: ") + QString::fromStdString(e.what()));
                 delete radioPlayer;
                 radioPlayer = nullptr;
             } catch (...) {
-                qWarning() << "WorkoutDialog: VLC initialization failed (unknown exception)";
+                LOG_WARN("WorkoutDialog", QStringLiteral("VLC initialization failed (unknown exception)"));
                 delete radioPlayer;
                 radioPlayer = nullptr;
             }
         } else {
-            qWarning() << "WorkoutDialog: libvlc not found; internet radio player disabled";
+            LOG_WARN("WorkoutDialog", QStringLiteral("libvlc not found; internet radio player disabled"));
         }
     }
 #endif
@@ -1594,7 +1595,7 @@ void WorkoutDialog::onBleConnectionError(const QString &errorString)
     // On WASM the DOM overlay (#ble-reconnect-overlay) already provides the
     // Reconnect button; this slot handles the C++-side notification.
     // Pause the workout so the rider is not penalised while reconnecting.
-    qWarning() << "[WorkoutDialog] BLE connection error:" << errorString;
+    LOG_WARN("WorkoutDialog", QStringLiteral("BLE connection error: ") + errorString);
     if (isWorkoutStarted && !isWorkoutPaused) {
         start_or_pause_workout(); // pause
     }
@@ -2774,6 +2775,9 @@ void WorkoutDialog::slotGetSensorListFinished() {
     // error, retry request
     else {
         if (numberFailGetListSensor > 3) {
+            LOG_WARN("WorkoutDialog",
+                     QStringLiteral("getSensorList: 3 retries exhausted — closing dialog: ")
+                     + replyGetListSensor->errorString());
             QMessageBox msgBox(this);
             msgBox.setIcon(QMessageBox::Warning);
             msgBox.setText(tr("<font color=black>Could not retrieve sensors from our server<br/>"
@@ -2786,7 +2790,10 @@ void WorkoutDialog::slotGetSensorListFinished() {
         }
         else {
             numberFailGetListSensor++;
-            qDebug() << "slotGetSensorListFinished error" << replyGetListSensor->errorString();
+            LOG_WARN("WorkoutDialog",
+                     QStringLiteral("getSensorList error (attempt ")
+                     + QString::number(numberFailGetListSensor) + QStringLiteral("): ")
+                     + replyGetListSensor->errorString());
             replyGetListSensor = SensorDAO::getActiveSensorList(account->id);
             connect(replyGetListSensor, SIGNAL(finished()), this, SLOT(slotGetSensorListFinished()) );
             return;
@@ -2976,6 +2983,9 @@ void WorkoutDialog::slotPutAccountFinished() {
     // error, retry request
     else {
         if (numberFailCheckSessionExpired > 3) {
+            LOG_WARN("WorkoutDialog",
+                     QStringLiteral("putAccount: 3 retries exhausted — closing dialog: ")
+                     + replyPutAccountToCheckSessionExpired->errorString());
             QMessageBox msgBox(this);
             msgBox.setIcon(QMessageBox::Warning);
             msgBox.setText(tr("<font color=black>Could not retrieve your session data.<br/>"
@@ -2988,7 +2998,10 @@ void WorkoutDialog::slotPutAccountFinished() {
         }
         else {
             numberFailCheckSessionExpired++;
-            qDebug() << "postDataAccountFinished error" << replyPutAccountToCheckSessionExpired->errorString();
+            LOG_WARN("WorkoutDialog",
+                     QStringLiteral("putAccount error (attempt ")
+                     + QString::number(numberFailCheckSessionExpired) + QStringLiteral("): ")
+                     + replyPutAccountToCheckSessionExpired->errorString());
             replyPutAccountToCheckSessionExpired = UserDAO::putAccount(account);
             connect(replyPutAccountToCheckSessionExpired, SIGNAL(finished()), this, SLOT(slotPutAccountFinished()) );
             return;

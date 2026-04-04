@@ -13,6 +13,7 @@
 #include "account.h"
 #include "util.h"
 #include "importerworkoutzwo.h"
+#include "logger.h"
 #include "xmlutil.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -80,7 +81,7 @@ void TabIntervalsIcu::refreshCredentials()
 #ifndef GC_WASM_BUILD
     auto *account = qApp->property("Account").value<Account *>();
     if (!account) {
-        qWarning() << "TabIntervalsIcu::refreshCredentials: Account property not available";
+        LOG_WARN("TabIntervalsIcu", QStringLiteral("refreshCredentials: Account property not available"));
         return;
     }
 
@@ -269,8 +270,10 @@ void TabIntervalsIcu::onCalendarFetchFinished()
         return;
 
     if (m_calendarReply->error() != QNetworkReply::NoError) {
-        setStatus(tr("Error fetching calendar: %1")
-                      .arg(m_calendarReply->errorString()));
+        const QString errMsg = m_calendarReply->errorString();
+        LOG_WARN("TabIntervalsIcu",
+                 QStringLiteral("Calendar fetch failed: ") + errMsg);
+        setStatus(tr("Error fetching calendar: %1").arg(errMsg));
         m_calendarReply->deleteLater();
         m_calendarReply = nullptr;
         return;
@@ -303,8 +306,10 @@ void TabIntervalsIcu::onWorkoutDownloadFinished()
         return;
 
     if (m_downloadReply->error() != QNetworkReply::NoError) {
-        setStatus(tr("Error downloading workout: %1")
-                      .arg(m_downloadReply->errorString()));
+        const QString errMsg = m_downloadReply->errorString();
+        LOG_WARN("TabIntervalsIcu",
+                 QStringLiteral("Workout download failed: ") + errMsg);
+        setStatus(tr("Error downloading workout: %1").arg(errMsg));
         m_downloadReply->deleteLater();
         m_downloadReply = nullptr;
         // Restore selection mode on error too
@@ -464,6 +469,8 @@ void TabIntervalsIcu::onSyncCalendarFetched()
 
     if (m_syncCalendarReply->error() != QNetworkReply::NoError) {
         const QString err = m_syncCalendarReply->errorString();
+        LOG_WARN("TabIntervalsIcu",
+                 QStringLiteral("Sync calendar fetch failed: ") + err);
         m_syncCalendarReply->deleteLater();
         m_syncCalendarReply = nullptr;
         setBusy(false);
@@ -529,9 +536,11 @@ void TabIntervalsIcu::onSyncWorkoutDownloaded()
 
     const QNetworkReply::NetworkError err = m_syncDownloadReply->error();
     if (err != QNetworkReply::NoError) {
-        qWarning() << "TabIntervalsIcu sync download error for"
-                   << m_pendingSyncWorkoutName << ":" << m_syncDownloadReply->errorString();
-        // Log and continue with remaining queue rather than aborting the whole sync
+        LOG_WARN("TabIntervalsIcu",
+                 QStringLiteral("Sync download failed for workout '")
+                 + m_pendingSyncWorkoutName + QStringLiteral("': ")
+                 + m_syncDownloadReply->errorString());
+        // Continue with remaining queue rather than aborting the whole sync
         m_syncDownloadReply->deleteLater();
         m_syncDownloadReply = nullptr;
         downloadNextSyncWorkout();

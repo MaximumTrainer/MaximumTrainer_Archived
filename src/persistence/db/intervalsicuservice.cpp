@@ -11,6 +11,7 @@
 #include <QFileInfo>
 #include <QMimeDatabase>
 #include <QDebug>
+#include "logger.h"
 
 static const QString INTERVALS_BASE_URL = "https://intervals.icu/api/v1";
 
@@ -47,6 +48,10 @@ QNetworkReply *IntervalsIcuService::testConnection()
 {
     auto *mgr = qApp->property("NetworkManagerWS")
                     .value<QNetworkAccessManager *>();
+    if (!mgr) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("testConnection: NetworkManagerWS not available"));
+        return nullptr;
+    }
     return mgr->get(buildRequest("/athlete/" + m_athleteId));
 }
 
@@ -61,6 +66,10 @@ QNetworkReply *IntervalsIcuService::fetchCalendar(const QDate &oldest,
 
     auto *mgr = qApp->property("NetworkManagerWS")
                     .value<QNetworkAccessManager *>();
+    if (!mgr) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("fetchCalendar: NetworkManagerWS not available"));
+        return nullptr;
+    }
     return mgr->get(buildRequest(path));
 }
 
@@ -73,6 +82,10 @@ QNetworkReply *IntervalsIcuService::downloadWorkoutZwo(const QString &workoutId)
 
     auto *mgr = qApp->property("NetworkManagerWS")
                     .value<QNetworkAccessManager *>();
+    if (!mgr) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("downloadWorkoutZwo: NetworkManagerWS not available"));
+        return nullptr;
+    }
     return mgr->get(buildRequest(path));
 }
 
@@ -112,7 +125,8 @@ QNetworkReply *IntervalsIcuService::uploadActivity(const QString &filePath,
                            .arg(QFileInfo(filePath).fileName()));
     QFile *file = new QFile(filePath);
     if (!file->open(QIODevice::ReadOnly)) {
-        qWarning() << "IntervalsIcuService::uploadActivity: cannot open" << filePath;
+        LOG_WARN("IntervalsIcuService",
+                 QStringLiteral("uploadActivity: cannot open file: ") + filePath);
         delete file;
         delete multiPart;
         return nullptr;
@@ -123,6 +137,10 @@ QNetworkReply *IntervalsIcuService::uploadActivity(const QString &filePath,
 
     auto *mgr = qApp->property("NetworkManagerWS")
                     .value<QNetworkAccessManager *>();
+    if (!mgr) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("uploadActivity: NetworkManagerWS not available"));
+        return nullptr;
+    }
     QNetworkReply *reply = mgr->post(request, multiPart);
     multiPart->setParent(reply);
     return reply;
@@ -138,13 +156,13 @@ IntervalsIcuService::parseEvents(const QByteArray &data)
     QJsonParseError err;
     const QJsonDocument doc = QJsonDocument::fromJson(data, &err);
     if (err.error != QJsonParseError::NoError) {
-        qWarning() << "IntervalsIcuService::parseEvents JSON error:"
-                   << err.errorString();
+        LOG_WARN("IntervalsIcuService",
+                 QStringLiteral("parseEvents: JSON parse error: ") + err.errorString());
         return events;
     }
 
     if (!doc.isArray()) {
-        qWarning() << "IntervalsIcuService::parseEvents: expected JSON array";
+        LOG_WARN("IntervalsIcuService", QStringLiteral("parseEvents: expected JSON array"));
         return events;
     }
 

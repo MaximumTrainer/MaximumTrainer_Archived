@@ -13,6 +13,7 @@
 #include <QDir>
 
 #include "util.h"
+#include "logger.h"
 #include "environnement.h"
 #include "userdao.h"
 #include "savingwindow.h"
@@ -314,7 +315,8 @@ void MainWindow::slotFinishedGetRadio() {
         replyRadio->deleteLater();
     }
     else {
-        qDebug() << "Problem getting radio list! retry again..." << replyRadio->errorString();
+        LOG_WARN("MainWindow",
+                 QStringLiteral("Radio list fetch failed: ") + replyRadio->errorString());
         ui->widget_bottomMenu->setGeneralMessage("Error retrieving data from Server..." + replyRadio->errorString(), 7000);
         replyRadio = RadioDAO::getAllRadios();
         connect(replyRadio, SIGNAL(finished()), this, SLOT(slotFinishedGetRadio()));
@@ -392,7 +394,7 @@ void MainWindow::onIntervalsIcuWorkoutDownloaded() {
 
     const QNetworkReply::NetworkError err = replyIntervalsIcuZwo->error();
     if (err != QNetworkReply::NoError) {
-        qWarning() << "IntervalsIcu ZWO download error:" << replyIntervalsIcuZwo->errorString();
+        LOG_WARN("MainWindow", QStringLiteral("Intervals.icu ZWO download error: ") + replyIntervalsIcuZwo->errorString());
         ui->widget_bottomMenu->setGeneralMessage(
             tr("Could not download workout from Intervals.icu: %1")
                 .arg(replyIntervalsIcuZwo->errorString()), 5000);
@@ -520,9 +522,9 @@ void MainWindow::goToWorkoutNameFilterFromIntervals(const QString &workoutName) 
                 return;
             }
         }
-        qWarning() << "goToWorkoutNameFilterFromIntervals: ZWO parse/save failed for" << zwoPath;
+        LOG_WARN("MainWindow", QStringLiteral("goToWorkoutNameFilterFromIntervals: ZWO parse/save failed for ") + zwoPath);
     } else {
-        qWarning() << "goToWorkoutNameFilterFromIntervals: could not open ZWO file" << zwoPath;
+        LOG_WARN("MainWindow", QStringLiteral("goToWorkoutNameFilterFromIntervals: could not open ZWO file ") + zwoPath);
     }
 
     // Fallback: refresh list even if parsing failed
@@ -620,7 +622,7 @@ void MainWindow::createWebChannelZone() {
 
     QFile webChannelJsFile(":/qtwebchannel/qwebchannel.js");
     if(  !webChannelJsFile.open(QIODevice::ReadOnly) ) {
-        qDebug() << QString("Couldn't open qwebchannel.js file: %1").arg(webChannelJsFile.errorString());
+        LOG_WARN("MainWindow", QStringLiteral("Could not open qwebchannel.js: ") + webChannelJsFile.errorString());
     }
     else {
         qDebug() << "OK webEngineProfile";
@@ -660,7 +662,7 @@ void MainWindow::createWebChannelPlan() {
 
     QFile webChannelJsFile(":/qtwebchannel/qwebchannel.js");
     if(  !webChannelJsFile.open(QIODevice::ReadOnly) ) {
-        qDebug() << QString("Couldn't open qwebchannel.js file: %1").arg(webChannelJsFile.errorString());
+        LOG_WARN("MainWindow", QStringLiteral("Could not open qwebchannel.js: ") + webChannelJsFile.errorString());
     }
     else {
         qDebug() << "OK webEngineProfile";
@@ -703,7 +705,7 @@ void MainWindow::createWebChannelSettings() {
 
     QFile webChannelJsFile(":/qtwebchannel/qwebchannel.js");
     if(  !webChannelJsFile.open(QIODevice::ReadOnly) ) {
-        qDebug() << QString("Couldn't open qwebchannel.js file: %1").arg(webChannelJsFile.errorString());
+        LOG_WARN("MainWindow", QStringLiteral("Could not open qwebchannel.js: ") + webChannelJsFile.errorString());
     }
     else {
         qDebug() << "OK webEngineProfile";
@@ -740,7 +742,7 @@ void MainWindow::createWebChannelStudio() {
 
     QFile webChannelJsFile(":/qtwebchannel/qwebchannel.js");
     if(  !webChannelJsFile.open(QIODevice::ReadOnly) ) {
-        qDebug() << QString("Couldn't open qwebchannel.js file: %1").arg(webChannelJsFile.errorString());
+        LOG_WARN("MainWindow", QStringLiteral("Could not open qwebchannel.js: ") + webChannelJsFile.errorString());
     }
     else {
         qDebug() << "OK webEngineProfile";
@@ -1267,12 +1269,14 @@ void MainWindow::postDataAccountFinished() {
     else {
         if (saveAccountTry > 5) {
             savingWindow.setMessage("Could not save on server");
-            qDebug() << "could not save 5 time in a row, leaving!";
+            LOG_WARN("MainWindow", QStringLiteral("putAccount: 5 retries exhausted — giving up"));
             loop.quit();
         }
         else {
             saveAccountTry++;
-            qDebug() << "postDataAccountFinished error" << replySaveAccount->errorString();
+            LOG_WARN("MainWindow",
+                     QStringLiteral("putAccount error (attempt ") + QString::number(saveAccountTry)
+                     + QStringLiteral("): ") + replySaveAccount->errorString());
             replySaveAccount = UserDAO::putAccount(account);
             connect(replySaveAccount, SIGNAL(finished()), this, SLOT(postDataAccountFinished()) );
         }
@@ -1700,7 +1704,6 @@ void MainWindow::slotSelfLoopsUploadFinished()
         qDebug() << "no error selfLoops!";
         QByteArray arrayData =  replySelfLoopsUpload->readAll();
         QString msgReply(arrayData);
-        qDebug() << "data is:" << msgReply;
 
         if (msgReply.contains("Success", Qt::CaseInsensitive)) {
             ui->widget_bottomMenu->setGeneralMessage(msgReady, 5000);
@@ -1717,7 +1720,8 @@ void MainWindow::slotSelfLoopsUploadFinished()
 
     }
     else {
-        qDebug() << replySelfLoopsUpload->errorString();
+        LOG_WARN("MainWindow",
+                 QStringLiteral("SelfLoops upload failed: ") + replySelfLoopsUpload->errorString());
         ui->widget_bottomMenu->setGeneralMessage("SelfLoops : " + replySelfLoopsUpload->errorString(), 5000);
     }
     replySelfLoopsUpload->deleteLater();
@@ -1746,8 +1750,10 @@ void MainWindow::slotIntervalsIcuUploadFinished()
             ui->widget_bottomMenu->setGeneralMessage(
                 "Intervals.icu: " + replyIntervalsIcuUpload->errorString(), 5000);
         }
-        qWarning() << "Intervals.icu upload error:" << replyIntervalsIcuUpload->errorString()
-                   << "HTTP" << httpStatus;
+        LOG_WARN("MainWindow",
+                 QStringLiteral("Intervals.icu upload failed: ")
+                 + replyIntervalsIcuUpload->errorString()
+                 + QStringLiteral(" HTTP ") + QString::number(httpStatus));
     }
     replyIntervalsIcuUpload->deleteLater();
 }
@@ -1783,7 +1789,6 @@ void MainWindow::slotTrainingPeaksRefreshFinished()
     if (replyTrainingPeaksRefreshStatus->error() == QNetworkReply::NoError) {
         qDebug() << "no error TP!";
         QByteArray arrayData =  replyTrainingPeaksRefreshStatus->readAll();
-        qDebug() << "response is :" << arrayData;
         Util::parseJsonTPObject(QString(arrayData));
 
         replyTrainingPeaksPostFile = ExtRequest::trainingPeaksUploadFile(account->training_peaks_access_token, account->training_peaks_public_upload,
@@ -1791,7 +1796,9 @@ void MainWindow::slotTrainingPeaksRefreshFinished()
         connect(replyTrainingPeaksPostFile, SIGNAL(finished()), this, SLOT(slotTrainingPeaksUploadFinished()) );
     }
     else {
-        qDebug() << replyTrainingPeaksRefreshStatus->errorString();
+        LOG_WARN("MainWindow",
+                 QStringLiteral("TrainingPeaks token refresh failed: ")
+                 + replyTrainingPeaksRefreshStatus->errorString());
         ui->widget_bottomMenu->setGeneralMessage("TrainingPeaks : " + replyTrainingPeaksRefreshStatus->errorString(), 5000);
     }
     replyTrainingPeaksRefreshStatus->deleteLater();
@@ -1811,17 +1818,16 @@ void MainWindow::slotTrainingPeaksUploadFinished()
     if (replyTrainingPeaksPostFile->error() == QNetworkReply::NoError) {
         qDebug() << "no error slotTrainingPeaksUploadFinished!";
         QByteArray arrayData =  replyTrainingPeaksPostFile->readAll();
-        qDebug() << arrayData;
         ui->widget_bottomMenu->setGeneralMessage(msgReady, 5000);
 
     }
     else {
-        qDebug() << replyTrainingPeaksPostFile->errorString();
+        LOG_WARN("MainWindow",
+                 QStringLiteral("TrainingPeaks upload failed: ")
+                 + replyTrainingPeaksPostFile->errorString());
         ui->widget_bottomMenu->setGeneralMessage("TrainingPeaks : " + replyTrainingPeaksPostFile->errorString(), 5000);
     }
     replyTrainingPeaksPostFile->deleteLater();
-
-
 
 }
 
@@ -1844,12 +1850,11 @@ void MainWindow::slotStravaUploadFinished()
         timerCheckUploadStatus->start(3000);
     }
     else {
-        qDebug() << replyStravaUpload->errorString();
+        LOG_WARN("MainWindow",
+                 QStringLiteral("Strava upload failed: ") + replyStravaUpload->errorString());
         ui->widget_bottomMenu->setGeneralMessage("Strava : " + replyStravaUpload->errorString(), 5000);
     }
     replyStravaUpload->deleteLater();
-
-
 
 }
 
@@ -1899,7 +1904,9 @@ void MainWindow::slotStravaUploadStatusFinished() {
     }
     else {
         timerCheckUploadStatus->stop();
-        qDebug() << replyStravaUploadStatus->errorString();
+        LOG_WARN("MainWindow",
+                 QStringLiteral("Strava upload status check failed: ")
+                 + replyStravaUploadStatus->errorString());
         ui->widget_bottomMenu->setGeneralMessage("Strava : " + replyStravaUploadStatus->errorString(), 5000);
     }
     replyStravaUploadStatus->deleteLater();

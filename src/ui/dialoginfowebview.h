@@ -43,9 +43,14 @@ signals:
 
 private slots:
     void pageLoaded(bool ok);
+    void onLoadStarted();
     /// Handles the direct token-exchange reply when the app falls back to
     /// exchanging the authorization code client-side.
     void slotIntervalsTokenExchangeFinished();
+
+private:
+    /// Build a user-friendly error page HTML for OAuth flow failures.
+    QString buildErrorPageHtml(const QString &failedUrl) const;
 
 private:
     Ui::DialogInfoWebView *ui;
@@ -59,6 +64,11 @@ private:
 
     /// Pending reply for the client-side Intervals.icu token exchange (fallback).
     QNetworkReply *m_intervalsTokenReply = nullptr;
+
+    /// Guard flag set while an error-page HTML is being loaded into the webview
+    /// to prevent the resulting pageLoaded(true) callback from re-entering the
+    /// normal OAuth-callback handling logic.
+    bool m_showingErrorPage = false;
 };
 
 #endif // DIALOGINFOWEBVIEW_H

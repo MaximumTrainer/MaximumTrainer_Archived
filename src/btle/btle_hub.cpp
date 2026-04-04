@@ -1,7 +1,7 @@
 #include "btle_hub.h"
 #include "btle_uuids.h"
 
-#include <QDebug>
+#include "logger.h"
 #include <QLowEnergyDescriptor>
 
 // Standard BLE service and characteristic UUIDs (defined locally in the TU)
@@ -202,13 +202,13 @@ void BtleHub::simulateNotification(quint16 characteristicUuid, const QByteArray 
 // ─────────────────────────────────────────────────────────────────────────────
 void BtleHub::onControllerConnected()
 {
-    qDebug() << "BtleHub: device connected, discovering services...";
+    LOG_INFO("BtleHub", QStringLiteral("Device connected — discovering services"));
     m_controller->discoverServices();
 }
 
 void BtleHub::onControllerDisconnected()
 {
-    qDebug() << "BtleHub: device disconnected";
+    LOG_INFO("BtleHub", QStringLiteral("Device disconnected"));
     m_cscStopTimer->stop();
     emit deviceDisconnected();
 
@@ -218,20 +218,23 @@ void BtleHub::onControllerDisconnected()
 
 void BtleHub::onReconnectTimer()
 {
-    qDebug() << "BtleHub: reconnect attempt" << (m_reconnectAttempts + 1);
+    LOG_INFO("BtleHub", QStringLiteral("Reconnect attempt ") + QString::number(m_reconnectAttempts + 1));
     ++m_reconnectAttempts;
     connectToDevice(m_reconnectDevice);
 }
 
 void BtleHub::onControllerError(QLowEnergyController::Error error)
 {
-    qDebug() << "BtleHub: controller error" << error;
-    emit connectionError(m_controller->errorString());
+    const QString errStr = m_controller->errorString();
+    LOG_WARN("BtleHub",
+             QStringLiteral("BLE controller error ") + QString::number(static_cast<int>(error))
+             + QStringLiteral(": ") + errStr);
+    emit connectionError(errStr);
 }
 
 void BtleHub::onServiceDiscovered(const QBluetoothUuid &serviceUuid)
 {
-    qDebug() << "BtleHub: service discovered" << serviceUuid;
+    LOG_DEBUG("BtleHub", QStringLiteral("Service discovered: ") + serviceUuid.toString());
 
     if (serviceUuid == BtleUuid::HeartRate) {
         m_hrService = m_controller->createServiceObject(serviceUuid, this);
@@ -262,7 +265,7 @@ void BtleHub::onServiceDiscovered(const QBluetoothUuid &serviceUuid)
 
 void BtleHub::onDiscoveryFinished()
 {
-    qDebug() << "BtleHub: service discovery finished";
+    LOG_INFO("BtleHub", QStringLiteral("Service discovery finished"));
     emit serviceDiscoveryFinished();
     emit deviceConnected();
 }

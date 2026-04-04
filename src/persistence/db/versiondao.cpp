@@ -9,8 +9,12 @@
 QNetworkReply* VersionDAO::getVersion() {
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("VersionDAO", QStringLiteral("getVersion: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
-    LOG_DEBUG("VersionDAO", QStringLiteral("GET ") + urlGitHubReleasesApi);
+    LOG_INFO("VersionDAO", QStringLiteral("GET ") + urlGitHubReleasesApi);
 
     QNetworkRequest request;
     request.setUrl(QUrl(urlGitHubReleasesApi));
