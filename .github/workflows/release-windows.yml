@@ -29,6 +29,8 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -325,6 +327,8 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Install Qt (with Bluetooth)
       uses: jurplel/install-qt-action@v3
@@ -379,6 +383,8 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3

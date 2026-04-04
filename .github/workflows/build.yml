@@ -46,6 +46,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set up Emscripten
       uses: mymindstorm/setup-emsdk@v14
@@ -147,6 +149,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Install Node.js
       uses: actions/setup-node@v4
