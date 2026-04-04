@@ -3,6 +3,9 @@
 
 #include <QWebEnginePage>
 #include <QDesktopServices>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QWebEngineCertificateError>
+#endif
 #include "logger.h"
 
 class MyQWebEnginePage : public QWebEnginePage
@@ -57,7 +60,6 @@ protected:
         }
     }
 #else
-#   include <QWebEngineCertificateError>
     bool certificateError(const QWebEngineCertificateError &error) override
     {
         LOG_WARN("WebEngine",
