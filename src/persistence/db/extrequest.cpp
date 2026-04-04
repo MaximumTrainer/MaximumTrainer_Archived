@@ -353,6 +353,8 @@ QNetworkReply* ExtRequest::selfloopsUploadFile(QString email, QString password, 
     QFile *file = new QFile(pathToZip);
     if (!file->open(QIODevice::ReadOnly)) {
         LOG_WARN("ExtRequest", QStringLiteral("selfloopsUploadFile: cannot open file: ") + pathToZip);
+        delete file;
+        delete multiPart;
         return nullptr;
     }
 

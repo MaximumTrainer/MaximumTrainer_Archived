@@ -660,7 +660,7 @@ void DialogMainWindowConfig::loadLoggingSettings()
     const bool enabled = m_checkFileLogging->isChecked();
     m_editLogFilePath->setEnabled(enabled);
     m_btnBrowseLog->setEnabled(enabled);
-    m_btnOpenLog->setEnabled(enabled && !Logger::instance().logFilePath().isEmpty());
+    m_btnOpenLog->setEnabled(enabled);
 }
 
 //---------------------------------------------------------------------------------------------
@@ -684,7 +684,7 @@ void DialogMainWindowConfig::onLogFileEnabledToggled(bool checked)
     if (!m_editLogFilePath) return;
     m_editLogFilePath->setEnabled(checked);
     m_btnBrowseLog->setEnabled(checked);
-    m_btnOpenLog->setEnabled(checked && !m_editLogFilePath->text().isEmpty());
+    m_btnOpenLog->setEnabled(checked);
 }
 
 //---------------------------------------------------------------------------------------------
@@ -708,7 +708,11 @@ void DialogMainWindowConfig::onBrowseLogFileClicked()
 //---------------------------------------------------------------------------------------------
 void DialogMainWindowConfig::onOpenLogFileClicked()
 {
-    const QString path = m_editLogFilePath->text().trimmed();
-    if (!path.isEmpty())
-        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+    QString path = m_editLogFilePath->text().trimmed();
+    if (path.isEmpty()) {
+        // No explicit path set — resolve the same default the Logger would use
+        path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+               + QStringLiteral("/MaximumTrainer.log");
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }

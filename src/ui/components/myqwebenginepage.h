@@ -40,8 +40,8 @@ public:
 
 protected:
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    /// In Qt 6 the certificate-error signal is preferred; this override
-    /// provides a fallback log for builds that still use the virtual.
+    /// In Qt 6, override the JavaScript console message handler to log
+    /// console output, including errors, with source and line information.
     void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level,
                                   const QString &message,
                                   int lineNumber,

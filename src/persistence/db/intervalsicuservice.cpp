@@ -139,6 +139,7 @@ QNetworkReply *IntervalsIcuService::uploadActivity(const QString &filePath,
                     .value<QNetworkAccessManager *>();
     if (!mgr) {
         LOG_WARN("IntervalsIcuService", QStringLiteral("uploadActivity: NetworkManagerWS not available"));
+        delete multiPart; // also deletes file (parented to multiPart)
         return nullptr;
     }
     QNetworkReply *reply = mgr->post(request, multiPart);
