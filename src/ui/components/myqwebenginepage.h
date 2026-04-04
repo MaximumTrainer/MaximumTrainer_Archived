@@ -41,6 +41,7 @@ public:
     }
 
 protected:
+#ifndef GC_WASM_BUILD
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     /// In Qt 6, override the JavaScript console message handler to log
     /// console output, including errors, with source and line information.
@@ -68,6 +69,7 @@ protected:
         return false; // reject — do not bypass certificate errors
     }
 #endif
+#endif // GC_WASM_BUILD
 
 private:
     QStringList listExternalLink;
