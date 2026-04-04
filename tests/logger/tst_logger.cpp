@@ -17,6 +17,7 @@
 #include <QSettings>
 #include <QRegularExpression>
 #include <QDir>
+#include <QScopeGuard>
 
 #include "../../src/app/logger.h"
 
@@ -359,37 +360,44 @@ void TstLogger::testConfig_saveAndLoad()
 
 void TstLogger::testConfig_fileLoggingEnabledByDefault()
 {
-    // Build a QSettings file that has NO file_enabled key to simulate a
-    // fresh install.  loadConfig() must default to enabled == true.
-    QTemporaryFile iniFile;
-    iniFile.setFileTemplate(QDir::tempPath() + QStringLiteral("/logger_default_XXXXXX.ini"));
-    QVERIFY(iniFile.open());
-    const QString iniPath = iniFile.fileName();
-    iniFile.close();
+    // RAII guard: restore Logger's file-logging state unconditionally so that
+    // a QVERIFY failure in this test cannot leave the Logger in a broken state
+    // and cause subsequent tests to behave unexpectedly.
+    const bool savedEnabled = Logger::instance().isFileLoggingEnabled();
+    const QString savedPath = Logger::instance().logFilePath();
+    auto loggerGuard = qScopeGuard([&] {
+        Logger::instance().setFileLogging(savedEnabled, savedPath);
+    });
 
-    {
-        QSettings s(iniPath, QSettings::IniFormat);
+    // RAII guard: remove (or restore) the logging/file_enabled QSettings key.
+    // This simulates a fresh install where no user preference has been saved.
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("logging"));
+    const QVariant prevValue = settings.value(QStringLiteral("file_enabled"));
+    settings.remove(QStringLiteral("file_enabled"));
+    settings.endGroup();
+    settings.sync();
+
+    auto settingsGuard = qScopeGuard([&] {
+        QSettings s;
         s.beginGroup(QStringLiteral("logging"));
-        // Only write the level; deliberately omit file_enabled so the default kicks in.
-        s.setValue(QStringLiteral("level"), static_cast<int>(LogLevel::Info));
+        if (prevValue.isValid())
+            s.setValue(QStringLiteral("file_enabled"), prevValue);
+        else
+            s.remove(QStringLiteral("file_enabled"));
         s.endGroup();
-    }
+        s.sync();
+    });
 
-    const bool savedFileEnabled = Logger::instance().isFileLoggingEnabled();
-    const QString savedFilePath = Logger::instance().logFilePath();
-    Logger::instance().setFileLogging(false);   // start from a known disabled state
+    // Start from a known-disabled state so we can detect whether
+    // loadConfig() actually enables file logging.
+    Logger::instance().setFileLogging(false);
 
-    // Read the value that loadConfig() would use for file_enabled.
-    QSettings ws(iniPath, QSettings::IniFormat);
-    ws.beginGroup(QStringLiteral("logging"));
-    const bool defaultFileEnabled = ws.value(QStringLiteral("file_enabled"), true).toBool();
-    ws.endGroup();
+    // Exercise the real loadConfig() path — it must default to enabled.
+    Logger::instance().loadConfig();
 
-    QVERIFY2(defaultFileEnabled,
-             "file_enabled default must be true so logging is on for fresh installs");
-
-    // Restore previous file logging state.
-    Logger::instance().setFileLogging(savedFileEnabled, savedFilePath);
+    QVERIFY2(Logger::instance().isFileLoggingEnabled(),
+             "loadConfig() must enable file logging when file_enabled is absent from settings");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
