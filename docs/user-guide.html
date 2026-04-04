@@ -399,6 +399,7 @@
         <li><a href="#settings">Settings</a></li>
         <li><a href="#studio-mode">Studio Mode</a></li>
         <li><a href="#achievements">Achievements</a></li>
+        <li><a href="#log-files">Log Files &amp; Troubleshooting</a></li>
         <li><a href="#tips">Tips &amp; Shortcuts</a></li>
         <li><a href="#platform-requirements">Platform Requirements</a></li>
       </ul>
@@ -1027,6 +1028,16 @@
                 <td><strong>Language</strong></td>
                 <td>Switch the UI language (requires a restart)</td>
               </tr>
+              <tr>
+                <td><strong>Logging</strong></td>
+                <td>
+                  Set the minimum log level (Verbose / Debug / Info / Warn / Error), enable or
+                  disable writing to a log file, choose the log file path, and open the current log
+                  file directly from the dialog. See
+                  <a href="#log-files">Log Files &amp; Troubleshooting</a> for OS-specific default
+                  paths.
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1081,6 +1092,119 @@
           <strong>Motivation tip:</strong> Achievements are evaluated against your full activity
           history, so every completed workout counts — even if you don't hit the power targets
           perfectly.
+        </div>
+      </section>
+
+      <!-- ── Log Files & Troubleshooting ──────────────────────── -->
+      <section class="guide-section" id="log-files">
+        <h2>🗒️ Log Files &amp; Troubleshooting</h2>
+        <p>
+          Maximum Trainer writes diagnostic messages to a log file whenever file logging is enabled
+          in <strong>Preferences → Preferences &amp; Profile → Logging</strong>. The log captures
+          all network request errors, BLE connection events, and OAuth login steps, making it the
+          first place to look when something goes wrong.
+        </p>
+
+        <h3>Enabling the log file</h3>
+        <ol>
+          <li>Open <strong>Preferences → Preferences &amp; Profile</strong>.</li>
+          <li>Select the <strong>Logging</strong> tab.</li>
+          <li>Tick <strong>Write log to file</strong>.</li>
+          <li>Optionally change the log file path with the <strong>Browse…</strong> button.</li>
+          <li>Click <strong>OK</strong> — logging starts immediately.</li>
+        </ol>
+        <p>
+          Use the <strong>Open log file</strong> button to open the current log in your default
+          text editor at any time.
+        </p>
+
+        <h3>Default log file locations</h3>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Default log file path</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Windows</strong></td>
+                <td>
+                  <code>%APPDATA%\MaximumTrainer\MaximumTrainer.log</code><br/>
+                  <small>e.g. <code>C:\Users\YourName\AppData\Roaming\MaximumTrainer\MaximumTrainer.log</code></small>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>macOS</strong></td>
+                <td>
+                  <code>~/Library/Application Support/MaximumTrainer/MaximumTrainer.log</code><br/>
+                  <small>Hold <kbd>⌥ Option</kbd> and click <strong>Go</strong> in Finder to reveal the hidden <code>Library</code> folder.</small>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Linux</strong></td>
+                <td>
+                  <code>~/.local/share/MaximumTrainer/MaximumTrainer.log</code><br/>
+                  <small>Follows the <a href="https://specifications.freedesktop.org/basedir-spec/latest/" target="_blank" rel="noopener">XDG Base Directory</a> specification. Override with the <code>$XDG_DATA_HOME</code> environment variable.</small>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>Tip:</strong> Set the log level to <strong>Debug</strong> or <strong>Verbose</strong>
+          before reproducing an issue, then send the log file when reporting a bug. Reset the level
+          back to <strong>Info</strong> afterwards to keep the file small.
+        </div>
+
+        <h3>Troubleshooting the Intervals.icu login page</h3>
+        <p>
+          If the <em>Login with Intervals.icu</em> dialog opens but shows a blank white page or an
+          error message, the OAuth authorization page could not load. Common causes and fixes:
+        </p>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Symptom</th><th>Solution</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Blank white page</td>
+                <td>
+                  Check your internet connection. The app needs to reach
+                  <code>https://intervals.icu</code>. If a proxy or firewall is blocking the
+                  domain, add an exception for <code>intervals.icu</code> and
+                  <code>maximumtrainer.com</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>"Unable to load page" error message</td>
+                <td>
+                  The failed URL is shown in the dialog. Copy it and paste it into your browser to
+                  test connectivity directly. Check the log file (see paths above) for a
+                  <code>[WARN]</code> entry from <code>DialogInfoWebView</code> — it will include
+                  the exact network error string.
+                </td>
+              </tr>
+              <tr>
+                <td>SSL / certificate error</td>
+                <td>
+                  Ensure your system clock is correct — a wrong date/time is the most common cause
+                  of SSL failures. On Windows, open <strong>Date &amp; Time settings</strong> and
+                  click <strong>Sync now</strong>. Check the log file for
+                  <code>[WARN] MyQWebEnginePage</code> entries.
+                </td>
+              </tr>
+              <tr>
+                <td>Login succeeds but app stays at login screen</td>
+                <td>
+                  The token exchange with the MaximumTrainer.com proxy may have failed. Enable
+                  <strong>Debug</strong> logging, reproduce the issue, and attach the log file to
+                  a GitHub issue.
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 

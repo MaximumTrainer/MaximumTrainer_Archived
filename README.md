@@ -297,6 +297,24 @@ make -j$(nproc)
 Language files are used at runtime from the `/language` folder.
 You need Qt Linguist to open and generate a new language file (`.qm` file).
 
+## Log Files
+
+MaximumTrainer writes diagnostic messages (network errors, BLE events, OAuth login steps) to a log
+file when file logging is enabled. Enable it in **Preferences → Preferences & Profile → Logging**.
+
+| Platform | Default log file path |
+|----------|-----------------------|
+| **Windows** | `%APPDATA%\MaximumTrainer\MaximumTrainer.log`<br/>(e.g. `C:\Users\YourName\AppData\Roaming\MaximumTrainer\MaximumTrainer.log`) |
+| **macOS** | `~/Library/Application Support/MaximumTrainer/MaximumTrainer.log` |
+| **Linux** | `~/.local/share/MaximumTrainer/MaximumTrainer.log` (XDG data dir; override with `$XDG_DATA_HOME`) |
+
+Set the log level to **Debug** before reproducing an issue, then attach the log file to your bug report.
+The **Open log file** button in the Logging settings page opens the file directly in your default text editor.
+
+For full troubleshooting guidance (including the Intervals.icu login page) see the
+[User Guide — Log Files & Troubleshooting](https://maximumtrainer.github.io/MaximumTrainer_Redux/user-guide.html#log-files)
+section.
+
 ## TODO
 
 Project now going through new revisions, with plans to enhance as an open-source interval trainer for indoor cycling & indoor rowing.
