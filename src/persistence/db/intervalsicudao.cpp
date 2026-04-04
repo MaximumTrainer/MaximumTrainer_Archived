@@ -3,6 +3,7 @@
 #include <QByteArray>
 
 #include "environnement.h"
+#include "logger.h"
 
 
 
@@ -28,7 +29,7 @@ QNetworkReply* IntervalsIcuDAO::getAthlete(const QString &athleteId, const QStri
 {
     QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuDAO::getAthlete: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuDAO", QStringLiteral("getAthlete: NetworkManagerWS not available"));
         return nullptr;
     }
 
@@ -45,7 +46,7 @@ QNetworkReply* IntervalsIcuDAO::getAthleteSettings(const QString &athleteId, con
 {
     QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuDAO::getAthleteSettings: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuDAO", QStringLiteral("getAthleteSettings: NetworkManagerWS not available"));
         return nullptr;
     }
 
@@ -62,7 +63,7 @@ QNetworkReply* IntervalsIcuDAO::downloadWorkoutZwo(const QString &athleteId, con
 {
     QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuDAO::downloadWorkoutZwo: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuDAO", QStringLiteral("downloadWorkoutZwo: NetworkManagerWS not available"));
         return nullptr;
     }
 
@@ -92,7 +93,7 @@ QNetworkReply* IntervalsIcuDAO::getAthleteBearer(const QString &athleteId, const
 {
     QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuDAO::getAthleteBearer: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuDAO", QStringLiteral("getAthleteBearer: NetworkManagerWS not available"));
         return nullptr;
     }
 
@@ -106,7 +107,7 @@ QNetworkReply* IntervalsIcuDAO::getAthleteSettingsBearer(const QString &athleteI
 {
     QNetworkAccessManager *manager = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuDAO::getAthleteSettingsBearer: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuDAO", QStringLiteral("getAthleteSettingsBearer: NetworkManagerWS not available"));
         return nullptr;
     }
 

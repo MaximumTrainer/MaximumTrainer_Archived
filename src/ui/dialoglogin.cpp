@@ -412,7 +412,9 @@ void DialogLogin::slotFinishedGoogle() {
         ui->label_process->setText(tr("Checking for updates..."));
     }
     else {
-        qDebug() << "Problem reaching Google..." << replyGoogle->errorString();
+        LOG_WARN("DialogLogin",
+                 QStringLiteral("Internet connectivity check failed: ")
+                 + replyGoogle->errorString());
         LOG_WARN("DialogLogin", QStringLiteral("No internet connection – offering offline mode"));
 
         const int choice = QMessageBox::question(

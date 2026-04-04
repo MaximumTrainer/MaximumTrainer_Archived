@@ -1,6 +1,6 @@
 #include "extrequest.h"
 #include "util.h"
-
+#include "logger.h"
 
 #include <QHttpMultiPart>
 
@@ -10,9 +10,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 QNetworkReply* ExtRequest::checkGoogleConnection() {
 
-
-    qDebug() << "check Google Start";
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("ExtRequest", QStringLiteral("checkGoogleConnection: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     const QString urlGoogle = "http://www.google.com/";
     QNetworkRequest request2;
@@ -30,6 +32,10 @@ QNetworkReply* ExtRequest::checkGoogleConnection() {
 QNetworkReply* ExtRequest::checkIpAddress() {
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("ExtRequest", QStringLiteral("checkIpAddress: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     const QString url2 = "http://bot.whatismyipaddress.com/";
     QNetworkRequest request1;
@@ -43,9 +49,12 @@ QNetworkReply* ExtRequest::checkIpAddress() {
 QNetworkReply* ExtRequest::stravaDeauthorization(QString access_token) {
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("ExtRequest", QStringLiteral("stravaDeauthorization: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     const QString url =  "https://www.strava.com/oauth/deauthorize";
-    qDebug() << "URL IS:" << url;;
     QUrlQuery postData;
     postData.addQueryItem("access_token", access_token);
 
@@ -55,7 +64,6 @@ QNetworkReply* ExtRequest::stravaDeauthorization(QString access_token) {
 
     QNetworkReply *replyPutUser = managerWS->post(request, postData.toString(QUrl::FullyEncoded).toUtf8() );
 
-    qDebug() << "putAccount end";
     return replyPutUser;
 }
 
@@ -63,8 +71,11 @@ QNetworkReply* ExtRequest::stravaDeauthorization(QString access_token) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 QNetworkReply* ExtRequest::stravaCheckUploadStatus(QString access_token, int uploadID) {
 
-
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("ExtRequest", QStringLiteral("stravaCheckUploadStatus: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     QString urlStrava = "https://www.strava.com/api/v3/uploads/" + QString::number(uploadID);
 
@@ -87,10 +98,13 @@ QNetworkReply* ExtRequest::stravaUploadFile(QString access_token, QString activi
 
     QFileInfo fileInfo(pathToFile);
     QString fileName = fileInfo.fileName(); //just the filename without the path
-    qDebug() << "stravaUploadFile" << pathToFile << "fileName:" << fileName;
-
+    LOG_INFO("ExtRequest", QStringLiteral("stravaUploadFile: ") + pathToFile);
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("ExtRequest", QStringLiteral("stravaUploadFile: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     const QString urlStrava = "https://www.strava.com/api/v3/uploads";
     const QString fileType = "fit";
@@ -154,10 +168,14 @@ QNetworkReply* ExtRequest::stravaUploadFile(QString access_token, QString activi
     fileDataPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/octet-stream"));
 
     QFile *file = new QFile(pathToFile);
-    if (!file->open(QIODevice::ReadOnly))
+    if (!file->open(QIODevice::ReadOnly)) {
+        LOG_WARN("ExtRequest", QStringLiteral("stravaUploadFile: cannot open file: ") + pathToFile);
+        delete file;
+        delete multiPart;
         return nullptr;
+    }
 
-    qDebug() << "test file size:" << file->size();
+    LOG_DEBUG("ExtRequest", QStringLiteral("stravaUploadFile: file size ") + QString::number(file->size()));
     fileDataPart.setBodyDevice(file);
     file->setParent(multiPart); // we cannot delete the file now, so delete it with the multiPart
 
@@ -190,11 +208,14 @@ QNetworkReply* ExtRequest::stravaUploadFile(QString access_token, QString activi
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 QNetworkReply* ExtRequest::trainingPeaksRefreshToken(QString access_token, QString refresh_token)
 {
-    qDebug() << "TrainingPeaksRefreshToken, " << access_token << " refresh is :" << refresh_token;
+    LOG_DEBUG("ExtRequest", QStringLiteral("trainingPeaksRefreshToken"));
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("ExtRequest", QStringLiteral("trainingPeaksRefreshToken: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
-    qDebug() << "URL IS:" << URL_TOKEN_TP;
     QUrlQuery postData;
     postData.addQueryItem("client_id", CLIENT_ID_TP);
     postData.addQueryItem("client_secret", CLIENT_SECRET_TP);
@@ -207,7 +228,6 @@ QNetworkReply* ExtRequest::trainingPeaksRefreshToken(QString access_token, QStri
 
     QNetworkReply *replyPutUser = managerWS->post(request, postData.toString(QUrl::FullyEncoded).toUtf8() );
 
-    qDebug() << "putAccount end";
     return replyPutUser;
 }
 
@@ -221,10 +241,13 @@ QNetworkReply* ExtRequest::trainingPeaksUploadFile(QString access_token, bool wo
 
     QFileInfo fileInfo(pathToFile);
     QString fileName = fileInfo.fileName(); //just the filename without the path
-    qDebug() << "trainingPeaksUploadFile" << pathToFile << "fileName:" << fileName;
-
+    LOG_INFO("ExtRequest", QStringLiteral("trainingPeaksUploadFile: ") + pathToFile);
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("ExtRequest", QStringLiteral("trainingPeaksUploadFile: NetworkManagerWS not available"));
+        return nullptr;
+    }
 
     const QString urlPost = URL_POST_FILE_TP;
 
@@ -241,8 +264,11 @@ QNetworkReply* ExtRequest::trainingPeaksUploadFile(QString access_token, bool wo
 
 
     QFile *file = new QFile(pathToFile);
-    if (!file->open(QIODevice::ReadOnly))
+    if (!file->open(QIODevice::ReadOnly)) {
+        LOG_WARN("ExtRequest", QStringLiteral("trainingPeaksUploadFile: cannot open file: ") + pathToFile);
+        delete file;
         return nullptr;
+    }
     QByteArray base64Encoded  = QByteArray(file->readAll().toBase64());
 
 
@@ -257,7 +283,6 @@ QNetworkReply* ExtRequest::trainingPeaksUploadFile(QString access_token, bool wo
     jsonString.append(",\"Data\":");
     jsonString.append("\"" + base64Encoded  + "\"");
 
-    qDebug() << "WorkoutPublic TP?" << boolPublicText ;
     jsonString.append(",\"SetWorkoutPublic\":");
     jsonString.append("\"" + boolPublicText + "\"");
 
@@ -271,9 +296,6 @@ QNetworkReply* ExtRequest::trainingPeaksUploadFile(QString access_token, bool wo
     jsonString.append("\"Bike\"");
 
     jsonString.append("}");
-
-    qDebug() << "JSON TO POST TP IS: " << jsonString;
-
 
     QUrl url(urlPost);
     QNetworkRequest request(url);
@@ -295,21 +317,19 @@ QNetworkReply* ExtRequest::trainingPeaksUploadFile(QString access_token, bool wo
 QNetworkReply* ExtRequest::selfloopsUploadFile(QString email, QString password, QString pathToFile, QString note) {
 
 
-    //    pathToFile = "C:/2015-07-31-05-31-36.fit";
-    //    QString pathToZip = pathToFile + ".gz";
-
-
     QString pathToZip = pathToFile + ".gz";
     Util::zipFileToDisk(pathToFile, pathToZip, true);
 
     QFileInfo fileInfo(pathToZip);
     QString fileName = fileInfo.fileName(); //just the filename without the path
 
-
-    qDebug() << "selfloopsUploadFile"  << "pathToFile:" << pathToFile << "pathToZip" << pathToZip ;
-
+    LOG_INFO("ExtRequest", QStringLiteral("selfloopsUploadFile: ") + pathToFile);
 
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("ExtRequest", QStringLiteral("selfloopsUploadFile: NetworkManagerWS not available"));
+        return nullptr;
+    }
     const QString urlSelfloops = "https://www.selfloops.com/restapi/maximumtrainer/activities/upload.json";
 
 
@@ -331,10 +351,14 @@ QNetworkReply* ExtRequest::selfloopsUploadFile(QString email, QString password, 
     fileDataPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/x-gzip"));
 
     QFile *file = new QFile(pathToZip);
-    if (!file->open(QIODevice::ReadOnly))
+    if (!file->open(QIODevice::ReadOnly)) {
+        LOG_WARN("ExtRequest", QStringLiteral("selfloopsUploadFile: cannot open file: ") + pathToZip);
+        delete file;
+        delete multiPart;
         return nullptr;
+    }
 
-    qDebug() << "test file size:" << file->size();
+    LOG_DEBUG("ExtRequest", QStringLiteral("selfloopsUploadFile: file size ") + QString::number(file->size()));
 
     fileDataPart.setBodyDevice(file);
     file->setParent(multiPart); // we cannot delete the file now, so delete it with the multiPart
@@ -379,7 +403,7 @@ QNetworkReply* ExtRequest::intervalsIcuOAuthExchange(const QString &code, const 
 {
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!managerWS) {
-        qWarning() << "ExtRequest::intervalsIcuOAuthExchange: NetworkManagerWS not available";
+        LOG_WARN("ExtRequest", QStringLiteral("intervalsIcuOAuthExchange: NetworkManagerWS not available"));
         return nullptr;
     }
 

@@ -5,6 +5,7 @@
 #include <QString>
 #include <QUrl>
 #include <QUrlQuery>
+#include "logger.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 QNetworkRequest IntervalsIcuService::buildRequest(const QString &url, const QString &apiKey)
@@ -28,7 +29,7 @@ QNetworkReply* IntervalsIcuService::getAthlete(const QString &athleteId, const Q
     QNetworkAccessManager *manager =
         qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuService::getAthlete: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuService", QStringLiteral("getAthlete: NetworkManagerWS not available"));
         return nullptr;
     }
 
@@ -44,7 +45,7 @@ QNetworkReply* IntervalsIcuService::getEvents(const QString &athleteId, const QS
     QNetworkAccessManager *manager =
         qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuService::getEvents: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuService", QStringLiteral("getEvents: NetworkManagerWS not available"));
         return nullptr;
     }
 
@@ -65,7 +66,7 @@ QNetworkReply* IntervalsIcuService::getWorkouts(const QString &athleteId, const 
     QNetworkAccessManager *manager =
         qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuService::getWorkouts: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuService", QStringLiteral("getWorkouts: NetworkManagerWS not available"));
         return nullptr;
     }
 
@@ -83,7 +84,7 @@ QNetworkReply* IntervalsIcuService::downloadWorkoutZwo(const QString &athleteId,
     QNetworkAccessManager *manager =
         qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuService::downloadWorkoutZwo: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuService", QStringLiteral("downloadWorkoutZwo: NetworkManagerWS not available"));
         return nullptr;
     }
 
@@ -102,7 +103,7 @@ QNetworkReply* IntervalsIcuService::downloadWorkoutMrc(const QString &athleteId,
     QNetworkAccessManager *manager =
         qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
     if (!manager) {
-        qWarning() << "IntervalsIcuService::downloadWorkoutMrc: NetworkManagerWS is not available";
+        LOG_WARN("IntervalsIcuService", QStringLiteral("downloadWorkoutMrc: NetworkManagerWS not available"));
         return nullptr;
     }
 

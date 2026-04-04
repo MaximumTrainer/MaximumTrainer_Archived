@@ -2,6 +2,7 @@
 
 #include "environnement.h"
 #include "util.h"
+#include "logger.h"
 
 
 
@@ -35,13 +36,15 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 QNetworkReply* UserDAO::putAccount(Account *account) {
 
-
-    qDebug() << "putAccount start";
     QNetworkAccessManager *managerWS = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!managerWS) {
+        LOG_WARN("UserDAO", QStringLiteral("putAccount: NetworkManagerWS not available"));
+        return nullptr;
+    }
     Settings *mySettings = qApp->property("User_Settings").value<Settings*>();
 
     const QString url =  Environnement::getURLEnvironnementWS() + "api/account_rest/account/";
-    qDebug() << "URL IS:" << url;;
+    LOG_DEBUG("UserDAO", QStringLiteral("putAccount: PUT ") + url);
 
 
     QUrlQuery postData;
@@ -83,7 +86,6 @@ QNetworkReply* UserDAO::putAccount(Account *account) {
     postData.addQueryItem("strava_access_token", account->strava_access_token);
     postData.addQueryItem("strava_private_upload", QString::number(account->strava_private_upload) );
 
-    qDebug() << "SAVING TPH ERE---"  << account->training_peaks_access_token;
     postData.addQueryItem("training_peaks_access_token", account->training_peaks_access_token);
     postData.addQueryItem("training_peaks_refresh_token", account->training_peaks_refresh_token);
     postData.addQueryItem("training_peaks_public_upload", QString::number(account->training_peaks_public_upload) );
@@ -170,7 +172,6 @@ QNetworkReply* UserDAO::putAccount(Account *account) {
 
     QNetworkReply *replyPutUser = managerWS->put(request, postData.toString(QUrl::FullyEncoded).toUtf8() );
 
-    qDebug() << "putAccount end";
     return replyPutUser;
 }
 
