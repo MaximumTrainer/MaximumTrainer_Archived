@@ -106,6 +106,7 @@ private slots:
 
     // ── Config round-trip ─────────────────────────────────────────────────────
     void testConfig_saveAndLoad();
+    void testConfig_fileLoggingEnabledByDefault();
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -354,6 +355,41 @@ void TstLogger::testConfig_saveAndLoad()
 
     // Restore original level.
     Logger::instance().setLogLevel(saved);
+}
+
+void TstLogger::testConfig_fileLoggingEnabledByDefault()
+{
+    // Build a QSettings file that has NO file_enabled key to simulate a
+    // fresh install.  loadConfig() must default to enabled == true.
+    QTemporaryFile iniFile;
+    iniFile.setFileTemplate(QDir::tempPath() + QStringLiteral("/logger_default_XXXXXX.ini"));
+    QVERIFY(iniFile.open());
+    const QString iniPath = iniFile.fileName();
+    iniFile.close();
+
+    {
+        QSettings s(iniPath, QSettings::IniFormat);
+        s.beginGroup(QStringLiteral("logging"));
+        // Only write the level; deliberately omit file_enabled so the default kicks in.
+        s.setValue(QStringLiteral("level"), static_cast<int>(LogLevel::Info));
+        s.endGroup();
+    }
+
+    const bool savedFileEnabled = Logger::instance().isFileLoggingEnabled();
+    const QString savedFilePath = Logger::instance().logFilePath();
+    Logger::instance().setFileLogging(false);   // start from a known disabled state
+
+    // Read the value that loadConfig() would use for file_enabled.
+    QSettings ws(iniPath, QSettings::IniFormat);
+    ws.beginGroup(QStringLiteral("logging"));
+    const bool defaultFileEnabled = ws.value(QStringLiteral("file_enabled"), true).toBool();
+    ws.endGroup();
+
+    QVERIFY2(defaultFileEnabled,
+             "file_enabled default must be true so logging is on for fresh installs");
+
+    // Restore previous file logging state.
+    Logger::instance().setFileLogging(savedFileEnabled, savedFilePath);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

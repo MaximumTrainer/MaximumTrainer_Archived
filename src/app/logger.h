@@ -18,7 +18,7 @@
  *
  * Configuration is persisted via QSettings (group "logging"):
  *   logging/level        (int, default 2 = Info)
- *   logging/file_enabled (bool, default false)
+ *   logging/file_enabled (bool, default true)
  *   logging/file_path    (string, default <AppData>/MaximumTrainer.log)
  *
  * Quick-start:
