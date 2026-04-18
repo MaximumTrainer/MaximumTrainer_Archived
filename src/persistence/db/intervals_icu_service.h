@@ -32,7 +32,7 @@ public:
     static QNetworkReply* getWorkouts(const QString &athleteId, const QString &apiKey);
 
     /// Download a workout as a ZWO file.
-    /// GET /athlete/{id}/workouts/{workoutId}/file.zwo
+    /// GET /athlete/{id}/workouts/{workoutId}.zwo
     static QNetworkReply* downloadWorkoutZwo(const QString &athleteId,
                                              const QString &workoutId,
                                              const QString &apiKey);

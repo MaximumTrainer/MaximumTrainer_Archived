@@ -76,7 +76,7 @@ QNetworkReply* IntervalsIcuService::getWorkouts(const QString &athleteId, const 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/v1/athlete/{id}/workouts/{workoutId}/file.zwo
+// GET /api/v1/athlete/{id}/workouts/{workoutId}.zwo
 QNetworkReply* IntervalsIcuService::downloadWorkoutZwo(const QString &athleteId,
                                                        const QString &workoutId,
                                                        const QString &apiKey)
@@ -90,12 +90,12 @@ QNetworkReply* IntervalsIcuService::downloadWorkoutZwo(const QString &athleteId,
 
     const QString url = QLatin1String(BASE_URL) + QStringLiteral("/athlete/") + athleteId
                         + QStringLiteral("/workouts/") + workoutId
-                        + QStringLiteral("/file.zwo");
+                        + QStringLiteral(".zwo");
     return manager->get(buildRequest(url, apiKey));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/v1/athlete/{id}/workouts/{workoutId}/file.mrc
+// GET /api/v1/athlete/{id}/workouts/{workoutId}.mrc
 QNetworkReply* IntervalsIcuService::downloadWorkoutMrc(const QString &athleteId,
                                                        const QString &workoutId,
                                                        const QString &apiKey)
@@ -109,7 +109,7 @@ QNetworkReply* IntervalsIcuService::downloadWorkoutMrc(const QString &athleteId,
 
     const QString url = QLatin1String(BASE_URL) + QStringLiteral("/athlete/") + athleteId
                         + QStringLiteral("/workouts/") + workoutId
-                        + QStringLiteral("/file.mrc");
+                        + QStringLiteral(".mrc");
     return manager->get(buildRequest(url, apiKey));
 }
 
