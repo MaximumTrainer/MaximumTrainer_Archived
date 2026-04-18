@@ -294,13 +294,27 @@ void TstOnlineMode::testOnlineModeAuthentication()
         window.show();
         QCoreApplication::processEvents();
 
+        // Helper: settle paint events, grab screenshot, save — used on all paths.
+        auto grabScreenshot = [&]() {
+            QCoreApplication::processEvents();
+            QTest::qWait(500);
+            QCoreApplication::processEvents();
+            QPixmap shot = window.grab();
+            if (!shot.isNull())
+                shot.save(outPath, "PNG");
+            qDebug().noquote() << "[Screenshot] Saved to:" << outPath;
+        };
+
         // ── 2. Make the live auth request ─────────────────────────────────────
         QNetworkReply *reply =
             IntervalsIcuService::getAthlete(m_athleteId, m_apiKey);
 
-        QVERIFY2(reply,
-                 "getAthlete() returned nullptr — "
-                 "NetworkManagerWS app property not registered");
+        if (!reply) {
+            window.markFailed(0, "getAthlete() returned nullptr");
+            grabScreenshot();
+            QFAIL("getAthlete() returned nullptr — "
+                  "NetworkManagerWS app property not registered");
+        }
 
         // ── 3. Wait for the reply (up to 30 s) ────────────────────────────────
         QEventLoop loop;
@@ -308,9 +322,14 @@ void TstOnlineMode::testOnlineModeAuthentication()
         QTimer::singleShot(TIMEOUT_MS, &loop, &QEventLoop::quit);
         loop.exec();
 
-        QVERIFY2(reply->isFinished(),
-                 "Auth request timed out after 30 s — "
-                 "check INTERVALS_ICU_API_KEY and network connectivity");
+        if (!reply->isFinished()) {
+            reply->abort();
+            reply->deleteLater();
+            window.markFailed(0, "Request timed out after 30 s");
+            grabScreenshot();
+            QFAIL("Auth request timed out after 30 s — "
+                  "check INTERVALS_ICU_API_KEY and network connectivity");
+        }
 
         const int httpStatus =
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -340,18 +359,7 @@ void TstOnlineMode::testOnlineModeAuthentication()
         reply->deleteLater();
 
         // ── 5. Settle paint events and grab screenshot ─────────────────────────
-        QCoreApplication::processEvents();
-        QTest::qWait(500);
-        QCoreApplication::processEvents();
-
-        QPixmap screenshot = window.grab();
-        QVERIFY2(!screenshot.isNull(), "Screenshot grab() returned null pixmap");
-
-        const bool saved = screenshot.save(outPath, "PNG");
-        QVERIFY2(saved,
-                 qPrintable(QString("Failed to save screenshot: %1").arg(outPath)));
-
-        qDebug().noquote() << "[Screenshot] Saved to:" << outPath;
+        grabScreenshot();
 
         // ── 6. Assertions ─────────────────────────────────────────────────────
         QVERIFY2(replyError == QNetworkReply::NoError,
@@ -373,11 +381,6 @@ void TstOnlineMode::testOnlineModeAuthentication()
 
         QVERIFY2(!athleteName.trimmed().isEmpty(),
                  "Auth response returned an empty athlete name");
-
-        qDebug().noquote()
-            << "[Auth] Athlete:" << athleteName
-            << "  ID:" << confirmedId
-            << "  HTTP:" << httpStatus;
 }
 
 QTEST_MAIN(TstOnlineMode)
