@@ -14,9 +14,11 @@
 
 #include <QtTest/QtTest>
 #include <QTemporaryFile>
+#include <QTemporaryDir>
 #include <QSettings>
 #include <QRegularExpression>
 #include <QDir>
+#include <QFile>
 #include <QScopeGuard>
 
 #include "../../src/app/logger.h"
@@ -94,6 +96,7 @@ private slots:
     void testFile_notWrittenWhenDisabled();
     void testFile_multipleEntries();
     void testFile_pathReturned();
+    void testFile_createsDirectoryIfMissing();
 
     // ── Qt message handler ────────────────────────────────────────────────────
     void testQtHandler_warningRouted();
@@ -256,6 +259,49 @@ void TstLogger::testFile_pathReturned()
     Logger::instance().setFileLogging(true, tmp.fileName());
     QCOMPARE(Logger::instance().logFilePath(), tmp.fileName());
     Logger::instance().setFileLogging(false);
+}
+
+void TstLogger::testFile_createsDirectoryIfMissing()
+{
+    // QTemporaryDir gives a uniquely-named directory that is guaranteed not
+    // to exist yet, eliminating any timestamp-collision risk in parallel or
+    // fast-retry CI runs.  The subdir inside it is intentionally not created
+    // so that Logger is forced to make it.
+    QTemporaryDir tmpBase;
+    QVERIFY(tmpBase.isValid());
+    const QString subDir  = tmpBase.path() + QStringLiteral("/sub");
+    const QString logPath = subDir          + QStringLiteral("/MaximumTrainer.log");
+
+    // Save logger state so we can restore it even if a QVERIFY* fires early
+    // (QVERIFY returns from the test function, bypassing any code after it).
+    // The logger guard runs first (inner), closing the file handle before the
+    // QTemporaryDir destructor removes the tree — required on Windows where
+    // open file handles block directory deletion.
+    const bool    savedEnabled = Logger::instance().isFileLoggingEnabled();
+    const QString savedPath    = Logger::instance().logFilePath();
+    auto loggerGuard = qScopeGuard([&] {
+        Logger::instance().setFileLogging(savedEnabled, savedPath);
+    });
+
+    // Directing Logger to a non-existent path must trigger directory creation.
+    Logger::instance().setFileLogging(true, logPath);
+
+    QVERIFY2(QDir(subDir).exists(),
+             "Logger must create the parent directory when it does not exist");
+    QVERIFY2(QFile::exists(logPath),
+             "Logger must create the log file when it does not exist");
+
+    // Write a message and confirm it lands in the file.
+    Logger::instance().log(LogLevel::Info, QStringLiteral("test"),
+                           QStringLiteral("dir-creation-test"));
+
+    QFile f(logPath);
+    QVERIFY(f.open(QIODevice::ReadOnly | QIODevice::Text));
+    const QString content = QString::fromUtf8(f.readAll());
+    f.close();
+
+    QVERIFY2(content.contains(QLatin1String("dir-creation-test")),
+             "Log entry should appear in the newly created log file");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
