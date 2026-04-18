@@ -36,11 +36,7 @@
 #include "dialog_connection_method.h"
 #include "networkmonitor.h"
 #include "updatedialog.h"
-
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QNetworkRequest>
-#include <QNetworkAccessManager>
+#include "versiondao.h"
 
 #include <QDir>
 #include <QMenu>
@@ -1368,45 +1364,49 @@ void MainWindow::on_actionRequest_Help_triggered()
 //-----------------------------------------------
 void MainWindow::on_actionCheck_for_Updates_triggered()
 {
-    QNetworkAccessManager *nm = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
-    if (!nm) return;
-
-    QNetworkRequest req(QUrl(urlGitHubReleasesApi));
-    req.setRawHeader("User-Agent", "MaximumTrainer");
-    req.setRawHeader("Accept", "application/vnd.github+json");
-
-    if (replyVersionCheck)
+    // Abort any in-flight check before starting a new one to prevent races.
+    if (replyVersionCheck) {
+        replyVersionCheck->abort();
         replyVersionCheck->deleteLater();
-    replyVersionCheck = nm->get(req);
+        replyVersionCheck = nullptr;
+    }
+
+    replyVersionCheck = VersionDAO::getVersion();
+    if (!replyVersionCheck) return;
+
     connect(replyVersionCheck, &QNetworkReply::finished,
             this, &MainWindow::slotVersionCheckFinished);
 }
 //-----------------------------------------------
 void MainWindow::slotVersionCheckFinished()
 {
-    if (!replyVersionCheck) return;
+    auto *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+    reply->deleteLater();
 
-    if (replyVersionCheck->error() != QNetworkReply::NoError) {
+    // Ignore stale replies from an aborted request.
+    if (reply != replyVersionCheck) return;
+    replyVersionCheck = nullptr;
+
+    if (reply->error() != QNetworkReply::NoError) {
         QMessageBox::warning(this, tr("Update Check"),
-            tr("Unable to check for updates:\n%1").arg(replyVersionCheck->errorString()));
-        replyVersionCheck->deleteLater();
-        replyVersionCheck = nullptr;
+            tr("Unable to check for updates:\n%1").arg(reply->errorString()));
         return;
     }
 
-    QByteArray data = replyVersionCheck->readAll();
-    replyVersionCheck->deleteLater();
-    replyVersionCheck = nullptr;
+    const QString latestTag = Util::parseJsonObjectVersion(QString::fromUtf8(reply->readAll()));
+    if (latestTag.isEmpty()) {
+        QMessageBox::warning(this, tr("Update Check"),
+            tr("Could not determine latest version. Please try again later."));
+        return;
+    }
 
-    QString latestTag = QJsonDocument::fromJson(data).object().value("tag_name").toString();
-    QString currentTag = Environnement::getVersion();
-
-    if (!latestTag.isEmpty() && latestTag != currentTag) {
+    if (Util::isVersionNewer(Environnement::getVersion(), latestTag)) {
         UpdateDialog dlg(latestTag, this);
         dlg.exec();
     } else {
         QMessageBox::information(this, tr("Check for Updates"),
-            tr("You are up to date (%1).").arg(currentTag));
+            tr("You are up to date (%1).").arg(Environnement::getVersion()));
     }
 }
 //-----------------------------------------------

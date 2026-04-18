@@ -16,6 +16,7 @@ TableViewInterval::TableViewInterval(QWidget *parent) :
     setAcceptDrops(true);
     setDropIndicatorShown(true);
     setDragDropMode(QAbstractItemView::InternalMove);
+    setDragDropOverwriteMode(false);
     setDefaultDropAction(Qt::MoveAction);
     setSelectionMode(QAbstractItemView::SingleSelection);
 }

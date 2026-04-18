@@ -3077,10 +3077,12 @@ void WorkoutDialog::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
     case Qt::Key_Space:
-        start_or_pause_workout();
+        if (!event->isAutoRepeat())
+            start_or_pause_workout();
         return;
     case Qt::Key_Right:
-        if (isWorkoutStarted && !isWorkoutOver &&
+        if (!event->isAutoRepeat() &&
+            isWorkoutStarted && !isWorkoutPaused && !isWorkoutOver && !isTestWorkout &&
             currentInterval + 1 < workout.getLstInterval().size())
             moveToNextInterval();
         return;
@@ -3092,10 +3094,12 @@ void WorkoutDialog::keyPressEvent(QKeyEvent *event)
         adjustWorkoutDifficulty(currentWorkoutDifficultyPercentage - 5);
         return;
     case Qt::Key_L:
-        lapButtonPressed();
+        if (!event->isAutoRepeat())
+            lapButtonPressed();
         return;
     case Qt::Key_Escape:
-        reject();
+        if (!event->isAutoRepeat())
+            reject();
         return;
     default:
         break;
