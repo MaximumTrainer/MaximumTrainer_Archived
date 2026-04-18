@@ -14,6 +14,7 @@
 
 #include <QtTest/QtTest>
 #include <QTemporaryFile>
+#include <QTemporaryDir>
 #include <QSettings>
 #include <QRegularExpression>
 #include <QDir>
@@ -262,21 +263,24 @@ void TstLogger::testFile_pathReturned()
 
 void TstLogger::testFile_createsDirectoryIfMissing()
 {
-    // Build a path inside a nested sub-directory that does not yet exist.
-    // Using a timestamp-derived name avoids clashes with parallel test runs.
-    const QString baseDir = QDir::tempPath()
-                            + QStringLiteral("/logger_test_mkdir_%1")
-                              .arg(QDateTime::currentMSecsSinceEpoch());
-    const QString subDir  = baseDir + QStringLiteral("/sub");
-    const QString logPath = subDir  + QStringLiteral("/MaximumTrainer.log");
+    // QTemporaryDir gives a uniquely-named directory that is guaranteed not
+    // to exist yet, eliminating any timestamp-collision risk in parallel or
+    // fast-retry CI runs.  The subdir inside it is intentionally not created
+    // so that Logger is forced to make it.
+    QTemporaryDir tmpBase;
+    QVERIFY(tmpBase.isValid());
+    const QString subDir  = tmpBase.path() + QStringLiteral("/sub");
+    const QString logPath = subDir          + QStringLiteral("/MaximumTrainer.log");
 
-    // Pre-condition: neither the directory nor the file should exist yet.
-    QVERIFY2(!QDir(baseDir).exists(),
-             "Test pre-condition: base directory must not exist before the test");
-
-    // Cleanup guard — remove the whole tree whether the test passes or fails.
-    auto guard = qScopeGuard([&] {
-        QDir(baseDir).removeRecursively();
+    // Save logger state so we can restore it even if a QVERIFY* fires early
+    // (QVERIFY returns from the test function, bypassing any code after it).
+    // The logger guard runs first (inner), closing the file handle before the
+    // QTemporaryDir destructor removes the tree — required on Windows where
+    // open file handles block directory deletion.
+    const bool    savedEnabled = Logger::instance().isFileLoggingEnabled();
+    const QString savedPath    = Logger::instance().logFilePath();
+    auto loggerGuard = qScopeGuard([&] {
+        Logger::instance().setFileLogging(savedEnabled, savedPath);
     });
 
     // Directing Logger to a non-existent path must trigger directory creation.
@@ -298,8 +302,6 @@ void TstLogger::testFile_createsDirectoryIfMissing()
 
     QVERIFY2(content.contains(QLatin1String("dir-creation-test")),
              "Log entry should appear in the newly created log file");
-
-    Logger::instance().setFileLogging(false);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
