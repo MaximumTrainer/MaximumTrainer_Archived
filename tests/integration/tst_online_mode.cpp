@@ -687,6 +687,7 @@ void TstOnlineMode::testWorkoutPush()
         QJsonDocument(QJsonObject{
             { "name",          uniqueName },
             { "type",          "Ride" },
+            { "folder",        QStringLiteral("") },   // required by the API; "" = root folder
             { "file_contents", zwoXml },
             { "filename",      QStringLiteral("MaximumTrainer_CI_Test.zwo") }
         }).toJson(QJsonDocument::Compact);
