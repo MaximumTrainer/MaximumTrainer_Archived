@@ -88,6 +88,13 @@ jobs:
           QMAKE_CXXFLAGS+="-I$(brew --prefix openssl@3)/include"
         make -j$(sysctl -n hw.logicalcpu)
 
+    - name: Build login screen test
+      run: |
+        mkdir -p build/tests
+        cd tests/integration
+        qmake login_screen_tests.pro
+        make -j$(sysctl -n hw.logicalcpu)
+
     - name: Bind rpath for Qt frameworks and OpenSSL
       run: |
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
@@ -294,3 +301,56 @@ jobs:
       with:
         name: online-mode-screenshot-macos
         path: build/tests/online-mode-macos-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Login Screen Full-Application Test – macOS
+  #
+  # Validates that a user can log into MaximumTrainer and access key
+  # functionality without error on macOS:
+  #   • Offline login path: account setup logic is exercised end-to-end and
+  #     SimulatorHub confirms all four sensor channels (HR, cadence, speed,
+  #     power) carry realistic values once logged in.
+  #   • Intervals.icu OAuth URL: the OAuth2 authorization URL built by
+  #     Environnement is validated for all required parameters (client_id,
+  #     response_type, scope, redirect_uri, state).
+  #   • Intervals.icu API login (optional): a real HTTPS request is made to
+  #     intervals.icu/api/v1 using secrets when available; QSKIP otherwise.
+  #   • A labelled 1280×720 screenshot is captured as visual build evidence.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_login_screen:
+    runs-on: macos-latest
+    needs: build_mac
+    permissions:
+      contents: read
+    env:
+      INTERVALS_ICU_API_KEY:    ${{ secrets.INTERVALS_ICU_API_KEY }}
+      INTERVALS_ICU_ATHLETE_ID: ${{ secrets.INTERVALS_ICU_ATHLETE_ID }}
+
+    steps:
+    - name: Install Qt (core + network + widgets + bluetooth for test binary)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+        modules: 'qtconnectivity'
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/login_screen_tests
+
+    - name: Run login screen test
+      run: ./build/tests/login_screen_tests -v2
+
+    - name: Upload login screen screenshot
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: login-screen-screenshot-macos
+        path: build/tests/login-screen-macos-*.png

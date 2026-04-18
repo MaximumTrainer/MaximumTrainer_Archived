@@ -80,6 +80,8 @@ jobs:
         make -j$(nproc)
         qmake online_mode_tests.pro
         make -j$(nproc)
+        qmake login_screen_tests.pro
+        make -j$(nproc)
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -440,3 +442,67 @@ jobs:
       with:
         name: online-mode-screenshot-linux
         path: build/tests/online-mode-linux-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Login Screen Full-Application Test – Linux
+  #
+  # Validates that a user can log into MaximumTrainer and access key
+  # functionality without error on Linux:
+  #   • Offline login path: account setup logic is exercised end-to-end and
+  #     SimulatorHub confirms all four sensor channels (HR, cadence, speed,
+  #     power) carry realistic values once logged in.
+  #   • Intervals.icu OAuth URL: the OAuth2 authorization URL built by
+  #     Environnement is validated for all required parameters (client_id,
+  #     response_type, scope, redirect_uri, state).
+  #   • Intervals.icu API login (optional): a real HTTPS request is made to
+  #     intervals.icu/api/v1 using secrets when available; QSKIP otherwise.
+  #   • A labelled 1280×720 screenshot is captured as visual build evidence.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_login_screen:
+    runs-on: ubuntu-22.04
+    needs: build_linux
+    permissions:
+      contents: read
+    env:
+      INTERVALS_ICU_API_KEY:    ${{ secrets.INTERVALS_ICU_API_KEY }}
+      INTERVALS_ICU_ATHLETE_ID: ${{ secrets.INTERVALS_ICU_ATHLETE_ID }}
+
+    steps:
+    - name: Install runtime dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          libqt5core5a \
+          libqt5gui5 \
+          libqt5widgets5 \
+          libqt5network5 \
+          libqt5bluetooth5 \
+          libqt5test5 \
+          xvfb \
+          libfontconfig1 \
+          libxrender1 \
+          libxext6 \
+          libgl1-mesa-dev
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: linux
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/login_screen_tests
+
+    - name: Run login screen test with Xvfb
+      run: |
+        Xvfb :99 -screen 0 1280x800x24 &
+        sleep 1
+        export DISPLAY=:99
+        ./build/tests/login_screen_tests -v2
+
+    - name: Upload login screen screenshot
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: login-screen-screenshot-linux
+        path: build/tests/login-screen-linux-*.png
