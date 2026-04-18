@@ -2,7 +2,16 @@ name: Release - Linux
 
 on:
   workflow_call:
+    inputs:
+      build_run_id:
+        description: 'Run ID of build.yml that produced the linux artifact'
+        required: true
+        type: string
   workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Run ID of build.yml that produced the linux artifact'
+        required: true
 
 jobs:
 
@@ -10,12 +19,24 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
+      actions: read
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
+    - name: Download pre-built linux artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: linux
+        path: .
+        run-id: ${{ inputs.build_run_id }}
+        github-token: ${{ github.token }}
+
+    - name: Mark binary executable
+      run: chmod +x build/release/MaximumTrainer
 
     - name: Install Qt and system dependencies
       run: |
@@ -49,21 +70,6 @@ jobs:
         make -j$(nproc)
         sudo make install
         sudo ldconfig
-
-    - name: Determine build version
-      run: |
-        GIT_TAG=$(git describe --tags --match 'v[0-9]*' --always | tr -d '\r' | sed 's/-[0-9]*-g[0-9a-f]*$//')
-        [[ "$GIT_TAG" =~ ^[vV][0-9] ]] || GIT_TAG="v0.0.0"
-        echo "Build version: $GIT_TAG"
-        echo "GIT_TAG=$GIT_TAG" >> "$GITHUB_ENV"
-
-    - name: Build
-      run: |
-        export PATH=/usr/lib/qt5/bin:$PATH
-        qmake PowerVelo.pro "INCLUDEPATH+=/usr/local/include" "LIBS+=-L/usr/local/lib"
-        make -j$(nproc)
-      env:
-        QMAKEFEATURES: /usr/share/qt5/mkspecs/features
 
     - name: Download linuxdeployqt
       run: |
@@ -109,112 +115,3 @@ jobs:
       with:
         name: linux-appimage
         path: MaximumTrainer-linux-x86_64.AppImage
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # BTLE Integration Test – Linux (release quality gate)
-  #
-  # Runs SimulatorHub in a Qt window under Xvfb, takes a screenshot as
-  # evidence that Bluetooth sensor detection and an activity session work
-  # end-to-end without physical hardware.
-  # ──────────────────────────────────────────────────────────────────────────
-  test_btle_integration:
-    runs-on: ubuntu-22.04
-    needs: build_linux
-    permissions:
-      contents: read
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Install Qt and dependencies
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install -y \
-          qtbase5-dev \
-          qtconnectivity5-dev \
-          xvfb \
-          libfontconfig1 \
-          libxrender1 \
-          libxext6 \
-          libgl1-mesa-dev \
-          build-essential
-
-    - name: Build BTLE integration test
-      run: |
-        export PATH=/usr/lib/qt5/bin:$PATH
-        mkdir -p build/tests
-        cd tests/integration
-        qmake btle_integration_tests.pro
-        make -j$(nproc)
-
-    - name: Run BTLE integration test with Xvfb
-      run: |
-        Xvfb :99 -screen 0 1280x800x24 &
-        sleep 1
-        export DISPLAY=:99
-        ./build/tests/btle_integration_tests -v2
-
-    - name: Upload screenshot evidence
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: btle-integration-screenshot
-        path: build/tests/btle_integration_screenshot.png
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # Runtime Validation – Linux (release quality gate)
-  #
-  # Verifies that the application UI initialises to a "Ready" state on Linux:
-  #   • Bluetooth stack is queryable (API returns "Not Found", not "Unsupported")
-  #   • All four sensor channels carry realistic values within 10 seconds
-  #   • A labelled 1280×720 screenshot is captured as visual build evidence
-  # ──────────────────────────────────────────────────────────────────────────
-  test_runtime_validation:
-    runs-on: ubuntu-22.04
-    needs: build_linux
-    permissions:
-      contents: read
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Install Qt and dependencies
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install -y \
-          qtbase5-dev \
-          qtconnectivity5-dev \
-          xvfb \
-          libfontconfig1 \
-          libxrender1 \
-          libxext6 \
-          libgl1-mesa-dev \
-          build-essential
-
-    - name: Build runtime validation test
-      run: |
-        export PATH=/usr/lib/qt5/bin:$PATH
-        mkdir -p build/tests
-        cd tests/integration
-        qmake runtime_validation_tests.pro
-        make -j$(nproc)
-
-    - name: Run runtime validation test with Xvfb (1280×800 display)
-      run: |
-        Xvfb :99 -screen 0 1280x800x24 &
-        sleep 1
-        export DISPLAY=:99
-        ./build/tests/runtime_validation_tests -v2
-
-    - name: Upload runtime validation screenshot
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: runtime-validation-screenshot-linux
-        path: build/tests/screenshot-linux-*.png

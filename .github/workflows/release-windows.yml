@@ -4,15 +4,22 @@ on:
   workflow_call:
     inputs:
       tag_name:
-        description: 'Release tag (e.g. v1.0.0) ÔÇö used to derive the MSI version number'
+        description: 'Release tag (e.g. v1.0.0) — used to derive the MSI version number'
         required: false
         type: string
         default: ''
+      build_run_id:
+        description: 'Run ID of build.yml that produced the windows artifact'
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag (e.g. v1.0.0) ÔÇö used to derive the MSI version number'
+        description: 'Release tag (e.g. v1.0.0) — used to derive the MSI version number'
         required: false
+      build_run_id:
+        description: 'Run ID of build.yml that produced the windows artifact'
+        required: true
 
 jobs:
 
@@ -20,171 +27,24 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
-    env:
-      QT_HOME: C:\Qt
+      actions: read
 
     steps:
-    - name: MSVC Environment Setup
-      uses: ilammy/msvc-dev-cmd@v1
-
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
+    - name: Download pre-built windows artifact
+      uses: actions/download-artifact@v4
       with:
-        version: '5.15.2'
-        modules: 'qtwebengine'
-        dir: ${{ env.QT_HOME }}
+        name: windows
+        path: build
+        run-id: ${{ inputs.build_run_id }}
+        github-token: ${{ github.token }}
 
-    - name: Set QTDIR
-      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
-      shell: powershell
-
-    - name: Write PowerShell helpers
-      run: |
-        @'
-        function Invoke-WebRequestWithRetry {
-          param([string]$Uri, [string]$OutFile, [int]$MaxAttempts = 5, [int]$BackoffSeconds = 5)
-          for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
-            try {
-              Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
-              return
-            } catch {
-              if ($attempt -eq $MaxAttempts) { throw }
-              Write-Host "Attempt $attempt failed: $_. Retrying in $BackoffSeconds seconds..."
-              Start-Sleep -Seconds $BackoffSeconds
-              $BackoffSeconds *= 2
-            }
-          }
-        }
-        '@ | Set-Content C:\helpers.ps1
-      shell: powershell
-
-    - name: Download OpenSSL 1.1.x
-      # Qt 5.15.2 requires OpenSSL 1.1.x DLLs (libssl-1_1-x64.dll / libcrypto-1_1-x64.dll)
-      # for HTTPS/TLS. Download the pre-built FireDaemon distribution and expose the
-      # DLL directory as OPENSSL_BIN so later steps can reference it.
-      run: |
-        . C:\helpers.ps1
-        Invoke-WebRequestWithRetry `
-          -Uri "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-1.1.1w.zip" `
-          -OutFile "$env:TEMP\openssl.zip"
-        Expand-Archive -Path "$env:TEMP\openssl.zip" -DestinationPath "$env:TEMP\openssl" -Force
-        $dll = Get-ChildItem "$env:TEMP\openssl" -Recurse -Filter "libssl-1_1-x64.dll" |
-               Select-Object -First 1
-        if (-not $dll) { Write-Error "libssl-1_1-x64.dll not found in archive"; exit 1 }
-        echo "OPENSSL_BIN=$($dll.DirectoryName)" >> $env:GITHUB_ENV
-        Write-Host "OpenSSL DLLs at: $($dll.DirectoryName)"
-      shell: powershell
-
-    - name: Download and install VLC-Qt
-      run: |
-        . C:\helpers.ps1
-        Invoke-WebRequestWithRetry -Uri "https://github.com/vlc-qt/vlc-qt/releases/download/1.1.0/VLC-Qt_1.1.0_win64_msvc2015.7z" -OutFile "$env:TEMP\vlcqt.7z"
-        & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\vlcqt.7z" -o"C:\vlcqt"
-        echo "VLCQT_DIR=C:/vlcqt" >> $env:GITHUB_ENV
-      shell: powershell
-
-    - name: Download and install SFML
-      run: |
-        curl.exe -L -o "$env:TEMP\sfml.zip" "https://github.com/SFML/SFML/releases/download/2.6.1/SFML-2.6.1-windows-vc17-64-bit.zip"
-        Expand-Archive -Path "$env:TEMP\sfml.zip" -DestinationPath "C:\sfml"
-      shell: powershell
-
-    - name: Build QWT
-      run: |
-        $qwtInstallDir = "$env:USERPROFILE\qwt"
-        $qwtInstallDirFwd = $qwtInstallDir -replace '\\', '/'
-        Set-Location ..
-        curl.exe -L -o "$env:TEMP\qwt.tar.bz2" "https://sourceforge.net/projects/qwt/files/qwt/6.2.0/qwt-6.2.0.tar.bz2/download"
-        7z x "$env:TEMP\qwt.tar.bz2" -o"$env:TEMP" -y
-        7z x "$env:TEMP\qwt.tar" -o"." -y
-        Rename-Item "qwt-6.2.0" "qwt-src"
-        Set-Location "qwt-src"
-        (Get-Content "qwtconfig.pri") | ForEach-Object {
-            if ($_ -match 'QWT_INSTALL_PREFIX\s*=') {
-                $_ -replace '(QWT_INSTALL_PREFIX\s*=\s*).*', "`$1$qwtInstallDirFwd"
-            } else { $_ }
-        } | Set-Content "qwtconfig.pri"
-        qmake qwt.pro
-        nmake
-        nmake install
-      shell: powershell
-
-    - name: Determine build version
-      run: |
-        $tag = (git describe --tags --match 'v[0-9]*' --always) -replace '\r','' -replace '-\d+-g[0-9a-f]+$',''
-        if (-not ($tag -match '^[vV][0-9]')) { $tag = 'v0.0.0' }
-        "GIT_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        Write-Host "Build version: $tag"
-      shell: powershell
-
-    - name: Build MaximumTrainer
-      run: |
-        $qwtInstallDir = "$env:USERPROFILE\qwt"
-        $qwtInstallDirFwd = $qwtInstallDir -replace '\\','/'
-        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
-        $sfmlDirFwd = $sfmlDir -replace '\\','/'
-        $env:QMAKEFEATURES = "$qwtInstallDir\features"
-        qmake PowerVelo.pro `
-          "VLCQT_INSTALL=$($env:VLCQT_DIR -replace '\\','/')" `
-          "SFML_INSTALL=$sfmlDirFwd"
-        nmake
-      shell: powershell
-
-    - name: Package with windeployqt
-      run: |
-        $qtBin = "$env:QTDIR\bin"
-        $buildRelease = "build\release"
-
-        # Copy QWT runtime DLL BEFORE windeployqt so that windeployqt can walk
-        # qwt.dll's Qt imports and include its dependencies (e.g. Qt5OpenGL.dll).
-        $qwtInstallDir = "$env:USERPROFILE\qwt"
-        $qwtDll = "$qwtInstallDir\lib\qwt.dll"
-        if (-not (Test-Path $qwtDll)) {
-          Write-Error "qwt.dll not found at expected path: $qwtDll"
-          exit 1
-        }
-        Copy-Item $qwtDll "$buildRelease\" -Force
-        Write-Host "Copied qwt.dll from $qwtDll"
-
-        # Run windeployqt on the main executable to bundle all its Qt DLLs.
-        & "$qtBin\windeployqt.exe" --release --no-translations "$buildRelease\MaximumTrainer.exe"
-
-        # Run windeployqt again on qwt.dll so that any Qt modules it depends on
-        # (Qt5OpenGL.dll etc.) that are not direct imports of MaximumTrainer.exe
-        # are also included.
-        & "$qtBin\windeployqt.exe" --release --no-translations "$buildRelease\qwt.dll"
-
-        # Copy VLC-Qt runtime DLLs
-        Copy-Item "C:\vlcqt\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
-
-        # Copy SFML runtime DLLs
-        $sfmlDir = (Get-ChildItem "C:\sfml" -Directory | Select-Object -First 1).FullName
-        Copy-Item "$sfmlDir\bin\*.dll" "$buildRelease\" -Force -ErrorAction SilentlyContinue
-
-        # Copy OpenSSL 1.1.x DLLs (required by Qt 5.15.2 for HTTPS/TLS).
-        # OPENSSL_BIN is set by the "Download OpenSSL 1.1.x" step above.
-        $opensslBin = "$env:OPENSSL_BIN"
-        if (Test-Path $opensslBin) {
-          foreach ($dll in @("libssl-1_1-x64.dll", "libcrypto-1_1-x64.dll")) {
-            $src = "$opensslBin\$dll"
-            if (Test-Path $src) {
-              Copy-Item $src "$buildRelease\" -Force
-              Write-Host "Copied $dll from Qt OpenSSL tools"
-            } else {
-              Write-Warning "OpenSSL DLL not found: $src"
-            }
-          }
-        } else {
-          Write-Warning "Qt OpenSSL tools directory not found: $opensslBin"
-        }
-
-        # Zip the release folder
-        Compress-Archive -Path "$buildRelease\*" -DestinationPath "MaximumTrainer-windows-x64.zip" -Force
+    - name: Create zip from pre-built release folder
+      run: Compress-Archive -Path "build\release\*" -DestinationPath "MaximumTrainer-windows-x64.zip" -Force
       shell: powershell
 
     - name: Upload artifact
@@ -196,9 +56,8 @@ jobs:
     - name: Set MSI version
       id: msi_version
       run: |
-        # Use the tag_name input when provided (workflow_call / standalone workflow_dispatch),
-        # otherwise fall back to github.ref_name (direct tag-push trigger).
-        $tag = if ("${{ inputs.tag_name }}" -ne "") { "${{ inputs.tag_name }}" } else { "${{ github.ref_name }}" }
+        # tag_name is always provided via workflow_dispatch or workflow_call.
+        $tag = "${{ inputs.tag_name }}"
         # Strip leading 'v' so WiX gets a numeric version like 1.2.3
         $version = $tag -replace '^v', ''
         # Normalize to a purely numeric dotted version for WiX (X.Y.Z or X.Y.Z.W)
@@ -313,96 +172,30 @@ jobs:
         name: windows-msi
         path: MaximumTrainer-windows-x64.msi
 
-  # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-  # Runtime Validation ÔÇô Windows (release quality gate)
-  #
-  # Verifies that the application UI initialises to a "Ready" state on Windows:
-  #   ÔÇó Bluetooth stack is queryable (API returns "Not Found", not "Unsupported")
-  #   ÔÇó All four sensor channels carry realistic values within 10 seconds
-  #   ÔÇó A labelled 1280├ù720 screenshot is captured as visual build evidence
-  # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-  test_runtime_validation:
-    runs-on: windows-latest
-    needs: build_windows
-    permissions:
-      contents: read
-    env:
-      QT_HOME: C:\Qt
-
-    steps:
-    - name: MSVC Environment Setup
-      uses: ilammy/msvc-dev-cmd@v1
-
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Install Qt (with Bluetooth)
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '5.15.2'
-        dir: ${{ env.QT_HOME }}
-
-    - name: Set QTDIR
-      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
-      shell: powershell
-
-    - name: Build runtime validation test
-      run: |
-        New-Item -ItemType Directory -Force -Path build\tests | Out-Null
-        Set-Location tests\integration
-        qmake runtime_validation_tests.pro
-        nmake
-      shell: powershell
-
-    - name: Run runtime validation test
-      run: .\build\tests\runtime_validation_tests.exe -v2
-      shell: powershell
-
-    - name: Upload runtime validation screenshot
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: runtime-validation-screenshot-windows
-        path: build\tests\screenshot-windows-*.png
-
   # ──────────────────────────────────────────────────────────────────────────
   # Install Verification – Windows
   #
-  # Installs the MSI produced by the build_windows job and verifies that:
+  # Installs the MSI produced by build_windows and verifies that:
   #   • The application files (including qwt.dll) are present in the install
   #     directory – catching the "qwt.dll not found" regression at release time.
-  #   • The runtime_validation_tests binary is built from source and executed as
-  #     a post-install smoke test; a labelled 1280×720 screenshot produced by
-  #     that test is uploaded as visual evidence that the software runs correctly.
+  #   • The pre-built runtime_validation_tests binary (from the build artifact)
+  #     is run as a post-install smoke test.
   # ──────────────────────────────────────────────────────────────────────────
   test_install_windows:
     runs-on: windows-latest
     needs: build_windows
     permissions:
       contents: read
-    env:
-      QT_HOME: C:\Qt
+      actions: read
 
     steps:
-    - name: MSVC Environment Setup
-      uses: ilammy/msvc-dev-cmd@v1
-
-    - name: Checkout
-      uses: actions/checkout@v4
+    - name: Download pre-built windows artifact (for test binaries)
+      uses: actions/download-artifact@v4
       with:
-        fetch-depth: 0
-
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '5.15.2'
-        dir: ${{ env.QT_HOME }}
-
-    - name: Set QTDIR
-      run: echo "QTDIR=${{ env.QT_HOME }}\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
-      shell: powershell
+        name: windows
+        path: build
+        run-id: ${{ inputs.build_run_id }}
+        github-token: ${{ github.token }}
 
     - name: Download MSI artifact
       uses: actions/download-artifact@v4
@@ -465,14 +258,6 @@ jobs:
           }
         }
         if ($failed) { exit 1 }
-      shell: powershell
-
-    - name: Build runtime validation test
-      run: |
-        New-Item -ItemType Directory -Force -Path build\tests | Out-Null
-        Set-Location tests\integration
-        qmake runtime_validation_tests.pro
-        nmake
       shell: powershell
 
     - name: Run runtime validation test (post-install smoke test)

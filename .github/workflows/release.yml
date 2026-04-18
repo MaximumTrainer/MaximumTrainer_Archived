@@ -1,13 +1,13 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag (e.g. v1.0.0) - used only when triggered manually'
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+      build_run_id:
+        description: 'Run ID of build.yml that produced the platform artifacts (used to download pre-built binaries)'
         required: true
 
 jobs:
@@ -17,26 +17,37 @@ jobs:
     uses: ./.github/workflows/release-linux.yml
     permissions:
       contents: read
+      actions: read
+    with:
+      build_run_id: ${{ github.event.inputs.build_run_id }}
 
   # ────────────────────────────────────── WINDOWS ────────────────────────────────────
   build_windows:
     uses: ./.github/workflows/release-windows.yml
     permissions:
       contents: read
+      actions: read
     with:
-      tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+      tag_name: ${{ github.event.inputs.tag_name }}
+      build_run_id: ${{ github.event.inputs.build_run_id }}
 
   # ────────────────────────────────────── MACOS ──────────────────────────────────────
   build_mac:
     uses: ./.github/workflows/release-mac.yml
     permissions:
       contents: read
+      actions: read
+    with:
+      build_run_id: ${{ github.event.inputs.build_run_id }}
 
   # ────────────────────────────────────── WASM ──────────────────────────────────────
   build_wasm:
     uses: ./.github/workflows/release-wasm.yml
     permissions:
       contents: read
+      actions: read
+    with:
+      build_run_id: ${{ github.event.inputs.build_run_id }}
 
   # ────────────────────────────────────── PUBLISH ────────────────────────────────────
   publish:
@@ -94,13 +105,13 @@ jobs:
         git config user.name  "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add docs/app/
-        git diff --cached --quiet || git commit -m "chore: deploy Wasm build artifacts for ${{ github.ref_name }}"
+        git diff --cached --quiet || git commit -m "chore: deploy Wasm build artifacts for ${{ github.event.inputs.tag_name }}"
         git push origin HEAD:refs/heads/master
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+        tag_name: ${{ github.event.inputs.tag_name }}
         generate_release_notes: true
         fail_on_unmatched_files: false
         # Don't try to delete/overwrite existing assets - attempting to delete
@@ -120,7 +131,7 @@ jobs:
     permissions:
       contents: read
     env:
-      TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+      TAG: ${{ github.event.inputs.tag_name }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:

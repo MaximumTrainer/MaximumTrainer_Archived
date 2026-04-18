@@ -220,43 +220,25 @@ jobs:
         echo "New tag: $new_tag"
         echo "new_tag=$new_tag" >> "$GITHUB_OUTPUT"
 
-    - name: Push tag and trigger release
-      # Try to create the tag ref via the REST API.  This succeeds for most
-      # commits but fails with 403 when the commit modifies .github/workflows/
-      # files — GitHub requires the 'workflows' OAuth scope which GITHUB_TOKEN
-      # cannot be granted via the permissions: block.
-      # In the failure case we skip tag creation here; softprops/action-gh-release
-      # in the publish job will create the tag automatically when it creates the
-      # GitHub Release. In both cases we dispatch release.yml from 'master'.
+    - name: Dispatch release workflow
+      # Do not pre-create the tag here — softprops/action-gh-release in the
+      # publish job creates (or reuses) the tag when it creates the GitHub
+      # Release.  Pre-creating it caused a double-run: the tag push fired
+      # release.yml AND the workflow_dispatch fired it again.
+      # Pass build_run_id so release jobs can download pre-built artifacts
+      # instead of rebuilding from source.
       uses: actions/github-script@v7
       with:
         script: |
           const tag = '${{ steps.semver.outputs.new_tag }}';
-          try {
-            await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/${tag}`,
-              sha: context.sha
-            });
-            console.log(`Created tag: ${tag}`);
-          } catch (err) {
-            if (err.status === 403 || err.status === 422) {
-              // 403 = workflow-file commits require 'workflows' scope (ungrantable)
-              // 422 = tag already exists (previous run created it)
-              console.log(`Note: tag ref creation returned ${err.status} — ` +
-                          `softprops/action-gh-release will create/reuse it`);
-            } else {
-              throw err;
-            }
-          }
-          // Always dispatch from 'master' so the ref is guaranteed to exist.
-          // The tag_name input controls the release/tag name in publish job.
           await github.rest.actions.createWorkflowDispatch({
             owner: context.repo.owner,
             repo: context.repo.repo,
             workflow_id: 'release.yml',
             ref: 'master',
-            inputs: { tag_name: tag }
+            inputs: {
+              tag_name: tag,
+              build_run_id: context.runId.toString()
+            }
           });
-          console.log(`Dispatched release.yml for ${tag}`);
+          console.log(`Dispatched release.yml for ${tag} (build_run_id=${context.runId})`);

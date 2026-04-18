@@ -2,7 +2,16 @@ name: Release - WASM
 
 on:
   workflow_call:
+    inputs:
+      build_run_id:
+        description: 'Run ID of build.yml that produced the wasm artifact'
+        required: true
+        type: string
   workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Run ID of build.yml that produced the wasm artifact'
+        required: true
 
 jobs:
 
@@ -10,121 +19,21 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
+      actions: read
 
     steps:
-    - name: Checkout
+    - name: Checkout (for docs/app/index.html)
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        sparse-checkout: docs/app/index.html
+        sparse-checkout-cone-mode: false
 
-    - name: Set up Emscripten
-      uses: mymindstorm/setup-emsdk@v14
+    - name: Download pre-built wasm artifact
+      uses: actions/download-artifact@v4
       with:
-        # Qt 6.6.3 was built with Emscripten 3.1.37. The emval ABI changed at
-        # 3.1.44 (_emval_new etc. moved from compiled WASM to JS-only), which
-        # breaks linking against Qt 6.6.3's libqwasm.a. Use 3.1.43 — the last
-        # version with the original emval WASM ABI. 3.1.37 was removed from GCS.
-        version: '3.1.43'
-
-    - name: Install Qt (Wasm singlethread)
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.6.3'
-        host: 'linux'
-        target: 'desktop'
-        arch: 'wasm_singlethread'
-        # qtconnectivity is not available for wasm_singlethread; WASM Bluetooth
-        # is bridged via JavaScript WebBluetooth (PowerVelo.pro already does
-        # QT -= bluetooth in the wasm_emscripten scope).
-        modules: 'qtwebchannel'
-
-    - name: Install Qt (linux host tools)
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.6.3'
-        host: 'linux'
-        target: 'desktop'
-        arch: 'gcc_64'
-        # set-env: false keeps gcc_64 from overwriting the WASM Qt env vars.
-        # No 'dir:' here — both WASM and host installs must share the same
-        # base directory so the wasm_singlethread qmake wrapper can resolve
-        # the sibling path Qt/6.6.3/gcc_64/bin/qmake6.
-        set-env: false
-
-    - name: Build QWT (Wasm)
-      run: |
-        cd /tmp
-        curl -L -o qwt.tar.bz2 "https://sourceforge.net/projects/qwt/files/qwt/6.3.0/qwt-6.3.0.tar.bz2/download"
-        tar -xjf qwt.tar.bz2
-        cd qwt-6.3.0
-        source "$EMSDK/emsdk_env.sh"
-        # Patch install prefix and disable WASM-incompatible QWT features via sed.
-        # Inline qmake "-=" assignments (e.g. "QWT_CONFIG -= QwtFramework") are
-        # split by the WASM qmake wrapper script before reaching the host qmake6,
-        # causing "Unknown option -=".  Editing qwtconfig.pri directly avoids this.
-        sed -i "s|QWT_INSTALL_PREFIX[^=]*=.*|QWT_INSTALL_PREFIX = $HOME/qwt-wasm|" qwtconfig.pri
-        # Disable WASM-incompatible QWT features using two complementary strategies,
-        # because qmake sub-directory builds re-evaluate .pri files from scratch and
-        # can re-add features that were removed at the top level.
-        #
-        # Strategy 1: append QWT_CONFIG -= to qwtconfig.pri (sequential override).
-        for feat in QwtDll QwtFramework QwtSvg QwtOpenGL QwtDesigner QwtDesignerSelfContained \
-                    QwtExamples QwtPlayground QwtTests QwtConcurrent; do
-          echo "QWT_CONFIG -= $feat" >> qwtconfig.pri
-        done
-        # Strategy 2: directly strip Qt modules unavailable in wasm_singlethread from
-        # every .pro and .pri file so even if the QwtXxx guard is bypassed the QT
-        # variable stays clean.  Note: src/src.pri has an unconditional
-        # "QT += concurrent" for Qt5+ with no else-clause, so this sed is required.
-        find . \( -name "*.pro" -o -name "*.pri" \) -print0 | \
-          xargs -0 sed -i \
-            -e '/QT[[:space:]]*+=/s/\bconcurrent\b//g' \
-            -e '/QT[[:space:]]*+=/s/\bopengl\b//g' \
-            -e '/QT[[:space:]]*+=/s/\bsvg\b//g'
-        # Strategy 3: disable concurrent at both the QWT level and the Qt level.
-        # - QWT_NO_CONCURRENT: prevents QwtConcurrent from being enabled in QWT.
-        #   (src.pri has no else-clause for this so we set it explicitly.)
-        # - QT_NO_QFUTURE: the code body in qwt_plot_spectrogram.cpp is guarded
-        #   by  #if !defined(QT_NO_QFUTURE)  (not QWT_NO_CONCURRENT), so we must
-        #   define this Qt-level flag to skip the multi-threaded rendering path.
-        echo "DEFINES += QWT_NO_CONCURRENT" >> qwtconfig.pri
-        echo "DEFINES += QT_NO_QFUTURE"    >> qwtconfig.pri
-        # Strategy 4: guard concurrent #includes across ALL QWT source files.
-        # Multiple files (qwt_plot_spectrogram.cpp, qwt_plot_rasteritem.cpp,
-        # qwt_point_mapper.cpp, etc.) unconditionally include <qfuture.h> and
-        # <qtconcurrentrun.h>. Apply the guard to every .cpp in src/.
-        find src -name "*.cpp" -print0 | xargs -0 sed -i \
-          's|#include <qfuture\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qfuture.h>\n#endif|g'
-        find src -name "*.cpp" -print0 | xargs -0 sed -i \
-          's|#include <qtconcurrentrun\.h>|#ifndef QWT_NO_CONCURRENT\n#include <qtconcurrentrun.h>\n#endif|g'
-        # Strategy 5: qwt_plot_spectrogram.cpp also uses QwtRasterData::ContourLines
-        # (QMap<double,QPolygonF>) — QMap was previously pulled in transitively via
-        # qfuture.h; now that include is guarded out, add it explicitly.
-        sed -i \
-          '/#include <qthread\.h>/a #include <qmap.h>' \
-          src/qwt_plot_spectrogram.cpp
-        echo "--- patched includes in concurrent-using files ---"
-        grep -rn "QWT_NO_CONCURRENT\|qfuture\|qtconcurrentrun" src/*.cpp | grep -v "^Binary"
-        qmake qwt.pro
-        emmake make -j$(nproc)
-        make install
-
-    - name: Determine build version
-      run: |
-        GIT_TAG=$(git describe --tags --match 'v[0-9]*' --always | tr -d '\r' | sed 's/-[0-9]*-g[0-9a-f]*$//')
-        [[ "$GIT_TAG" =~ ^[vV][0-9] ]] || GIT_TAG="v0.0.0"
-        echo "Build version: $GIT_TAG"
-        echo "GIT_TAG=$GIT_TAG" >> "$GITHUB_ENV"
-
-    - name: Build MaximumTrainer (Wasm)
-      run: |
-        source "$EMSDK/emsdk_env.sh"
-        # Point qmake to the WASM QWT feature file so CONFIG += qwt resolves correctly
-        export QMAKEFEATURES="$HOME/qwt-wasm/features"
-        mkdir -p build-wasm && cd build-wasm
-        qmake ../PowerVelo.pro \
-          "QWT_INSTALL=$HOME/qwt-wasm"
-        emmake make -j$(nproc)
+        name: wasm
+        run-id: ${{ inputs.build_run_id }}
+        github-token: ${{ github.token }}
 
     - name: Package Wasm artifacts
       run: |

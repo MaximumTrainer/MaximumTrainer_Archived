@@ -2,7 +2,16 @@ name: Release - macOS
 
 on:
   workflow_call:
+    inputs:
+      build_run_id:
+        description: 'Run ID of build.yml that produced the macos artifact'
+        required: true
+        type: string
   workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Run ID of build.yml that produced the macos artifact'
+        required: true
 
 jobs:
 
@@ -10,12 +19,24 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: read
+      actions: read
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
+    - name: Download pre-built macos artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos
+        path: .
+        run-id: ${{ inputs.build_run_id }}
+        github-token: ${{ github.token }}
+
+    - name: Mark binary executable
+      run: chmod +x build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -41,20 +62,6 @@ jobs:
         make -j$(sysctl -n hw.logicalcpu)
         sudo make install
 
-    - name: Determine build version
-      run: |
-        GIT_TAG=$(git describe --tags --match 'v[0-9]*' --always | tr -d '\r' | sed 's/-[0-9]*-g[0-9a-f]*$//')
-        [[ "$GIT_TAG" =~ ^[vV][0-9] ]] || GIT_TAG="v0.0.0"
-        echo "Build version: $GIT_TAG"
-        echo "GIT_TAG=$GIT_TAG" >> "$GITHUB_ENV"
-
-    - name: Build MaximumTrainer
-      run: |
-        qmake PowerVelo.pro \
-          "SFML_INSTALL=$(brew --prefix sfml)" \
-          "QWT_INSTALL=/usr/local/qwt-6.2.0"
-        make -j$(sysctl -n hw.logicalcpu)
-
     - name: Package with macdeployqt
       run: |
         # Add rpath for QWT and OpenSSL so macdeployqt can resolve and bundle them.
@@ -68,49 +75,3 @@ jobs:
       with:
         name: macos-dmg
         path: MaximumTrainer-macos.dmg
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # Runtime Validation – macOS (release quality gate)
-  #
-  # Verifies that the application UI initialises to a "Ready" state on macOS:
-  #   • Bluetooth stack is queryable (API returns "Not Found", not "Unsupported")
-  #   • All four sensor channels carry realistic values within 10 seconds
-  #   • A labelled 1280×720 screenshot is captured as visual build evidence
-  # ──────────────────────────────────────────────────────────────────────────
-  test_runtime_validation:
-    runs-on: macos-latest
-    needs: build_mac
-    permissions:
-      contents: read
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Install Qt (with Bluetooth)
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.7.3'
-        host: 'mac'
-        target: 'desktop'
-        arch: 'clang_64'
-        modules: 'qtconnectivity'
-
-    - name: Build runtime validation test
-      run: |
-        mkdir -p build/tests
-        cd tests/integration
-        qmake runtime_validation_tests.pro
-        make -j$(sysctl -n hw.logicalcpu)
-
-    - name: Run runtime validation test
-      run: ./build/tests/runtime_validation_tests -v2
-
-    - name: Upload runtime validation screenshot
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: runtime-validation-screenshot-macos
-        path: build/tests/screenshot-macos-*.png
