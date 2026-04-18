@@ -72,10 +72,20 @@ jobs:
         qmake offline_mode_tests.pro
         make -j$(sysctl -n hw.logicalcpu)
 
+    - name: Build online mode test
+      run: |
+        mkdir -p build/tests
+        cd tests/integration
+        qmake online_mode_tests.pro \
+          QMAKE_LFLAGS+="-L$(brew --prefix openssl@3)/lib" \
+          QMAKE_CXXFLAGS+="-I$(brew --prefix openssl@3)/include"
+        make -j$(sysctl -n hw.logicalcpu)
+
     - name: Bind rpath for Qt frameworks and OpenSSL
       run: |
         install_name_tool -add_rpath /usr/local/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
         install_name_tool -add_rpath $(brew --prefix openssl@3)/lib build/release/MaximumTrainer.app/Contents/MacOS/MaximumTrainer
+        install_name_tool -add_rpath $(brew --prefix openssl@3)/lib build/tests/online_mode_tests
 
     - name: upload artifact
       uses: actions/upload-artifact@v4
@@ -222,3 +232,58 @@ jobs:
 
     - name: Run Intervals.icu integration tests
       run: ./build/tests/intervals_icu_integration_tests -v2
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Online Mode Authentication Test – macOS
+  #
+  # Simulates a user authenticating into the running application on macOS.
+  # A 1280x720 window is shown, a live HTTPS authentication request is made
+  # to https://intervals.icu/api/v1 using credentials from GitHub Secrets,
+  # and the result is displayed in the window and captured as a screenshot.
+  #
+  # Requires GitHub Secrets to be configured:
+  #   INTERVALS_ICU_API_KEY    – personal API key (intervals.icu Settings → API)
+  #   INTERVALS_ICU_ATHLETE_ID – athlete ID, e.g. i12345
+  #
+  # The test calls QSKIP gracefully when either secret is absent (fork PRs,
+  # local development without credentials).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_online_mode:
+    runs-on: macos-latest
+    needs: build_mac
+    permissions:
+      contents: read
+    env:
+      INTERVALS_ICU_API_KEY:    ${{ secrets.INTERVALS_ICU_API_KEY }}
+      INTERVALS_ICU_ATHLETE_ID: ${{ secrets.INTERVALS_ICU_ATHLETE_ID }}
+
+    steps:
+    - name: Install Qt (core + network + widgets for test binary)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+
+    - name: Install OpenSSL
+      run: brew install openssl@3
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/online_mode_tests
+
+    - name: Run online mode authentication test
+      run: ./build/tests/online_mode_tests -v2
+
+    - name: Upload online mode screenshot
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: online-mode-screenshot-macos
+        path: build/tests/online-mode-macos-*.png

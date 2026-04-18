@@ -71,6 +71,8 @@ jobs:
         make -j$(nproc)
         qmake offline_mode_tests.pro
         make -j$(nproc)
+        qmake online_mode_tests.pro
+        make -j$(nproc)
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -368,3 +370,66 @@ jobs:
 
     - name: Run Intervals.icu integration tests
       run: ./build/tests/intervals_icu_integration_tests -v2
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Online Mode Authentication Test – Linux
+  #
+  # Simulates a user authenticating into the running application on Linux.
+  # A 1280x720 window is shown, a live HTTPS authentication request is made
+  # to https://intervals.icu/api/v1 using credentials from GitHub Secrets,
+  # and the result is displayed in the window and captured as a screenshot.
+  #
+  # Requires GitHub Secrets to be configured:
+  #   INTERVALS_ICU_API_KEY    – personal API key (intervals.icu Settings → API)
+  #   INTERVALS_ICU_ATHLETE_ID – athlete ID, e.g. i12345
+  #
+  # The test calls QSKIP gracefully when either secret is absent (fork PRs,
+  # local development without credentials).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_online_mode:
+    runs-on: ubuntu-22.04
+    needs: build_linux
+    permissions:
+      contents: read
+    env:
+      INTERVALS_ICU_API_KEY:    ${{ secrets.INTERVALS_ICU_API_KEY }}
+      INTERVALS_ICU_ATHLETE_ID: ${{ secrets.INTERVALS_ICU_ATHLETE_ID }}
+
+    steps:
+    - name: Install runtime dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          libqt5core5a \
+          libqt5gui5 \
+          libqt5widgets5 \
+          libqt5network5 \
+          libqt5test5 \
+          xvfb \
+          libfontconfig1 \
+          libxrender1 \
+          libxext6 \
+          libgl1-mesa-dev
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: linux
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/online_mode_tests
+
+    - name: Run online mode authentication test with Xvfb
+      run: |
+        Xvfb :99 -screen 0 1280x800x24 &
+        sleep 1
+        export DISPLAY=:99
+        ./build/tests/online_mode_tests -v2
+
+    - name: Upload online mode screenshot
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: online-mode-screenshot-linux
+        path: build/tests/online-mode-linux-*.png
