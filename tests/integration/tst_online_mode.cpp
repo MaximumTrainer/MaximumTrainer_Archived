@@ -666,11 +666,29 @@ void TstOnlineMode::testWorkoutPush()
     // Embed the timestamp so the workout can be identified if automated cleanup fails.
     const QString uniqueName =
         QString("MaximumTrainer CI Test Workout [%1]").arg(timestamp);
+
+    // Use file_contents with a valid ZWO so the workout has downloadable structured data.
+    // The 'description' field in WorkoutEx is intervals.icu's native workout format, not
+    // free text — sending arbitrary text causes a 422 Unprocessable Entity.
+    const QString zwoXml = QString(
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        "<workout_file>\n"
+        "  <author>MaximumTrainer CI</author>\n"
+        "  <name>%1</name>\n"
+        "  <description>Auto-created by CI integration test. Safe to delete.</description>\n"
+        "  <sportType>bike</sportType>\n"
+        "  <tags/>\n"
+        "  <workout>\n"
+        "    <SteadyState Duration=\"300\" Power=\"0.5\"/>\n"
+        "  </workout>\n"
+        "</workout_file>\n").arg(uniqueName);
+
     const QByteArray json =
         QJsonDocument(QJsonObject{
-            { "name",        uniqueName },
-            { "type",        "Ride" },
-            { "description", "Auto-created by MaximumTrainer CI integration test — safe to delete." }
+            { "name",          uniqueName },
+            { "type",          "Ride" },
+            { "file_contents", zwoXml },
+            { "filename",      QStringLiteral("MaximumTrainer_CI_Test.zwo") }
         }).toJson(QJsonDocument::Compact);
 
     QNetworkReply *reply =
@@ -701,11 +719,13 @@ void TstOnlineMode::testWorkoutPush()
         window.markFailed(replyErrStr);
         grabScreenshot();
         QFAIL(qPrintable(
-            QString("Workout push failed: HTTP %1  —  %2").arg(httpStatus).arg(replyErrStr)));
+            QString("Workout push failed: HTTP %1  —  %2\nResponse body: %3")
+                .arg(httpStatus).arg(replyErrStr).arg(QString::fromUtf8(body.left(512)))));
     }
 
     const QJsonObject obj = QJsonDocument::fromJson(body).object();
-    const QString workoutId = obj.value(QStringLiteral("id")).toString();
+    // The API returns id as an integer JSON value; use toVariant() for safe string conversion.
+    const QString workoutId = obj.value(QStringLiteral("id")).toVariant().toString();
 
     if (workoutId.isEmpty()) {
         window.addRow("HTTP Status", QString::number(httpStatus) + " OK");
@@ -755,147 +775,69 @@ void TstOnlineMode::testWorkoutPull()
         qDebug().noquote() << "[Screenshot] Saved to:" << outPath;
     };
 
-    // ── 1. List the workout library ───────────────────────────────────────────
-    QNetworkReply *listReply = IntervalsIcuService::getWorkouts(m_athleteId, m_apiKey);
-
-    if (!listReply) {
-        window.markFailed("getWorkouts() returned nullptr");
+    // We download the ZWO for the workout created by testWorkoutPush, which was
+    // uploaded with valid ZWO file_contents.  If push didn't succeed this test
+    // skips rather than fails — it cannot invent a workout ID from nothing.
+    if (m_pushedWorkoutId.isEmpty()) {
+        window.markPassed("testWorkoutPush did not store a workout ID — skipping ZWO download");
         grabScreenshot();
-        QFAIL("getWorkouts() returned nullptr");
+        QSKIP("testWorkoutPush did not produce a workout ID; skipping ZWO download test");
     }
 
-    if (!waitForReply(listReply)) {
-        listReply->abort();
-        listReply->deleteLater();
-        window.markFailed("Workout list request timed out after 30 s");
+    window.addRow("Workout ID", m_pushedWorkoutId);
+
+    QNetworkReply *zwoReply =
+        IntervalsIcuService::downloadWorkoutZwo(m_athleteId, m_pushedWorkoutId, m_apiKey);
+
+    if (!zwoReply) {
+        window.markFailed("downloadWorkoutZwo() returned nullptr");
         grabScreenshot();
-        QFAIL("getWorkouts() timed out");
+        QFAIL("downloadWorkoutZwo() returned nullptr");
     }
 
-    const int        listStatus  = listReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    const QByteArray listBody    = listReply->readAll();
-    const auto       listError   = listReply->error();
-    const QString    listErrStr  = listReply->errorString();
-    listReply->deleteLater();
+    if (!waitForReply(zwoReply)) {
+        zwoReply->abort();
+        zwoReply->deleteLater();
+        window.markFailed("ZWO download timed out after 30 s");
+        grabScreenshot();
+        QFAIL("downloadWorkoutZwo() timed out after 30 s");
+    }
 
-    if (listError != QNetworkReply::NoError || listStatus != 200) {
-        window.addRow("List HTTP Status", QString::number(listStatus));
-        window.markFailed(listErrStr);
+    const int        zwoStatus  = zwoReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const QByteArray zwoBody    = zwoReply->readAll();
+    const auto       zwoError   = zwoReply->error();
+    const QString    zwoErrStr  = zwoReply->errorString();
+    zwoReply->deleteLater();
+
+    if (zwoError != QNetworkReply::NoError || zwoStatus != 200) {
+        window.addRow("ZWO HTTP Status", QString::number(zwoStatus));
+        window.markFailed(zwoErrStr);
         grabScreenshot();
         QFAIL(qPrintable(
-            QString("getWorkouts failed: HTTP %1  —  %2").arg(listStatus).arg(listErrStr)));
+            QString("ZWO download failed: HTTP %1  —  %2\nResponse body: %3")
+                .arg(zwoStatus).arg(zwoErrStr).arg(QString::fromUtf8(zwoBody.left(512)))));
     }
 
-    const QJsonArray workouts = QJsonDocument::fromJson(listBody).array();
-    window.addRow("Library Size", QString::number(workouts.size()));
+    const bool isXml = zwoBody.startsWith("<?xml") || zwoBody.startsWith("<workout_file");
 
-    if (workouts.isEmpty()) {
-        window.markPassed("No workouts in library — skipping ZWO download");
-        grabScreenshot();
-        QSKIP("Workout library is empty — nothing to pull");
-    }
-
-    // Pick up to 5 pre-existing workouts (skip the one we created in testWorkoutPush —
-    // it has no interval steps so its ZWO file would be empty), and try each until one
-    // returns valid XML. This avoids a hard failure when the first candidate has no
-    // structured workout data.
-    static constexpr int kMaxCandidates = 5;
-    QStringList candidateIds;
-    QStringList candidateNames;
-    for (const QJsonValue &v : workouts) {
-        const QJsonObject w = v.toObject();
-        const QString id    = w.value(QStringLiteral("id")).toString();
-        if (!id.isEmpty() && id != m_pushedWorkoutId) {
-            candidateIds   << id;
-            candidateNames << w.value(QStringLiteral("name")).toString();
-            if (candidateIds.size() >= kMaxCandidates)
-                break;
-        }
-    }
-
-    if (candidateIds.isEmpty()) {
-        window.markPassed("No pre-existing workouts to pull — skipping ZWO download");
-        grabScreenshot();
-        QSKIP("Workout library has no pre-existing workouts to pull");
-    }
-
-    // ── 2. Try each candidate until a valid ZWO is returned ──────────────────
-    int        zwoStatus = 0;
-    QByteArray zwoBody;
-    QString    zwoErrStr;
-    QString    pickedId;
-    QString    pickedName;
-    bool       isXml = false;
-
-    for (int i = 0; i < candidateIds.size(); ++i) {
-        pickedId   = candidateIds.at(i);
-        pickedName = candidateNames.at(i);
-
-        window.addRow(QString("Trying [%1/%2]").arg(i + 1).arg(candidateIds.size()),
-                      QString("ID: %1  —  %2").arg(pickedId,
-                              pickedName.isEmpty() ? "(unnamed)" : pickedName));
-
-        QNetworkReply *zwoReply =
-            IntervalsIcuService::downloadWorkoutZwo(m_athleteId, pickedId, m_apiKey);
-
-        if (!zwoReply) {
-            qDebug().noquote() << "[testWorkoutPull] downloadWorkoutZwo() returned nullptr for" << pickedId;
-            continue;
-        }
-
-        if (!waitForReply(zwoReply)) {
-            zwoReply->abort();
-            zwoReply->deleteLater();
-            qDebug().noquote() << "[testWorkoutPull] ZWO download timed out for" << pickedId;
-            continue;
-        }
-
-        zwoStatus = zwoReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        zwoBody   = zwoReply->readAll();
-        zwoErrStr = zwoReply->errorString();
-        const auto zwoErr = zwoReply->error();
-        zwoReply->deleteLater();
-
-        if (zwoErr != QNetworkReply::NoError || zwoStatus != 200) {
-            qDebug().noquote()
-                << "[testWorkoutPull] HTTP" << zwoStatus << "for" << pickedId << "—" << zwoErrStr;
-            continue;
-        }
-
-        isXml = zwoBody.startsWith("<?xml") || zwoBody.startsWith("<workout_file");
-        if (isXml)
-            break;   // found a valid ZWO
-
-        qDebug().noquote()
-            << "[testWorkoutPull] Non-XML response for" << pickedId
-            << "(first 64 bytes:" << zwoBody.left(64) << ")";
-    }
+    window.addRow("ZWO HTTP Status", QString::number(zwoStatus) + " OK", /*highlight=*/true);
+    window.addRow("ZWO Size",        QString("%1 bytes").arg(zwoBody.size()), /*highlight=*/true);
+    window.addRow("Format",          isXml ? "XML (valid)" : "Not XML");
 
     if (!isXml) {
-        window.markPassed(
-            QString("Tried %1 candidate(s) — none returned XML ZWO; skipping").arg(candidateIds.size()));
+        window.markFailed("Response is not XML");
         grabScreenshot();
-        QSKIP(qPrintable(
-            QString("None of the %1 candidate workout(s) returned a valid ZWO file")
-                .arg(candidateIds.size())));
+        QFAIL(qPrintable(
+            QString("ZWO response does not start with XML header. First 64 bytes: %1")
+                .arg(QString::fromUtf8(zwoBody.left(64)))));
     }
 
-    const QString sizeStr = QString("%1 bytes").arg(zwoBody.size());
-
-    window.addRow("List HTTP Status", QString::number(listStatus) + " OK", /*highlight=*/true);
-    window.addRow("ZWO HTTP Status",  QString::number(zwoStatus)  + " OK", /*highlight=*/true);
-    window.addRow("ZWO Size",         sizeStr,                              /*highlight=*/true);
-    window.addRow("Format",           "XML (valid)");
     window.markPassed("ZWO downloaded and validated");
     grabScreenshot();
 
-    QCOMPARE(listStatus, 200);
     QCOMPARE(zwoStatus, 200);
     QVERIFY2(zwoBody.size() > 0, "ZWO response body is empty");
-    QVERIFY2(isXml,
-             qPrintable(QString("ZWO response does not start with XML header. "
-                                "First 64 bytes: %1")
-                            .arg(QString::fromUtf8(zwoBody.left(64)))));
+    QVERIFY2(isXml, "ZWO response is not valid XML");
 }
 
 QTEST_MAIN(TstOnlineMode)
