@@ -116,6 +116,14 @@ jobs:
         nmake install
       shell: powershell
 
+    - name: Determine build version
+      run: |
+        $tag = (git describe --tags --match 'v[0-9]*' --always) -replace '\r','' -replace '-\d+-g[0-9a-f]+$',''
+        if (-not ($tag -match '^[vV][0-9]')) { $tag = 'v0.0.0' }
+        "GIT_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Host "Build version: $tag"
+      shell: powershell
+
     - name: Create Makefile
       run: |
         $qwtInstallDir = "$env:USERPROFILE\qwt"

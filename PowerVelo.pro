@@ -5,20 +5,35 @@
 
 # Embed the git version tag into the binary so the app can report its own
 # version and compare it against the latest GitHub release at startup.
-GIT_VERSION = $$system(git describe --tags --match "v[0-9]*" --always)
-# Strip any trailing carriage-return that qmake's $$system() may capture on
-# Windows when git writes "\r\n" to stdout.
-GIT_VERSION = $$replace(GIT_VERSION, \\r, )
-# If this is not an exact tag commit, git describe appends "-N-gHASH" to the
-# nearest tag (e.g. "v0.0.53-3-gabcdef1").  Strip that suffix so APP_VERSION
-# is always a clean "vX.Y.Z" string; the extra commits are intentionally
-# folded into the tagged baseline for update-check purposes.
-GIT_VERSION = $$section(GIT_VERSION, -, 0, 0)
-isEmpty(GIT_VERSION): GIT_VERSION = "v0.0.0"
-# If git describe found no matching tag it falls back to a bare commit hash
-# (e.g. "8f6e749").  A commit hash does not start with "v" followed by a
-# digit, so treat it as an unknown version.
-!contains(GIT_VERSION, ^[vV][0-9]): GIT_VERSION = "v0.0.0"
+#
+# In GitHub Actions CI, actions/checkout@v4 writes safe.directory only to a
+# temporary gitconfig used during the checkout step, not to the real
+# ~/.gitconfig seen by subsequent build steps.  This causes qmake's
+# $$system(git describe ...) to return an empty string, triggering the
+# "v0.0.0" fallback even when the correct tag is available.
+#
+# The CI fix: each workflow exports GIT_TAG to the environment before running
+# qmake (using a "Determine build version" step that calls git describe in
+# bash, where it works reliably).  PowerVelo.pro reads that env-var first and
+# only falls back to $$system(git describe ...) for local development builds
+# where GIT_TAG is not set.
+GIT_VERSION = $$(GIT_TAG)
+isEmpty(GIT_VERSION) {
+    # Local development fallback: run git describe directly.
+    GIT_VERSION = $$system(git describe --tags --match "v[0-9]*" --always)
+    # Strip any trailing carriage-return that qmake's $$system() may capture
+    # on Windows when git writes "\r\n" to stdout.
+    GIT_VERSION = $$replace(GIT_VERSION, \\r, )
+    # If this is not an exact tag commit, git describe appends "-N-gHASH" to
+    # the nearest tag (e.g. "v0.0.53-3-gabcdef1").  Strip that suffix so
+    # APP_VERSION is always a clean "vX.Y.Z" string.
+    GIT_VERSION = $$section(GIT_VERSION, -, 0, 0)
+    isEmpty(GIT_VERSION): GIT_VERSION = "v0.0.0"
+    # If git describe found no matching tag it falls back to a bare commit
+    # hash (e.g. "8f6e749").  A commit hash does not start with "v" followed
+    # by a digit, so treat it as an unknown version.
+    !contains(GIT_VERSION, ^[vV][0-9]): GIT_VERSION = "v0.0.0"
+}
 DEFINES += APP_VERSION=\\\"$$GIT_VERSION\\\"
 
 # Derive qmake's VERSION variable from GIT_VERSION.  This is used by qmake to
