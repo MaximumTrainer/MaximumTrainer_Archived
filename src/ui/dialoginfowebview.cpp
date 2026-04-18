@@ -225,7 +225,7 @@ void DialogInfoWebView::pageLoaded(bool ok){
         // whether a technical OAuth error occurred (invalid_client,
         // invalid_redirect_uri, server_error, etc.).
         if (urlStr.contains(QLatin1String("error="))) {
-            const QUrlQuery errorQuery(QUrl(urlStr));
+            const QUrlQuery errorQuery{QUrl(urlStr)};
             const QString error     = errorQuery.queryItemValue(QStringLiteral("error"));
             const QString errorDesc = errorQuery.queryItemValue(QStringLiteral("error_description"));
             LOG_WARN("DialogInfoWebView",
