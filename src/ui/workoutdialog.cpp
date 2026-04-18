@@ -13,6 +13,9 @@
 #include <QKeyEvent>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QVBoxLayout>
+#include <QPushButton>
+#include <QLabel>
 
 #include "interval.h"
 #include "workout.h"
@@ -31,6 +34,10 @@
 #include "dialogcalibrate.h"
 #include "dialogcalibratepm.h"
 #include "logger.h"
+#include "strava_service.h"
+#include "trainingpeaks_service.h"
+#include "selfloops_service.h"
+#include "extrequest.h"
 
 
 
@@ -2748,9 +2755,12 @@ void WorkoutDialog::achievementReceived(Achievement achievement) {
     qDebug() << "\n\n\n-----------------WORKOUT DIALOG, RECVEIVED NEW ACHIEVEMENT  -------------!!!";
     qDebug() << "achievement name:" << achievement.getName();
 
-    //// Add achievement to Queue
+    //// Add achievement to Queue (for in-workout animated overlay)
     queueAchievement.enqueue(achievement);
     qDebug() << "Queue size is at" << queueAchievement.size();
+
+    // Also collect for the post-workout summary panel
+    earnedAchievements.append(achievement);
 
     if (!achievementCurrentlyPlaying) {
         qDebug() << "SHOULD SHOW ACHIEVEMENT NOW!";
@@ -3150,6 +3160,7 @@ void WorkoutDialog::sureYouWantToQuit() {
             if (Util::getSystemPathHistory() != "invalid_writable_path") {
                 int intervalPausedTime_msec = totalTimePausedWorkout_msec - lastIntervalTotalTimePausedWorkout_msec;
                 changeIntervalsDataWorkout(lastIntervalEndTime_msec, timeElapsed_sec, intervalPausedTime_msec, true, false);
+                m_quitAfterSave = true;  // skip post-workout panel — dialog closes immediately after
                 closeFitFiles(timeElapsed_sec);
             }
 
@@ -3273,7 +3284,281 @@ void WorkoutDialog::checkFitFileCreated() {
     QString fitFilename = arrDataWorkout[0]->getFitFilename();
     qDebug() << "FIT File name is" << fitFilename << "name:"<< workout.getName() << "desc" << workout.getDescription();
     if (fitFilename != "") {
+        fitFilePath        = fitFilename;
+        fitFileName        = workout.getName();
+        fitFileDescription = workout.getDescription();
+        if (!m_quitAfterSave)
+            showPostWorkoutPanel();
         emit fitFileReady(fitFilename, workout.getName(), workout.getDescription());
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void WorkoutDialog::showPostWorkoutPanel()
+{
+    if (widgetPostWorkout) return;  // already shown
+
+    widgetPostWorkout = new QWidget(ui->widget_allSpeedo);
+    widgetPostWorkout->setObjectName("widgetPostWorkout");
+    widgetPostWorkout->setStyleSheet(
+        "QWidget#widgetPostWorkout { background-color: rgba(10,10,10,220); border-radius: 10px; }"
+        "QLabel  { color: white; }"
+        "QPushButton { background-color: #2a6099; color: white; border-radius: 4px; padding: 6px 12px; }"
+        "QPushButton:disabled { background-color: #1a3a59; color: #888; }");
+
+    auto *layout = new QVBoxLayout(widgetPostWorkout);
+    layout->setSpacing(6);
+    layout->setContentsMargins(16, 12, 16, 12);
+
+    auto *titleLabel = new QLabel(tr("Workout Complete!"), widgetPostWorkout);
+    titleLabel->setStyleSheet("font-size: 14pt; font-weight: bold; color: #80c0ff;");
+    titleLabel->setAlignment(Qt::AlignCenter);
+    layout->addWidget(titleLabel);
+
+    // — Achievements section —
+    if (!earnedAchievements.isEmpty()) {
+        auto *achHeader = new QLabel(tr("Achievements Earned:"), widgetPostWorkout);
+        achHeader->setStyleSheet("font-size: 10pt; font-weight: bold; color: #f0c040; margin-top: 6px;");
+        layout->addWidget(achHeader);
+        for (const Achievement &a : earnedAchievements) {
+            auto *row = new QLabel(QString("🏆  %1").arg(a.getName()), widgetPostWorkout);
+            row->setStyleSheet("font-size: 10pt;");
+            layout->addWidget(row);
+        }
+    }
+
+    // — Upload section —
+    const bool hasStrava   = !account->strava_access_token.isEmpty();
+    const bool hasTP       = !account->training_peaks_access_token.isEmpty()
+                          && !account->training_peaks_refresh_token.isEmpty();
+    const bool hasSL       = !account->selfloops_user.isEmpty()
+                          && !account->selfloops_pw.isEmpty();
+
+    if (hasStrava || hasTP || hasSL) {
+        auto *upHeader = new QLabel(tr("Upload Activity:"), widgetPostWorkout);
+        upHeader->setStyleSheet("font-size: 10pt; font-weight: bold; color: #80c0ff; margin-top: 8px;");
+        layout->addWidget(upHeader);
+
+        if (hasStrava) {
+            auto *btn = new QPushButton(tr("Upload to Strava"), widgetPostWorkout);
+            btn->setObjectName("btnStrava");
+            connect(btn, &QPushButton::clicked, this, &WorkoutDialog::uploadToStrava);
+            layout->addWidget(btn);
+        }
+        if (hasTP) {
+            auto *btn = new QPushButton(tr("Upload to TrainingPeaks"), widgetPostWorkout);
+            btn->setObjectName("btnTrainingPeaks");
+            connect(btn, &QPushButton::clicked, this, &WorkoutDialog::uploadToTrainingPeaks);
+            layout->addWidget(btn);
+        }
+        if (hasSL) {
+            auto *btn = new QPushButton(tr("Upload to SelfLoops"), widgetPostWorkout);
+            btn->setObjectName("btnSelfLoops");
+            connect(btn, &QPushButton::clicked, this, &WorkoutDialog::uploadToSelfLoops);
+            layout->addWidget(btn);
+        }
+    }
+
+    widgetPostWorkout->adjustSize();
+    const QSize ps = ui->widget_allSpeedo->size();
+    const QSize ws = widgetPostWorkout->size();
+    widgetPostWorkout->move((ps.width()  - ws.width())  / 2,
+                            (ps.height() - ws.height()) / 2);
+    widgetPostWorkout->show();
+    widgetPostWorkout->raise();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void WorkoutDialog::uploadToStrava()
+{
+    if (fitFilePath.isEmpty()) return;
+    auto *btn = widgetPostWorkout ? widgetPostWorkout->findChild<QPushButton*>("btnStrava") : nullptr;
+
+    StravaService svc;
+    svc.setAccessToken(account->strava_access_token);
+    replyPostStravaUpload = svc.uploadActivity(fitFilePath, fitFileName, fitFileDescription,
+                                               account->strava_private_upload, true);
+    if (!replyPostStravaUpload) {
+        if (btn) { btn->setText(tr("Upload to Strava (Failed — Retry)")); }
+        return;
+    }
+    if (btn) btn->setEnabled(false);
+    connect(replyPostStravaUpload, &QNetworkReply::finished,
+            this, &WorkoutDialog::slotPostStravaUploadDone);
+}
+
+void WorkoutDialog::slotPostStravaUploadDone()
+{
+    auto *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+    reply->deleteLater();
+    replyPostStravaUpload = nullptr;
+
+    auto *btn = widgetPostWorkout ? widgetPostWorkout->findChild<QPushButton*>("btnStrava") : nullptr;
+    if (reply->error() != QNetworkReply::NoError) {
+        LOG_WARN("WorkoutDialog", QStringLiteral("Strava upload failed: ") + reply->errorString());
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to Strava (Failed — Retry)")); }
+        return;
+    }
+
+    const QByteArray body = reply->readAll();
+    stravaUploadID_post = Util::parseIdJsonStravaUploadObject(QString(body));
+    qDebug() << "Strava upload id:" << stravaUploadID_post;
+
+    if (stravaUploadID_post <= 0) {
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to Strava (Failed — Retry)")); }
+        return;
+    }
+
+    if (btn) btn->setText(tr("Uploading to Strava…"));
+    timerPostStravaStatus = new QTimer(this);
+    connect(timerPostStravaStatus, &QTimer::timeout, this, &WorkoutDialog::slotPostStravaCheckStatus);
+    timerPostStravaStatus->start(3000);
+}
+
+void WorkoutDialog::slotPostStravaCheckStatus()
+{
+    replyPostStravaStatus = ExtRequest::stravaCheckUploadStatus(account->strava_access_token, stravaUploadID_post);
+    if (replyPostStravaStatus)
+        connect(replyPostStravaStatus, &QNetworkReply::finished,
+                this, &WorkoutDialog::slotPostStravaStatusDone);
+}
+
+void WorkoutDialog::slotPostStravaStatusDone()
+{
+    auto *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+    reply->deleteLater();
+    replyPostStravaStatus = nullptr;
+
+    auto *btn = widgetPostWorkout ? widgetPostWorkout->findChild<QPushButton*>("btnStrava") : nullptr;
+
+    if (reply->error() != QNetworkReply::NoError) {
+        if (timerPostStravaStatus) timerPostStravaStatus->stop();
+        LOG_WARN("WorkoutDialog", QStringLiteral("Strava status check failed: ") + reply->errorString());
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to Strava (Failed — Retry)")); }
+        return;
+    }
+
+    const int code = Util::parseStravaUploadStatus(QString(reply->readAll()));
+    // 0 = completed, 1 = in progress, 2 = error, -1 = unexpected
+    if (code == 1) return;  // keep timer running
+
+    if (timerPostStravaStatus) { timerPostStravaStatus->stop(); timerPostStravaStatus->deleteLater(); timerPostStravaStatus = nullptr; }
+
+    if (code == 0) {
+        if (btn) btn->setText(tr("✓ Uploaded to Strava"));
+        LOG_INFO("WorkoutDialog", "Strava upload succeeded");
+    } else {
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to Strava (Failed — Retry)")); }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void WorkoutDialog::uploadToTrainingPeaks()
+{
+    if (fitFilePath.isEmpty()) return;
+    auto *btn = widgetPostWorkout ? widgetPostWorkout->findChild<QPushButton*>("btnTrainingPeaks") : nullptr;
+
+    // Refresh token first, then upload in the finished slot.
+    replyPostTPRefresh = ExtRequest::trainingPeaksRefreshToken(account->training_peaks_access_token,
+                                                               account->training_peaks_refresh_token);
+    if (!replyPostTPRefresh) {
+        if (btn) { btn->setText(tr("Upload to TrainingPeaks (Failed — Retry)")); }
+        return;
+    }
+    if (btn) btn->setEnabled(false);
+    connect(replyPostTPRefresh, &QNetworkReply::finished,
+            this, &WorkoutDialog::slotPostTPRefreshDone);
+}
+
+void WorkoutDialog::slotPostTPRefreshDone()
+{
+    auto *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+    reply->deleteLater();
+    replyPostTPRefresh = nullptr;
+
+    auto *btn = widgetPostWorkout ? widgetPostWorkout->findChild<QPushButton*>("btnTrainingPeaks") : nullptr;
+    if (reply->error() != QNetworkReply::NoError) {
+        LOG_WARN("WorkoutDialog", QStringLiteral("TP token refresh failed: ") + reply->errorString());
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to TrainingPeaks (Failed — Retry)")); }
+        return;
+    }
+
+    Util::parseJsonTPObject(QString::fromUtf8(reply->readAll()));
+
+    replyPostTPUpload = ExtRequest::trainingPeaksUploadFile(account->training_peaks_access_token,
+                                                            account->training_peaks_public_upload,
+                                                            fitFileName, fitFileDescription, fitFilePath);
+    if (!replyPostTPUpload) {
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to TrainingPeaks (Failed — Retry)")); }
+        return;
+    }
+    connect(replyPostTPUpload, &QNetworkReply::finished,
+            this, &WorkoutDialog::slotPostTPUploadDone);
+}
+
+void WorkoutDialog::slotPostTPUploadDone()
+{
+    auto *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+    reply->deleteLater();
+    replyPostTPUpload = nullptr;
+
+    auto *btn = widgetPostWorkout ? widgetPostWorkout->findChild<QPushButton*>("btnTrainingPeaks") : nullptr;
+    if (reply->error() == QNetworkReply::NoError) {
+        if (btn) btn->setText(tr("✓ Uploaded to TrainingPeaks"));
+        LOG_INFO("WorkoutDialog", "TrainingPeaks upload succeeded");
+    } else {
+        LOG_WARN("WorkoutDialog", QStringLiteral("TP upload failed: ") + reply->errorString());
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to TrainingPeaks (Failed — Retry)")); }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void WorkoutDialog::uploadToSelfLoops()
+{
+    if (fitFilePath.isEmpty()) return;
+    auto *btn = widgetPostWorkout ? widgetPostWorkout->findChild<QPushButton*>("btnSelfLoops") : nullptr;
+
+    replyPostSelfloopsUpload = ExtRequest::selfloopsUploadFile(account->selfloops_user,
+                                                               account->selfloops_pw,
+                                                               fitFilePath, fitFileDescription);
+    if (!replyPostSelfloopsUpload) {
+        if (btn) { btn->setText(tr("Upload to SelfLoops (Failed — Retry)")); }
+        return;
+    }
+    if (btn) btn->setEnabled(false);
+    connect(replyPostSelfloopsUpload, &QNetworkReply::finished,
+            this, &WorkoutDialog::slotPostSelfloopsUploadDone);
+}
+
+void WorkoutDialog::slotPostSelfloopsUploadDone()
+{
+    auto *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+    reply->deleteLater();
+    replyPostSelfloopsUpload = nullptr;
+
+    auto *btn = widgetPostWorkout ? widgetPostWorkout->findChild<QPushButton*>("btnSelfLoops") : nullptr;
+    if (reply->error() != QNetworkReply::NoError) {
+        LOG_WARN("WorkoutDialog", QStringLiteral("SelfLoops upload failed: ") + reply->errorString());
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to SelfLoops (Failed — Retry)")); }
+        return;
+    }
+
+    const QString msgReply = QString::fromUtf8(reply->readAll());
+    if (msgReply.contains("Success", Qt::CaseInsensitive)) {
+        if (btn) btn->setText(tr("✓ Uploaded to SelfLoops"));
+        LOG_INFO("WorkoutDialog", "SelfLoops upload succeeded");
+    } else if (msgReply.contains("already", Qt::CaseInsensitive)) {
+        if (btn) btn->setText(tr("✓ Activity already on SelfLoops"));
+    } else if (msgReply.contains("empty", Qt::CaseInsensitive)) {
+        if (btn) { btn->setEnabled(true); btn->setText(tr("SelfLoops: activity is empty")); }
+    } else {
+        LOG_WARN("WorkoutDialog", QStringLiteral("SelfLoops unexpected response: ") + msgReply);
+        if (btn) { btn->setEnabled(true); btn->setText(tr("Upload to SelfLoops (Failed — Retry)")); }
     }
 }
 

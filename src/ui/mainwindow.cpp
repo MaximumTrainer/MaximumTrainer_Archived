@@ -1685,38 +1685,10 @@ void MainWindow::checkToUploadFile(const QString& filename, const QString& nameO
 
     qDebug() << "check to upload Fit file";
 
-    if (account->strava_access_token != "") {
-
-        QString msgUploading = tr("Uploading your activity to Strava...");
-        ui->widget_bottomMenu->setGeneralMessage(msgUploading);
-        replyStravaUpload = ExtRequest::stravaUploadFile(account->strava_access_token, nameOnly, description,
-                                                         true, account->strava_private_upload, "workout", filename);
-        connect(replyStravaUpload, SIGNAL(finished()), this, SLOT(slotStravaUploadFinished()) );
-    }
-
-
-    if (account->training_peaks_access_token != "" && account->training_peaks_refresh_token != "") {
-
-        //1- Refresh Token
-        //2- Upload File
-        nameWorkout = nameOnly;
-        descriptionWorkout = description;
-        filepathWorkout = filename;
-
-        QString msgUploading = tr("Uploading your activity to TrainingPeaks...");
-        ui->widget_bottomMenu->setGeneralMessage(msgUploading);
-        replyTrainingPeaksRefreshStatus = ExtRequest::trainingPeaksRefreshToken(account->training_peaks_access_token, account->training_peaks_refresh_token);
-        connect(replyTrainingPeaksRefreshStatus, SIGNAL(finished()), this, SLOT(slotTrainingPeaksRefreshFinished()) );
-    }
-
-    //SelfLoops
-    if (account->selfloops_user.size() > 0 && account->selfloops_pw.size() > 0 ) {
-
-        QString msgUploading = tr("Uploading your activity to SelfLoops...");
-        ui->widget_bottomMenu->setGeneralMessage(msgUploading);
-        replySelfLoopsUpload = ExtRequest::selfloopsUploadFile(account->selfloops_user, account->selfloops_pw, filename, description);
-        connect(replySelfLoopsUpload, SIGNAL(finished()), this, SLOT(slotSelfLoopsUploadFinished()) );
-    }
+    // Note: Strava, TrainingPeaks, and SelfLoops uploads are now triggered
+    // explicitly by the post-workout upload buttons inside WorkoutDialog.
+    // Only Intervals.icu is auto-uploaded here because it has its own
+    // dedicated auto-upload setting flag.
 
     // Intervals.icu
     if (account->intervals_icu_auto_upload &&
@@ -1734,7 +1706,6 @@ void MainWindow::checkToUploadFile(const QString& filename, const QString& nameO
         }
         svc->deleteLater();
     }
-
 
 }
 

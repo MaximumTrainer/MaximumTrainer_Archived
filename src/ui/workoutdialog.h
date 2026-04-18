@@ -206,6 +206,17 @@ private slots:
     void moveToInterval(int nb, double secWorkout, double startIntervalSec, bool showConfirmation);
     void adjustWorkoutDifficulty(int percentage);
 
+    // Post-workout upload slots
+    void uploadToStrava();
+    void uploadToTrainingPeaks();
+    void uploadToSelfLoops();
+    void slotPostStravaUploadDone();
+    void slotPostStravaCheckStatus();
+    void slotPostStravaStatusDone();
+    void slotPostTPRefreshDone();
+    void slotPostTPUploadDone();
+    void slotPostSelfloopsUploadDone();
+
 
 
 private:
@@ -213,6 +224,7 @@ private:
     void keyPressEvent(QKeyEvent *event) override;
 
     void checkFitFileCreated();
+    void showPostWorkoutPanel();
     void closeFitFiles(double timeElapsed_sec);
     void closeAndDeleteFitFile();
     void changeIntervalsDataWorkout(double, double, int, bool, bool);
@@ -311,6 +323,23 @@ private:
     QTimer *timerLastAnimationAchievementComplete;
     QQueue<Achievement> queueAchievement;
     bool achievementCurrentlyPlaying;
+
+    // Post-workout summary: achievements earned this session
+    QList<Achievement> earnedAchievements;
+
+    // Post-workout upload panel and stored FIT file info
+    QWidget *widgetPostWorkout = nullptr;
+    QString fitFilePath;
+    QString fitFileName;
+    QString fitFileDescription;
+    bool    m_quitAfterSave = false;   // suppress panel when saving-and-quitting
+    QNetworkReply *replyPostStravaUpload   = nullptr;
+    QNetworkReply *replyPostStravaStatus   = nullptr;
+    QTimer        *timerPostStravaStatus   = nullptr;
+    int            stravaUploadID_post     = 0;
+    QNetworkReply *replyPostTPRefresh      = nullptr;
+    QNetworkReply *replyPostTPUpload       = nullptr;
+    QNetworkReply *replyPostSelfloopsUpload = nullptr;
 
 
 
