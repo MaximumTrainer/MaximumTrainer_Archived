@@ -118,6 +118,8 @@ private slots:
     void testGetAthlete_authHeader();
     void testGetEvents_authHeader();
     void testGetWorkouts_authHeader();
+    void testGetWorkout_authHeader();
+    void testConvertWorkoutToZwo_authHeader();
     void testDownloadZwo_authHeader();
     void testDownloadMrc_authHeader();
 
@@ -128,6 +130,8 @@ private slots:
     void testGetAthlete_url();
     void testGetEvents_url();
     void testGetWorkouts_url();
+    void testGetWorkout_url();
+    void testConvertWorkoutToZwo_url();
     void testDownloadZwo_url();
     void testDownloadMrc_url();
 
@@ -194,6 +198,29 @@ void TstIntervalsIcuService::testGetEvents_authHeader()
 void TstIntervalsIcuService::testGetWorkouts_authHeader()
 {
     QNetworkReply *reply = IntervalsIcuService::getWorkouts(ATHLETE_ID, API_KEY);
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
+
+    const QByteArray header = m_manager->lastRequest.rawHeader("Authorization");
+    QCOMPARE(header, expectedBasicHeader(API_KEY));
+}
+
+void TstIntervalsIcuService::testGetWorkout_authHeader()
+{
+    QNetworkReply *reply = IntervalsIcuService::getWorkout(ATHLETE_ID, WORKOUT_ID, API_KEY);
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
+
+    const QByteArray header = m_manager->lastRequest.rawHeader("Authorization");
+    QCOMPARE(header, expectedBasicHeader(API_KEY));
+}
+
+void TstIntervalsIcuService::testConvertWorkoutToZwo_authHeader()
+{
+    QNetworkReply *reply = IntervalsIcuService::convertWorkoutToZwo(
+        ATHLETE_ID, API_KEY, QByteArrayLiteral("{}"));
     QVERIFY(reply != nullptr);
     QCOMPARE(m_manager->callCount, 1);
     reply->deleteLater();
@@ -282,6 +309,32 @@ void TstIntervalsIcuService::testGetWorkouts_url()
     QVERIFY(!url.contains(QStringLiteral("/workouts/"))); // no workout ID segment
 }
 
+void TstIntervalsIcuService::testGetWorkout_url()
+{
+    QNetworkReply *reply = IntervalsIcuService::getWorkout(ATHLETE_ID, WORKOUT_ID, API_KEY);
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
+
+    const QString url = m_manager->lastRequest.url().toString();
+    QVERIFY(url.contains(QStringLiteral("/workouts/") + WORKOUT_ID));
+    QVERIFY(!url.contains(QStringLiteral(".zwo")));
+    QVERIFY(!url.contains(QStringLiteral(".mrc")));
+}
+
+void TstIntervalsIcuService::testConvertWorkoutToZwo_url()
+{
+    QNetworkReply *reply = IntervalsIcuService::convertWorkoutToZwo(
+        ATHLETE_ID, API_KEY, QByteArrayLiteral("{}"));
+    QVERIFY(reply != nullptr);
+    QCOMPARE(m_manager->callCount, 1);
+    reply->deleteLater();
+
+    const QString url = m_manager->lastRequest.url().toString();
+    QVERIFY(url.contains(QStringLiteral("/athlete/") + ATHLETE_ID
+                         + QStringLiteral("/download-workout.zwo")));
+}
+
 void TstIntervalsIcuService::testDownloadZwo_url()
 {
     QNetworkReply *reply = IntervalsIcuService::downloadWorkoutZwo(
@@ -291,7 +344,7 @@ void TstIntervalsIcuService::testDownloadZwo_url()
     reply->deleteLater();
 
     const QString url = m_manager->lastRequest.url().toString();
-    QVERIFY(url.contains(QStringLiteral("/workouts/") + WORKOUT_ID + QStringLiteral("/file.zwo")));
+    QVERIFY(url.contains(QStringLiteral("/workouts/") + WORKOUT_ID + QStringLiteral(".zwo")));
 }
 
 void TstIntervalsIcuService::testDownloadMrc_url()
@@ -303,7 +356,7 @@ void TstIntervalsIcuService::testDownloadMrc_url()
     reply->deleteLater();
 
     const QString url = m_manager->lastRequest.url().toString();
-    QVERIFY(url.contains(QStringLiteral("/workouts/") + WORKOUT_ID + QStringLiteral("/file.mrc")));
+    QVERIFY(url.contains(QStringLiteral("/workouts/") + WORKOUT_ID + QStringLiteral(".mrc")));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -339,6 +392,8 @@ void TstIntervalsIcuService::testNullManager_returnsNullptr()
     QCOMPARE(IntervalsIcuService::getEvents(ATHLETE_ID, API_KEY,
                                             QDate(2024,1,1), QDate(2024,1,31)), nullptr);
     QCOMPARE(IntervalsIcuService::getWorkouts(ATHLETE_ID, API_KEY), nullptr);
+    QCOMPARE(IntervalsIcuService::getWorkout(ATHLETE_ID, WORKOUT_ID, API_KEY), nullptr);
+    QCOMPARE(IntervalsIcuService::convertWorkoutToZwo(ATHLETE_ID, API_KEY, QByteArrayLiteral("{}")), nullptr);
     QCOMPARE(IntervalsIcuService::downloadWorkoutZwo(ATHLETE_ID, WORKOUT_ID, API_KEY), nullptr);
     QCOMPARE(IntervalsIcuService::downloadWorkoutMrc(ATHLETE_ID, WORKOUT_ID, API_KEY), nullptr);
 

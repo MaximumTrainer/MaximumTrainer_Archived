@@ -31,6 +31,19 @@ public:
     /// GET /athlete/{id}/workouts
     static QNetworkReply* getWorkouts(const QString &athleteId, const QString &apiKey);
 
+    /// Fetch a single workout from the athlete's library by ID.
+    /// GET /athlete/{id}/workouts/{workoutId}
+    static QNetworkReply* getWorkout(const QString &athleteId,
+                                     const QString &workoutId,
+                                     const QString &apiKey);
+
+    /// Convert a Workout JSON object to a ZWO file.
+    /// POST /athlete/{id}/download-workout.zwo
+    /// @param workoutJson  UTF-8 encoded Workout JSON object (e.g. from getWorkout).
+    static QNetworkReply* convertWorkoutToZwo(const QString &athleteId,
+                                              const QString &apiKey,
+                                              const QByteArray &workoutJson);
+
     /// Download a workout as a ZWO file.
     /// GET /athlete/{id}/workouts/{workoutId}.zwo
     static QNetworkReply* downloadWorkoutZwo(const QString &athleteId,
@@ -38,7 +51,7 @@ public:
                                              const QString &apiKey);
 
     /// Download a workout as an MRC file.
-    /// GET /athlete/{id}/workouts/{workoutId}/file.mrc
+    /// GET /athlete/{id}/workouts/{workoutId}.mrc
     static QNetworkReply* downloadWorkoutMrc(const QString &athleteId,
                                              const QString &workoutId,
                                              const QString &apiKey);

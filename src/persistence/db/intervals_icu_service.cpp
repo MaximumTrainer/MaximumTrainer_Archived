@@ -76,6 +76,44 @@ QNetworkReply* IntervalsIcuService::getWorkouts(const QString &athleteId, const 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/athlete/{id}/workouts/{workoutId}
+QNetworkReply* IntervalsIcuService::getWorkout(const QString &athleteId,
+                                               const QString &workoutId,
+                                               const QString &apiKey)
+{
+    QNetworkAccessManager *manager =
+        qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("getWorkout: NetworkManagerWS not available"));
+        return nullptr;
+    }
+
+    const QString url = QLatin1String(BASE_URL) + QStringLiteral("/athlete/") + athleteId
+                        + QStringLiteral("/workouts/") + workoutId;
+    return manager->get(buildRequest(url, apiKey));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/athlete/{id}/download-workout.zwo
+QNetworkReply* IntervalsIcuService::convertWorkoutToZwo(const QString &athleteId,
+                                                        const QString &apiKey,
+                                                        const QByteArray &workoutJson)
+{
+    QNetworkAccessManager *manager =
+        qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("convertWorkoutToZwo: NetworkManagerWS not available"));
+        return nullptr;
+    }
+
+    const QString url = QLatin1String(BASE_URL) + QStringLiteral("/athlete/") + athleteId
+                        + QStringLiteral("/download-workout.zwo");
+    QNetworkRequest req = buildRequest(url, apiKey);
+    req.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    return manager->post(req, workoutJson);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v1/athlete/{id}/workouts/{workoutId}.zwo
 QNetworkReply* IntervalsIcuService::downloadWorkoutZwo(const QString &athleteId,
                                                        const QString &workoutId,

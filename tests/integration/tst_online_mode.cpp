@@ -824,9 +824,8 @@ void TstOnlineMode::testWorkoutPull()
         qDebug().noquote() << "[Screenshot] Saved to:" << outPath;
     };
 
-    // We download the ZWO for the workout created by testWorkoutPush, which was
-    // uploaded with valid ZWO file_contents.  If push didn't succeed this test
-    // skips rather than fails — it cannot invent a workout ID from nothing.
+    // We fetch the workout created by testWorkoutPush, then convert it to ZWO.
+    // If push didn't succeed this test skips rather than fails.
     if (m_pushedWorkoutId.isEmpty()) {
         window.markPassed("testWorkoutPush did not store a workout ID — skipping ZWO download");
         grabScreenshot();
@@ -835,21 +834,57 @@ void TstOnlineMode::testWorkoutPull()
 
     window.addRow("Workout ID", m_pushedWorkoutId);
 
+    // ── Step 1: GET /athlete/{id}/workouts/{workoutId} ───────────────────────
+    QNetworkReply *getReply =
+        IntervalsIcuService::getWorkout(m_athleteId, m_pushedWorkoutId, m_apiKey);
+
+    if (!getReply) {
+        window.markFailed("getWorkout() returned nullptr");
+        grabScreenshot();
+        QFAIL("getWorkout() returned nullptr");
+    }
+
+    if (!waitForReply(getReply)) {
+        getReply->abort();
+        getReply->deleteLater();
+        window.markFailed("GET workout timed out after 30 s");
+        grabScreenshot();
+        QFAIL("getWorkout() timed out after 30 s");
+    }
+
+    const int        getStatus  = getReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const QByteArray getBody    = getReply->readAll();
+    const auto       getError   = getReply->error();
+    const QString    getErrStr  = getReply->errorString();
+    getReply->deleteLater();
+
+    if (getError != QNetworkReply::NoError || getStatus != 200) {
+        window.addRow("GET HTTP Status", QString::number(getStatus));
+        window.markFailed(getErrStr);
+        grabScreenshot();
+        QFAIL(qPrintable(
+            QString("GET workout failed: HTTP %1  —  %2\nResponse body: %3")
+                .arg(getStatus).arg(getErrStr).arg(QString::fromUtf8(getBody.left(512)))));
+    }
+
+    window.addRow("GET HTTP Status", QString::number(getStatus) + " OK", /*highlight=*/true);
+
+    // ── Step 2: POST /athlete/{id}/download-workout.zwo ─────────────────────
     QNetworkReply *zwoReply =
-        IntervalsIcuService::downloadWorkoutZwo(m_athleteId, m_pushedWorkoutId, m_apiKey);
+        IntervalsIcuService::convertWorkoutToZwo(m_athleteId, m_apiKey, getBody);
 
     if (!zwoReply) {
-        window.markFailed("downloadWorkoutZwo() returned nullptr");
+        window.markFailed("convertWorkoutToZwo() returned nullptr");
         grabScreenshot();
-        QFAIL("downloadWorkoutZwo() returned nullptr");
+        QFAIL("convertWorkoutToZwo() returned nullptr");
     }
 
     if (!waitForReply(zwoReply)) {
         zwoReply->abort();
         zwoReply->deleteLater();
-        window.markFailed("ZWO download timed out after 30 s");
+        window.markFailed("ZWO conversion timed out after 30 s");
         grabScreenshot();
-        QFAIL("downloadWorkoutZwo() timed out after 30 s");
+        QFAIL("convertWorkoutToZwo() timed out after 30 s");
     }
 
     const int        zwoStatus  = zwoReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -863,7 +898,7 @@ void TstOnlineMode::testWorkoutPull()
         window.markFailed(zwoErrStr);
         grabScreenshot();
         QFAIL(qPrintable(
-            QString("ZWO download failed: HTTP %1  —  %2\nResponse body: %3")
+            QString("ZWO conversion failed: HTTP %1  —  %2\nResponse body: %3")
                 .arg(zwoStatus).arg(zwoErrStr).arg(QString::fromUtf8(zwoBody.left(512)))));
     }
 
