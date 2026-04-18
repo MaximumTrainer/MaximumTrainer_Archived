@@ -61,6 +61,7 @@ jobs:
         qmake PowerVelo.pro "INCLUDEPATH+=/usr/local/include" "LIBS+=-L/usr/local/lib"
       env:
         QMAKEFEATURES: /usr/share/qt5/mkspecs/features
+        TP_CLIENT_SECRET: ${{ secrets.TP_CLIENT_SECRET }}
 
     - name: Build
       run: |
@@ -544,3 +545,105 @@ jobs:
       with:
         name: login-screen-screenshot-linux
         path: build/tests/login-screen*-linux-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Strava / TrainingPeaks / Selfloops Service Unit Tests – Linux
+  #
+  # Builds and runs all three offline service test suites.  These tests use
+  # a mock network manager and do not require real API credentials.
+  #
+  # Optional live tests are gated behind GitHub Secrets and QSKIP gracefully
+  # when the relevant secret is absent.
+  # ──────────────────────────────────────────────────────────────────────────
+  test_third_party_services:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    env:
+      TP_CLIENT_SECRET:    ${{ secrets.TP_CLIENT_SECRET }}
+      STRAVA_ACCESS_TOKEN: ${{ secrets.STRAVA_ACCESS_TOKEN }}
+      TP_REFRESH_TOKEN:    ${{ secrets.TP_REFRESH_TOKEN }}
+      SELFLOOPS_EMAIL:     ${{ secrets.SELFLOOPS_EMAIL }}
+      SELFLOOPS_PW:        ${{ secrets.SELFLOOPS_PW }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install Qt and dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          build-essential
+
+    - name: Build Strava service tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        mkdir -p build/tests
+        cd tests/strava
+        qmake strava_tests.pro
+        make -j$(nproc)
+
+    - name: Build TrainingPeaks service tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        cd tests/trainingpeaks
+        qmake trainingpeaks_tests.pro
+        make -j$(nproc)
+
+    - name: Build Selfloops service tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        cd tests/selfloops
+        qmake selfloops_tests.pro
+        make -j$(nproc)
+
+    - name: Run Strava service tests
+      run: ./build/tests/strava_tests -v2
+
+    - name: Run TrainingPeaks service tests
+      run: ./build/tests/trainingpeaks_tests -v2
+
+    - name: Run Selfloops service tests
+      run: ./build/tests/selfloops_tests -v2
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # CredentialStore Unit Tests – Linux
+  #
+  # Tests the AES-256-GCM CredentialStore backend (Linux only).
+  # The roundtrip, overwrite, remove, missing-key, multi-service, empty-value,
+  # and special-character tests all execute without any external dependencies.
+  # Requires libssl-dev (already available in the base Qt install step).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_credential_store:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install Qt and dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          qtbase5-dev \
+          libssl-dev \
+          build-essential
+
+    - name: Build CredentialStore tests
+      run: |
+        export PATH=/usr/lib/qt5/bin:$PATH
+        mkdir -p build/tests
+        cd tests/credential_store
+        qmake credential_store_tests.pro
+        make -j$(nproc)
+
+    - name: Run CredentialStore tests
+      run: ./build/tests/credential_store_tests -v2

@@ -36,6 +36,18 @@ isEmpty(GIT_VERSION) {
 }
 DEFINES += APP_VERSION=\\\"$$GIT_VERSION\\\"
 
+# TrainingPeaks client secret — supplied at build time via environment variable.
+# In GitHub Actions CI, set the TP_CLIENT_SECRET secret and expose it as an
+# environment variable in the qmake step.  For local development, export
+# TP_CLIENT_SECRET before running qmake.  An empty secret disables the token
+# refresh flow but does not prevent file uploads with an existing access token.
+TP_SECRET_VAL = $$(TP_CLIENT_SECRET)
+!isEmpty(TP_SECRET_VAL) {
+    DEFINES += TP_CLIENT_SECRET=\\\"$$TP_SECRET_VAL\\\"
+} else {
+    DEFINES += TP_CLIENT_SECRET=\\\"\\\"
+}
+
 # Derive qmake's VERSION variable from GIT_VERSION.  This is used by qmake to
 # populate the Windows RC file so the version appears in the .exe "Details" tab
 # of the file-properties dialog.  The leading "v" is stripped and any
@@ -184,7 +196,8 @@ win32-msvc* {
 
     # Gdi32 and User32 are standard system libs resolved automatically by the
     # MSVC linker via the LIB environment variable.  No explicit -L path needed.
-    LIBS += -lGdi32 -lUser32
+    # Crypt32 is required for DPAPI (CryptProtectData) in CredentialStore.
+    LIBS += -lGdi32 -lUser32 -lCrypt32
     CONFIG += force_debug_info
 
 
@@ -246,7 +259,7 @@ macx:!wasm_emscripten {
     }
 
     # on mac we use native buttons and video, but have native fullscreen support
-    LIBS    += -lobjc -framework IOKit -framework AppKit
+    LIBS    += -lobjc -framework IOKit -framework AppKit -framework Security
 
     # QWT: configure directly against the flat (non-framework) install.
     !isEmpty(QWT_INSTALL) {

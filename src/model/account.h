@@ -21,6 +21,16 @@ public:
     void saveNbSecShowIntervalBefore(int nbSec);
     void saveIntervalsIcuCredentials();
 
+    /// Encrypt and persist Strava OAuth2 tokens to QSettings.
+    /// Call after a successful token exchange or refresh.
+    void saveStravaCredentials();
+
+    /// Encrypt and persist TrainingPeaks OAuth2 tokens to QSettings.
+    void saveTrainingPeaksCredentials();
+
+    /// Encrypt and persist Selfloops email + password to QSettings.
+    void saveSelfloopsCredentials();
+
 
     int id;
     int subscription_type_id;  //1 = Free, 2= Regular, 3=Studio
@@ -74,6 +84,7 @@ public:
     bool show_included_course;
     bool distance_in_km;
     QString strava_access_token;
+    QString strava_refresh_token;    ///< OAuth2 refresh token for Strava.
     bool strava_private_upload;
     QString selfloops_user;
     QString selfloops_pw;

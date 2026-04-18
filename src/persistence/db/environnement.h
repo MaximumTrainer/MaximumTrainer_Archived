@@ -88,7 +88,13 @@ const static QString urlTrainingPeaksAuthorize("https://oauth.trainingpeaks.com/
                                                "&scope=file:write");
 
 const static QString CLIENT_ID_TP = "maximumtrainer";
-const static QString CLIENT_SECRET_TP = "tXd2eDxHe73taHkVB4oHkMkSPw6aZ3nO5n2R0bxc";
+// CLIENT_SECRET_TP is injected at build time via the TP_CLIENT_SECRET env var
+// (see PowerVelo.pro).  The macro expands to an empty string when the secret
+// has not been configured, which disables the token-refresh flow.
+#ifndef TP_CLIENT_SECRET
+#define TP_CLIENT_SECRET ""
+#endif
+const static QString CLIENT_SECRET_TP = QStringLiteral(TP_CLIENT_SECRET);
 const static QString URL_TOKEN_TP = "https://oauth.trainingpeaks.com/oauth/token/";
 const static QString URL_POST_FILE_TP = "https://api.trainingpeaks.com/v1/file/";
 

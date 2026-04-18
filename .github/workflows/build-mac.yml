@@ -54,6 +54,8 @@ jobs:
         qmake PowerVelo.pro \
           "SFML_INSTALL=$(brew --prefix sfml)" \
           "QWT_INSTALL=/usr/local/qwt-6.2.0"
+      env:
+        TP_CLIENT_SECRET: ${{ secrets.TP_CLIENT_SECRET }}
 
     - name: Diagnose QWT installation
       run: |

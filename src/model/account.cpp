@@ -1,4 +1,5 @@
 #include "account.h"
+#include "credential_store.h"
 #include <QDebug>
 
 
@@ -51,6 +52,14 @@ Account::Account(QObject *parent) : QObject(parent)  {
     intervals_icu_refresh_token = settings.value("intervals_icu_refresh_token", "").toString();
     settings.endGroup();
 
+    // Load encrypted third-party service credentials from the platform credential store.
+    strava_access_token         = CredentialStore::load("strava",        "access_token");
+    strava_refresh_token        = CredentialStore::load("strava",        "refresh_token");
+    training_peaks_access_token  = CredentialStore::load("trainingpeaks", "access_token");
+    training_peaks_refresh_token = CredentialStore::load("trainingpeaks", "refresh_token");
+    selfloops_user              = CredentialStore::load("selfloops",     "email");
+    selfloops_pw                = CredentialStore::load("selfloops",     "password");
+
 
 
 
@@ -66,13 +75,8 @@ Account::Account(QObject *parent) : QObject(parent)  {
     show_included_workout = true;
     show_included_course = true;
     distance_in_km = true;
-    strava_access_token = "";
     strava_private_upload = false;
-    training_peaks_access_token = "";
-    training_peaks_refresh_token = "";
     training_peaks_public_upload = false;
-    selfloops_user = "";
-    selfloops_pw = "";
     intervals_icu_auto_upload = false;
     control_trainer_resistance = true;
     stop_pairing_on_found = true;
@@ -202,6 +206,24 @@ void Account::saveIntervalsIcuCredentials() {
     settings.setValue("intervals_icu_access_token",  intervals_icu_access_token);
     settings.setValue("intervals_icu_refresh_token", intervals_icu_refresh_token);
     settings.endGroup();
+}
+
+void Account::saveStravaCredentials()
+{
+    CredentialStore::store("strava", "access_token",  strava_access_token);
+    CredentialStore::store("strava", "refresh_token", strava_refresh_token);
+}
+
+void Account::saveTrainingPeaksCredentials()
+{
+    CredentialStore::store("trainingpeaks", "access_token",  training_peaks_access_token);
+    CredentialStore::store("trainingpeaks", "refresh_token", training_peaks_refresh_token);
+}
+
+void Account::saveSelfloopsCredentials()
+{
+    CredentialStore::store("selfloops", "email",    selfloops_user);
+    CredentialStore::store("selfloops", "password", selfloops_pw);
 }
 
 

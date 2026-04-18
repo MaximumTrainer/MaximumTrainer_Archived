@@ -11,7 +11,10 @@ SOURCES     +=\
     $$PWD/achievementdao.cpp \
     $$PWD/intervalsicudao.cpp \
     $$PWD/intervalsicuservice.cpp \
-    $$PWD/intervals_icu_service.cpp
+    $$PWD/intervals_icu_service.cpp \
+    $$PWD/strava_service.cpp \
+    $$PWD/trainingpeaks_service.cpp \
+    $$PWD/selfloops_service.cpp
 
 HEADERS     += \
     $$PWD/userdao.h \
@@ -23,7 +26,10 @@ HEADERS     += \
     $$PWD/achievementdao.h \
     $$PWD/intervalsicudao.h \
     $$PWD/intervalsicuservice.h \
-    $$PWD/intervals_icu_service.h
+    $$PWD/intervals_icu_service.h \
+    $$PWD/strava_service.h \
+    $$PWD/trainingpeaks_service.h \
+    $$PWD/selfloops_service.h
 
 
 

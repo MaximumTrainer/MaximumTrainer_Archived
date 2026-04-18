@@ -15,6 +15,18 @@ contains(QMAKE_PLATFORM, wasm) {
 } else {
     SOURCES += $$PWD/soundplayer.cpp
 }
+
+# CredentialStore: platform-native secure storage (DPAPI / Keychain / AES-GCM)
+contains(QMAKE_PLATFORM, wasm) {
+    SOURCES += $$PWD/credential_store_wasm.cpp
+} else: win32 {
+    SOURCES += $$PWD/credential_store_win.cpp
+} else: macx {
+    OBJECTIVE_SOURCES += $$PWD/credential_store_mac.mm
+} else {
+    SOURCES += $$PWD/credential_store_linux.cpp
+    LIBS += -lcrypto
+}
 contains(DEFINES, GC_HAVE_VLCQT) {
     SOURCES += $$PWD/myvlcplayer.cpp
 }
@@ -31,7 +43,8 @@ HEADERS += $$PWD/util.h \
     $$PWD/simplecrypt.h \
     $$PWD/reportutil.h \
     $$PWD/myconstants.h \
-    $$PWD/networkmonitor.h
+    $$PWD/networkmonitor.h \
+    $$PWD/credential_store.h
 
 
 
