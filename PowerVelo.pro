@@ -200,6 +200,9 @@ win32-msvc* {
     LIBS += -lGdi32 -lUser32 -lCrypt32
     CONFIG += force_debug_info
 
+    # Embed the application icon into the Windows executable.
+    RC_ICONS = $$PWD/resources/myappico.ico
+
 
 } else {
 
@@ -240,6 +243,9 @@ macx:!wasm_emscripten {
     # (NSBluetoothAlwaysUsageDescription is required; without it BLE scanning
     # silently returns an empty device list on Monterey and later).
     QMAKE_INFO_PLIST = $$PWD/mac/Info.plist
+
+    # Embed the application icon into the macOS bundle.
+    ICON = $$PWD/resources/myappico.icns
 
     # Bluetooth entitlement required for App Store distribution
     QMAKE_CODE_SIGN_ENTITLEMENTS = $$PWD/mac/MaximumTrainer.entitlements

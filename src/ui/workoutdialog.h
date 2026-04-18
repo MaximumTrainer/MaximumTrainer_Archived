@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QTime>
 #include <QTimer>
+#include <QKeyEvent>
 #include <QNetworkReply>
 
 #include "account.h"
@@ -208,6 +209,8 @@ private slots:
 
 
 private:
+
+    void keyPressEvent(QKeyEvent *event) override;
 
     void checkFitFileCreated();
     void closeFitFiles(double timeElapsed_sec);

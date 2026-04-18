@@ -35,6 +35,12 @@
 #include "simulator_hub.h"
 #include "dialog_connection_method.h"
 #include "networkmonitor.h"
+#include "updatedialog.h"
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QNetworkRequest>
+#include <QNetworkAccessManager>
 
 #include <QDir>
 #include <QMenu>
@@ -1358,6 +1364,50 @@ void MainWindow::on_actionRequest_Help_triggered()
     infoAntStick.setUrlWebView(Environnement::getUrlSupport());
     qDebug() << "URL IS : " << Environnement::getUrlSupport();
     infoAntStick.exec();
+}
+//-----------------------------------------------
+void MainWindow::on_actionCheck_for_Updates_triggered()
+{
+    QNetworkAccessManager *nm = qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!nm) return;
+
+    QNetworkRequest req(QUrl(urlGitHubReleasesApi));
+    req.setRawHeader("User-Agent", "MaximumTrainer");
+    req.setRawHeader("Accept", "application/vnd.github+json");
+
+    if (replyVersionCheck)
+        replyVersionCheck->deleteLater();
+    replyVersionCheck = nm->get(req);
+    connect(replyVersionCheck, &QNetworkReply::finished,
+            this, &MainWindow::slotVersionCheckFinished);
+}
+//-----------------------------------------------
+void MainWindow::slotVersionCheckFinished()
+{
+    if (!replyVersionCheck) return;
+
+    if (replyVersionCheck->error() != QNetworkReply::NoError) {
+        QMessageBox::warning(this, tr("Update Check"),
+            tr("Unable to check for updates:\n%1").arg(replyVersionCheck->errorString()));
+        replyVersionCheck->deleteLater();
+        replyVersionCheck = nullptr;
+        return;
+    }
+
+    QByteArray data = replyVersionCheck->readAll();
+    replyVersionCheck->deleteLater();
+    replyVersionCheck = nullptr;
+
+    QString latestTag = QJsonDocument::fromJson(data).object().value("tag_name").toString();
+    QString currentTag = Environnement::getVersion();
+
+    if (!latestTag.isEmpty() && latestTag != currentTag) {
+        UpdateDialog dlg(latestTag, this);
+        dlg.exec();
+    } else {
+        QMessageBox::information(this, tr("Check for Updates"),
+            tr("You are up to date (%1).").arg(currentTag));
+    }
 }
 //-----------------------------------------------
 void MainWindow::on_actionPreferences_triggered()

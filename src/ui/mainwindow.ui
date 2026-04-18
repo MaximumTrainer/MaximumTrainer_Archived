@@ -416,6 +416,8 @@
     <addaction name="actionAbout_MT"/>
     <addaction name="actionAbout_Qt"/>
     <addaction name="actionRequest_Help"/>
+    <addaction name="separator"/>
+    <addaction name="actionCheck_for_Updates"/>
    </widget>
    <widget class="QMenu" name="menuMaximumTrainer">
     <property name="title">
@@ -479,6 +481,11 @@
   <action name="actionRequest_Help">
    <property name="text">
     <string>Help</string>
+   </property>
+  </action>
+  <action name="actionCheck_for_Updates">
+   <property name="text">
+    <string>Check for Updates…</string>
    </property>
   </action>
   <action name="actionCreate_New">

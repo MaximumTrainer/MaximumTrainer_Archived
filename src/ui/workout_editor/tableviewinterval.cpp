@@ -11,7 +11,13 @@ TableViewInterval::TableViewInterval(QWidget *parent) :
 
     setStyle(new IntervalViewStyle(style()));
 
-
+    // Enable drag-to-reorder rows via the grab handle in column 0.
+    setDragEnabled(true);
+    setAcceptDrops(true);
+    setDropIndicatorShown(true);
+    setDragDropMode(QAbstractItemView::InternalMove);
+    setDefaultDropAction(Qt::MoveAction);
+    setSelectionMode(QAbstractItemView::SingleSelection);
 }
 
 

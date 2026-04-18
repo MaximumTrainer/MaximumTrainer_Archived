@@ -3073,6 +3073,37 @@ void WorkoutDialog::expandWindow() {
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
+void WorkoutDialog::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key()) {
+    case Qt::Key_Space:
+        start_or_pause_workout();
+        return;
+    case Qt::Key_Right:
+        if (isWorkoutStarted && !isWorkoutOver &&
+            currentInterval + 1 < workout.getLstInterval().size())
+            moveToNextInterval();
+        return;
+    case Qt::Key_Plus:
+    case Qt::Key_Equal:
+        adjustWorkoutDifficulty(currentWorkoutDifficultyPercentage + 5);
+        return;
+    case Qt::Key_Minus:
+        adjustWorkoutDifficulty(currentWorkoutDifficultyPercentage - 5);
+        return;
+    case Qt::Key_L:
+        lapButtonPressed();
+        return;
+    case Qt::Key_Escape:
+        reject();
+        return;
+    default:
+        break;
+    }
+    QDialog::keyPressEvent(event);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
 void WorkoutDialog::reject() {
 
     sureYouWantToQuit();
