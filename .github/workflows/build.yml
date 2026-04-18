@@ -108,6 +108,13 @@ jobs:
         emmake make -j$(nproc)
         make install
 
+    - name: Determine build version
+      run: |
+        GIT_TAG=$(git describe --tags --match 'v[0-9]*' --always | tr -d '\r' | sed 's/-[0-9]*-g[0-9a-f]*$//')
+        [[ "$GIT_TAG" =~ ^[vV][0-9] ]] || GIT_TAG="v0.0.0"
+        echo "Build version: $GIT_TAG"
+        echo "GIT_TAG=$GIT_TAG" >> "$GITHUB_ENV"
+
     - name: Build MaximumTrainer (Wasm)
       run: |
         source "$EMSDK/emsdk_env.sh"
