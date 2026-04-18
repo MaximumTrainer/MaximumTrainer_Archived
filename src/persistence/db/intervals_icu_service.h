@@ -59,6 +59,10 @@ public:
                                         const QString &workoutId,
                                         const QString &apiKey);
 
+    /// List all the athlete's workout folders.
+    /// GET /athlete/{id}/folders
+    static QNetworkReply* listFolders(const QString &athleteId, const QString &apiKey);
+
 private:
     /// Build a QNetworkRequest with Authorization: Basic and Accept: application/json.
     static QNetworkRequest buildRequest(const QString &url, const QString &apiKey);

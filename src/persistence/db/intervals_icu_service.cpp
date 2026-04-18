@@ -150,3 +150,20 @@ QNetworkReply* IntervalsIcuService::deleteWorkout(const QString &athleteId,
                         + QStringLiteral("/workouts/") + workoutId;
     return manager->deleteResource(buildRequest(url, apiKey));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/athlete/{id}/folders
+QNetworkReply* IntervalsIcuService::listFolders(const QString &athleteId,
+                                                const QString &apiKey)
+{
+    QNetworkAccessManager *manager =
+        qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("listFolders: NetworkManagerWS not available"));
+        return nullptr;
+    }
+
+    const QString url = QLatin1String(BASE_URL) + QStringLiteral("/athlete/") + athleteId
+                        + QStringLiteral("/folders");
+    return manager->get(buildRequest(url, apiKey));
+}

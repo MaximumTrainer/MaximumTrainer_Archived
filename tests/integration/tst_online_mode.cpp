@@ -663,6 +663,54 @@ void TstOnlineMode::testWorkoutPush()
         qDebug().noquote() << "[Screenshot] Saved to:" << outPath;
     };
 
+    // ── 1. Fetch folders to get a valid folder_id ─────────────────────────────
+    // WorkoutEx requires folder_id (integer) — there is no "folder" string field.
+    QNetworkReply *foldersReply = IntervalsIcuService::listFolders(m_athleteId, m_apiKey);
+    if (!foldersReply) {
+        window.markFailed("listFolders() returned nullptr");
+        grabScreenshot();
+        QFAIL("listFolders() returned nullptr");
+    }
+    if (!waitForReply(foldersReply)) {
+        foldersReply->abort();
+        foldersReply->deleteLater();
+        window.markFailed("Folders request timed out");
+        grabScreenshot();
+        QFAIL("listFolders() timed out");
+    }
+    const int        foldersStatus = foldersReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const QByteArray foldersBody   = foldersReply->readAll();
+    foldersReply->deleteLater();
+
+    if (foldersStatus != 200) {
+        window.markFailed(QString("listFolders HTTP %1").arg(foldersStatus));
+        grabScreenshot();
+        QFAIL(qPrintable(QString("listFolders failed: HTTP %1\nBody: %2")
+                             .arg(foldersStatus)
+                             .arg(QString::fromUtf8(foldersBody.left(256)))));
+    }
+
+    // Find the first FOLDER (not PLAN) to use as the target.
+    int folderId = -1;
+    const QJsonArray foldersArr = QJsonDocument::fromJson(foldersBody).array();
+    for (const QJsonValue &v : foldersArr) {
+        const QJsonObject f = v.toObject();
+        if (f.value(QStringLiteral("type")).toString() == QLatin1String("FOLDER")) {
+            folderId = f.value(QStringLiteral("id")).toInt(-1);
+            if (folderId != -1) break;
+        }
+    }
+
+    if (folderId == -1) {
+        window.markPassed(QString("No FOLDER found in library (got %1 entries) — skipping push")
+                              .arg(foldersArr.size()));
+        grabScreenshot();
+        QSKIP("No workout folder found in athlete library; cannot create workout");
+    }
+
+    window.addRow("Folder ID", QString::number(folderId));
+
+    // ── 2. Build and send the workout ────────────────────────────────────────
     // Embed the timestamp so the workout can be identified if automated cleanup fails.
     const QString uniqueName =
         QString("MaximumTrainer CI Test Workout [%1]").arg(timestamp);
@@ -687,7 +735,7 @@ void TstOnlineMode::testWorkoutPush()
         QJsonDocument(QJsonObject{
             { "name",          uniqueName },
             { "type",          "Ride" },
-            { "folder",        QStringLiteral("") },   // required by the API; "" = root folder
+            { "folder_id",     folderId },
             { "file_contents", zwoXml },
             { "filename",      QStringLiteral("MaximumTrainer_CI_Test.zwo") }
         }).toJson(QJsonDocument::Compact);
