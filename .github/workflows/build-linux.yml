@@ -74,6 +74,8 @@ jobs:
         cd tests/integration
         qmake btle_integration_tests.pro
         make -j$(nproc)
+        qmake btle_api_tests.pro
+        make -j$(nproc)
         qmake runtime_validation_tests.pro
         make -j$(nproc)
         qmake offline_mode_tests.pro
@@ -222,6 +224,42 @@ jobs:
       with:
         name: btle-integration-screenshot
         path: build/tests/btle_integration_screenshot.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # BLE API Smoke Test – Linux
+  #
+  # Exercises the real BtleHub → QLowEnergyController code path on Linux.
+  # With no physical BLE hardware the OS BLE stack reports a connection error
+  # for the fake device address, confirming the real API is invoked.
+  # On CI runners with no BT adapter the test QSKIP gracefully.
+  # No display required (headless Qt Test binary).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_btle_api:
+    runs-on: ubuntu-22.04
+    needs: build_linux
+    permissions:
+      contents: read
+
+    steps:
+    - name: Install runtime dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          libqt5core5a \
+          libqt5bluetooth5 \
+          libqt5test5
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: linux
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/btle_api_tests
+
+    - name: Run BLE API smoke test
+      run: ./build/tests/btle_api_tests -v2
 
   # ──────────────────────────────────────────────────────────────────────────
   # Runtime Validation – Linux

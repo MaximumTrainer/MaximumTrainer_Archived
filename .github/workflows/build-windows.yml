@@ -187,6 +187,14 @@ jobs:
         nmake
       shell: powershell
 
+    - name: Build BLE API smoke test
+      run: |
+        New-Item -ItemType Directory -Force -Path build\tests | Out-Null
+        Set-Location tests\integration
+        qmake btle_api_tests.pro
+        nmake
+      shell: powershell
+
     - name: Build offline mode test
       run: |
         New-Item -ItemType Directory -Force -Path build\tests | Out-Null
@@ -209,6 +217,10 @@ jobs:
             --no-translations `
             --no-system-d3d-compiler `
             build\tests\runtime_validation_tests.exe
+        & "$env:QTDIR\bin\windeployqt.exe" --release `
+            --no-translations `
+            --no-system-d3d-compiler `
+            build\tests\btle_api_tests.exe
         & "$env:QTDIR\bin\windeployqt.exe" --release `
             --no-translations `
             --no-system-d3d-compiler `
@@ -260,6 +272,30 @@ jobs:
       with:
         name: runtime-validation-screenshot-windows
         path: build\tests\screenshot-windows-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # BLE API Smoke Test – Windows
+  #
+  # Exercises the real BtleHub → QLowEnergyController code path on Windows.
+  # Uses the WinRT Bluetooth stack; on CI runners with no BT adapter the test
+  # QSKIP gracefully.  No display required (headless Qt Test binary).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_btle_api:
+    runs-on: windows-latest
+    needs: build_windows
+    permissions:
+      contents: read
+
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows
+        path: build
+
+    - name: Run BLE API smoke test
+      run: .\build\tests\btle_api_tests.exe -v2
+      shell: powershell
 
   # ──────────────────────────────────────────────────────────────────────────
   # Offline Mode Integration Test – Windows

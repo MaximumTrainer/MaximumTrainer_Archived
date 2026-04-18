@@ -79,6 +79,13 @@ jobs:
         qmake offline_mode_tests.pro
         make -j$(sysctl -n hw.logicalcpu)
 
+    - name: Build BLE API smoke test
+      run: |
+        mkdir -p build/tests
+        cd tests/integration
+        qmake btle_api_tests.pro
+        make -j$(sysctl -n hw.logicalcpu)
+
     - name: Build online mode test
       run: |
         mkdir -p build/tests
@@ -142,6 +149,41 @@ jobs:
       with:
         name: runtime-validation-screenshot-macos
         path: build/tests/screenshot-macos-*.png
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # BLE API Smoke Test – macOS
+  #
+  # Exercises the real BtleHub → QLowEnergyController code path on macOS.
+  # Uses CoreBluetooth; on CI runners with no BT hardware the test QSKIP
+  # gracefully.  No display required (headless Qt Test binary).
+  # ──────────────────────────────────────────────────────────────────────────
+  test_btle_api:
+    runs-on: macos-latest
+    needs: build_mac
+    permissions:
+      contents: read
+
+    steps:
+    - name: Install Qt (with Bluetooth)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+        modules: 'qtconnectivity'
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos
+        path: build
+
+    - name: Make test binary executable
+      run: chmod +x build/tests/btle_api_tests
+
+    - name: Run BLE API smoke test
+      run: ./build/tests/btle_api_tests -v2
 
   # ──────────────────────────────────────────────────────────────────────────
   # Offline Mode Integration Test – macOS
