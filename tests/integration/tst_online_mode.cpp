@@ -48,19 +48,17 @@
  *   .\build\tests\online_mode_tests.exe -v2
  */
 
-#include <QtTest/QtTest>
+#include "tst_online_mode.h"
+
 #include <QApplication>
-#include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QFrame>
 #include <QScreen>
 #include <QPixmap>
 #include <QDir>
 #include <QSysInfo>
 #include <QDateTime>
-#include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QJsonDocument>
@@ -84,22 +82,12 @@
 static constexpr int TIMEOUT_MS = 30'000;  // 30 s per request
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OnlineModeWindow
-//
-// 1280x720 window that represents the MaximumTrainer online-mode login state.
-// Shows a status badge that transitions from "AUTHENTICATING..." to
-// "CONNECTED" (green) or "AUTH FAILED" (red), and displays the athlete
-// name and ID returned from the live intervals.icu API.
+// OnlineModeWindow implementation
 // ─────────────────────────────────────────────────────────────────────────────
-class OnlineModeWindow : public QWidget
-{
-    Q_OBJECT
-
-public:
-    explicit OnlineModeWindow(const QString &athleteId,
-                              const QString &timestamp,
-                              QWidget       *parent = nullptr)
-        : QWidget(parent)
+OnlineModeWindow::OnlineModeWindow(const QString &athleteId,
+                                   const QString &timestamp,
+                                   QWidget       *parent)
+    : QWidget(parent)
     {
         const QString platform = kPlatformTag.toUpper();
         const QString osName   = QSysInfo::prettyProductName();
@@ -242,8 +230,8 @@ public:
         root->addLayout(footerRow);
     }
 
-    void markConnected(const QString &confirmedId, const QString &athleteName, int httpStatus)
-    {
+void OnlineModeWindow::markConnected(const QString &confirmedId, const QString &athleteName, int httpStatus)
+{
         m_statusBadge->setText("[ CONNECTED ]");
         m_statusBadge->setStyleSheet(
             "font-size: 14px; color: #3fb950; background: #0d2010;"
@@ -257,8 +245,8 @@ public:
             "font-size: 14px; color: #3fb950; font-weight: bold;");
     }
 
-    void markFailed(int httpStatus, const QString &errorString)
-    {
+void OnlineModeWindow::markFailed(int httpStatus, const QString &errorString)
+{
         m_statusBadge->setText("[ AUTH FAILED ]");
         m_statusBadge->setStyleSheet(
             "font-size: 14px; color: #f85149; background: #200d0d;"
@@ -269,31 +257,11 @@ public:
             "font-size: 14px; color: #f85149;");
     }
 
-private:
-    QLabel *m_statusBadge      = nullptr;
-    QLabel *m_requestedIdLabel = nullptr;
-    QLabel *m_confirmedIdLabel = nullptr;
-    QLabel *m_athleteNameLabel = nullptr;
-    QLabel *m_httpStatusLabel  = nullptr;
-    QLabel *m_buildLabel       = nullptr;
-};
-
-
 // ─────────────────────────────────────────────────────────────────────────────
-// TstOnlineMode -- QTest class
+// TstOnlineMode -- slot implementations
 // ─────────────────────────────────────────────────────────────────────────────
-class TstOnlineMode : public QObject
+void TstOnlineMode::initTestCase()
 {
-    Q_OBJECT
-
-    QString               m_apiKey;
-    QString               m_athleteId;
-    QNetworkAccessManager *m_manager = nullptr;
-
-private slots:
-
-    void initTestCase()
-    {
         m_apiKey    = qEnvironmentVariable("INTERVALS_ICU_API_KEY");
         m_athleteId = qEnvironmentVariable("INTERVALS_ICU_ATHLETE_ID");
 
@@ -307,23 +275,13 @@ private slots:
                           QVariant::fromValue<QNetworkAccessManager *>(m_manager));
     }
 
-    void cleanupTestCase()
-    {
+void TstOnlineMode::cleanupTestCase()
+{
         qApp->setProperty("NetworkManagerWS", QVariant());
     }
 
-    /*
-     * testOnlineModeAuthentication
-     *
-     * 1.  Shows the OnlineModeWindow with "AUTHENTICATING..." badge.
-     * 2.  Calls IntervalsIcuService::getAthlete() — same path as the app.
-     * 3.  Waits up to 30 s for the HTTP reply.
-     * 4.  Updates the window badge and athlete fields.
-     * 5.  Grabs a labelled 1280x720 screenshot and saves it as build evidence.
-     * 6.  Asserts HTTP 200, no network error, and matching athlete ID.
-     */
-    void testOnlineModeAuthentication()
-    {
+void TstOnlineMode::testOnlineModeAuthentication()
+{
         const QString timestamp =
             QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH-mm-ssZ");
         const QString screenshotName =
@@ -420,8 +378,6 @@ private slots:
             << "[Auth] Athlete:" << athleteName
             << "  ID:" << confirmedId
             << "  HTTP:" << httpStatus;
-    }
-};
+}
 
 QTEST_MAIN(TstOnlineMode)
-#include "tst_online_mode.moc"

@@ -55,4 +55,5 @@ SOURCES += \
     tst_online_mode.cpp
 
 HEADERS += \
-    ../../src/persistence/db/intervals_icu_service.h
+    ../../src/persistence/db/intervals_icu_service.h \
+    tst_online_mode.h
