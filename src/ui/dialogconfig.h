@@ -2,6 +2,10 @@
 #define DIALOGCONFIG_H
 
 #include <QDialog>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QSpinBox>
+#include <QLabel>
 
 #include "workoutdialog.h"
 #include "account.h"
@@ -161,6 +165,22 @@ private :
     void playSoundTestEffect();
     void moveElement(QString widgetIdentifier, bool moveRight); //moveRight false = moveLeft
 
+    // Group C: preference tab setup helpers
+    QWidget *setupLoggingTab();
+    QWidget *setupLanguageTab();
+    QWidget *setupStudioTab();
+    QWidget *setupTrainerTab();
+
+    void initLoggingTab();
+    void initLanguageTab();
+    void initStudioTab();
+    void initTrainerTab();
+
+    void saveLoggingTab();
+    void saveLanguageTab();
+    void saveStudioTab();
+    void saveTrainerTab();
+
 private:
     RadioTableModel *tableModel;
     QString currentRadioName;
@@ -177,6 +197,23 @@ private:
     bool playOnNextSliderRelease;
 
     bool isPlayingRadio;
+
+    // Logging tab controls
+    QComboBox    *comboLogLevel     = nullptr;
+    QCheckBox    *checkLogToFile    = nullptr;
+    QLabel       *labelLogFilePath  = nullptr;
+
+    // Language tab controls
+    QComboBox    *comboLanguage     = nullptr;
+    QLabel       *labelRestartNote  = nullptr;
+
+    // Studio tab controls
+    QCheckBox    *checkStudioMode   = nullptr;
+    QSpinBox     *spinNbRiders      = nullptr;
+
+    // Trainer tab controls
+    QCheckBox    *checkControlResistance = nullptr;
+    QComboBox    *comboTrainerModel      = nullptr;
 };
 
 #endif // DIALOGCONFIG_H

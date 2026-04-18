@@ -2,8 +2,17 @@
 #include "ui_dialogconfig.h"
 
 #include <QDebug>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGroupBox>
+#include <QPushButton>
+#include <QFileDialog>
+#include <QDesktopServices>
+#include <QSettings>
+#include <QMessageBox>
 
 #include "workoutdialog.h"
+#include "logger.h"
 
 
 
@@ -48,12 +57,20 @@ DialogConfig::DialogConfig(QList<Radio> lstRadio, QWidget *parent,  WorkoutDialo
     QListWidgetItem *item4 = new QListWidgetItem(QIcon(":/image/icon/sound"),   tr("Sounds"), ui->listWidget_settings);
     QListWidgetItem *item5 = new QListWidgetItem(QIcon(":/image/icon/movie"),   tr("Video Player"), ui->listWidget_settings);
     QListWidgetItem *item6 = new QListWidgetItem(QIcon(":/image/icon/radio"),   tr("Radio"), ui->listWidget_settings);
+    QListWidgetItem *item7 = new QListWidgetItem(tr("Logging"), ui->listWidget_settings);
+    QListWidgetItem *item8 = new QListWidgetItem(tr("Language"), ui->listWidget_settings);
+    QListWidgetItem *item9 = new QListWidgetItem(tr("Studio"), ui->listWidget_settings);
+    QListWidgetItem *item10 = new QListWidgetItem(tr("Trainer"), ui->listWidget_settings);
     item1->setSizeHint(QSize(35,35));
     item2->setSizeHint(QSize(35,35));
     item3->setSizeHint(QSize(35,35));
     item4->setSizeHint(QSize(35,35));
     item5->setSizeHint(QSize(35,35));
     item6->setSizeHint(QSize(35,35));
+    item7->setSizeHint(QSize(35,35));
+    item8->setSizeHint(QSize(35,35));
+    item9->setSizeHint(QSize(35,35));
+    item10->setSizeHint(QSize(35,35));
 
     ui->listWidget_settings->addItem(item1);
     ui->listWidget_settings->addItem(item2);
@@ -61,6 +78,15 @@ DialogConfig::DialogConfig(QList<Radio> lstRadio, QWidget *parent,  WorkoutDialo
     ui->listWidget_settings->addItem(item4);
     ui->listWidget_settings->addItem(item5);
     ui->listWidget_settings->addItem(item6);
+    ui->listWidget_settings->addItem(item7);
+    ui->listWidget_settings->addItem(item8);
+    ui->listWidget_settings->addItem(item9);
+    ui->listWidget_settings->addItem(item10);
+
+    ui->stackedWidget->addWidget(setupLoggingTab());
+    ui->stackedWidget->addWidget(setupLanguageTab());
+    ui->stackedWidget->addWidget(setupStudioTab());
+    ui->stackedWidget->addWidget(setupTrainerTab());
 
 
     connect(ui->listWidget_settings, SIGNAL(currentRowChanged(int)), this, SLOT(currentListViewSelectionChanged(int)) );
@@ -338,7 +364,14 @@ void DialogConfig::initUi() {
     ui->listWidget_settings->setCurrentRow(account->last_index_selected_config_workout);
     /// Show last openned subtab
     QTabWidget *myTab = ui->stackedWidget->currentWidget()->findChild<QTabWidget*>();
-    myTab->setCurrentIndex(account->last_tab_sub_config_selected);
+    if (myTab)
+        myTab->setCurrentIndex(account->last_tab_sub_config_selected);
+
+    // Init the programmatic tabs
+    initLoggingTab();
+    initLanguageTab();
+    initStudioTab();
+    initTrainerTab();
 
 
     ///Timers
@@ -803,7 +836,13 @@ void DialogConfig::accept() {
 //-----------------------
 void DialogConfig::reject() {
 
-    saveSettings();
+    // On cancel only persist the last-selected tab index so the dialog
+    // reopens on the same page; do NOT commit widget values.
+    account->last_index_selected_config_workout = ui->listWidget_settings->currentRow();
+    QTabWidget *myTab = ui->stackedWidget->currentWidget()->findChild<QTabWidget*>();
+    if (myTab)
+        account->last_tab_sub_config_selected = myTab->currentIndex();
+
     QDialog::reject();
 }
 
@@ -818,7 +857,8 @@ void DialogConfig::saveSettings() {
 
     ///Save last openned subtab
     QTabWidget *myTab = ui->stackedWidget->currentWidget()->findChild<QTabWidget*>();
-    account->last_tab_sub_config_selected = myTab->currentIndex();
+    if (myTab)
+        account->last_tab_sub_config_selected = myTab->currentIndex();
 
 
     int startTrigger = ui->comboBox_startTrigger->currentIndex();
@@ -896,6 +936,11 @@ void DialogConfig::saveSettings() {
     settings.setValue("defaultUrl", ui->lineEdit_homePage->text());
     settings.endGroup();
 
+    // Save the new preference tabs
+    saveLoggingTab();
+    saveLanguageTab();
+    saveStudioTab();
+    saveTrainerTab();
 
     parentDialog->setMessagePlot(); //update message start workout
 }
@@ -1046,4 +1091,231 @@ void DialogConfig::on_spinBox_value_intervalmessage_duration_sec_valueChanged(in
 void DialogConfig::on_spinBox_value_intervalmessage_before_valueChanged(int arg1)
 {
     account->saveNbSecShowIntervalBefore(arg1);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Group C — Programmatic preference tabs
+// ═══════════════════════════════════════════════════════════════════════════════
+
+static QWidget *makeTabPage(const QString &objectName)
+{
+    auto *page = new QWidget();
+    page->setObjectName(objectName);
+    auto *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(16, 16, 16, 16);
+    layout->setSpacing(10);
+    return page;
+}
+
+// ─── Logging tab (#136) ───────────────────────────────────────────────────────
+QWidget *DialogConfig::setupLoggingTab()
+{
+    QWidget *page = makeTabPage("page_logging");
+    auto *layout = qobject_cast<QVBoxLayout*>(page->layout());
+
+    auto *grp = new QGroupBox(tr("Log Level"), page);
+    auto *grpLayout = new QHBoxLayout(grp);
+    comboLogLevel = new QComboBox(grp);
+    comboLogLevel->addItems({tr("Verbose"), tr("Debug"), tr("Info"), tr("Warn"), tr("Error"), tr("Off")});
+    grpLayout->addWidget(new QLabel(tr("Minimum level:"), grp));
+    grpLayout->addWidget(comboLogLevel);
+    grpLayout->addStretch();
+    layout->addWidget(grp);
+
+    auto *grp2 = new QGroupBox(tr("Log File"), page);
+    auto *grp2Layout = new QVBoxLayout(grp2);
+    checkLogToFile = new QCheckBox(tr("Write log to file"), grp2);
+    grp2Layout->addWidget(checkLogToFile);
+    auto *pathRow = new QHBoxLayout();
+    labelLogFilePath = new QLabel(Logger::instance().logFilePath(), grp2);
+    labelLogFilePath->setWordWrap(true);
+    pathRow->addWidget(new QLabel(tr("Path:"), grp2));
+    pathRow->addWidget(labelLogFilePath, 1);
+    auto *btnOpen = new QPushButton(tr("Open"), grp2);
+    pathRow->addWidget(btnOpen);
+    grp2Layout->addLayout(pathRow);
+    layout->addWidget(grp2);
+
+    connect(btnOpen, &QPushButton::clicked, this, [this]() {
+        const QString path = Logger::instance().logFilePath();
+        if (!path.isEmpty())
+            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+    });
+
+    layout->addStretch();
+    return page;
+}
+
+void DialogConfig::initLoggingTab()
+{
+    if (!comboLogLevel) return;
+    comboLogLevel->setCurrentIndex(static_cast<int>(Logger::instance().logLevel()));
+    checkLogToFile->setChecked(Logger::instance().isFileLoggingEnabled());
+    labelLogFilePath->setText(Logger::instance().logFilePath());
+}
+
+void DialogConfig::saveLoggingTab()
+{
+    if (!comboLogLevel) return;
+    Logger::instance().setLogLevel(static_cast<LogLevel>(comboLogLevel->currentIndex()));
+    Logger::instance().setFileLogging(checkLogToFile->isChecked());
+    labelLogFilePath->setText(Logger::instance().logFilePath());
+    Logger::instance().saveConfig();
+}
+
+// ─── Language tab (#132) ─────────────────────────────────────────────────────
+QWidget *DialogConfig::setupLanguageTab()
+{
+    QWidget *page = makeTabPage("page_language");
+    auto *layout = qobject_cast<QVBoxLayout*>(page->layout());
+
+    auto *grp = new QGroupBox(tr("Application Language"), page);
+    auto *grpLayout = new QVBoxLayout(grp);
+
+    comboLanguage = new QComboBox(grp);
+    comboLanguage->addItem(tr("English"),                     0);
+    comboLanguage->addItem(tr("French (Français)"),          1);
+    grpLayout->addWidget(comboLanguage);
+
+    labelRestartNote = new QLabel(tr("A restart is required to apply the language change."), grp);
+    labelRestartNote->setStyleSheet("color: #888; font-style: italic;");
+    labelRestartNote->setVisible(false);
+    grpLayout->addWidget(labelRestartNote);
+
+    layout->addWidget(grp);
+    layout->addStretch();
+
+    connect(comboLanguage, &QComboBox::currentIndexChanged, this, [this]() {
+        labelRestartNote->setVisible(true);
+    });
+
+    return page;
+}
+
+void DialogConfig::initLanguageTab()
+{
+    if (!comboLanguage) return;
+    QSettings s;
+    s.beginGroup("language_app");
+    const int langIdx = s.value("lang", 0).toInt();
+    s.endGroup();
+
+    // Block signals so the "restart required" note doesn't appear on init.
+    comboLanguage->blockSignals(true);
+    comboLanguage->setCurrentIndex(langIdx < comboLanguage->count() ? langIdx : 0);
+    comboLanguage->blockSignals(false);
+}
+
+void DialogConfig::saveLanguageTab()
+{
+    if (!comboLanguage) return;
+    QSettings s;
+    s.beginGroup("language_app");
+    s.setValue("lang", comboLanguage->currentData().toInt());
+    s.endGroup();
+}
+
+// ─── Studio tab (#134) ───────────────────────────────────────────────────────
+QWidget *DialogConfig::setupStudioTab()
+{
+    QWidget *page = makeTabPage("page_studio");
+    auto *layout = qobject_cast<QVBoxLayout*>(page->layout());
+
+    auto *grp = new QGroupBox(tr("Studio Mode"), page);
+    auto *grpLayout = new QVBoxLayout(grp);
+
+    checkStudioMode = new QCheckBox(tr("Enable Studio Mode"), grp);
+    grpLayout->addWidget(checkStudioMode);
+
+    auto *riderRow = new QHBoxLayout();
+    riderRow->addWidget(new QLabel(tr("Number of riders:"), grp));
+    spinNbRiders = new QSpinBox(grp);
+    spinNbRiders->setMinimum(1);
+    spinNbRiders->setMaximum(6);
+    riderRow->addWidget(spinNbRiders);
+    riderRow->addStretch();
+    grpLayout->addLayout(riderRow);
+
+    auto *note = new QLabel(tr("Studio mode allows multiple riders to train simultaneously.\n"
+                               "Each rider requires a separate BLE sensor slot.\n"
+                               "Changes take effect after restarting the application."), grp);
+    note->setStyleSheet("color: #888; font-style: italic;");
+    note->setWordWrap(true);
+    grpLayout->addWidget(note);
+
+    layout->addWidget(grp);
+    layout->addStretch();
+    return page;
+}
+
+void DialogConfig::initStudioTab()
+{
+    if (!checkStudioMode) return;
+    checkStudioMode->setChecked(account->enable_studio_mode);
+    spinNbRiders->setValue(qMax(1, account->nb_user_studio));
+}
+
+void DialogConfig::saveStudioTab()
+{
+    if (!checkStudioMode) return;
+    account->enable_studio_mode = checkStudioMode->isChecked();
+    account->nb_user_studio     = spinNbRiders->value();
+}
+
+// ─── Trainer tab (#131) ──────────────────────────────────────────────────────
+QWidget *DialogConfig::setupTrainerTab()
+{
+    QWidget *page = makeTabPage("page_trainer");
+    auto *layout = qobject_cast<QVBoxLayout*>(page->layout());
+
+    auto *grp = new QGroupBox(tr("Trainer Settings"), page);
+    auto *grpLayout = new QVBoxLayout(grp);
+
+    checkControlResistance = new QCheckBox(tr("Control trainer resistance (ERG mode)"), grp);
+    grpLayout->addWidget(checkControlResistance);
+
+    auto *modelRow = new QHBoxLayout();
+    modelRow->addWidget(new QLabel(tr("Trainer model (virtual power):"), grp));
+    comboTrainerModel = new QComboBox(grp);
+    comboTrainerModel->addItem(tr("None / Direct power meter"), 0);
+    comboTrainerModel->addItem(tr("Tacx Blue Motion"),          1);
+    comboTrainerModel->addItem(tr("Tacx Antares"),              2);
+    comboTrainerModel->addItem(tr("Tacx Satori"),               3);
+    comboTrainerModel->addItem(tr("Elite Qubo Digital"),        4);
+    comboTrainerModel->addItem(tr("Elite Novo Force"),          5);
+    comboTrainerModel->addItem(tr("Wahoo KICKR SNAP"),          6);
+    comboTrainerModel->addItem(tr("CycleOps Fluid 2"),          7);
+    modelRow->addWidget(comboTrainerModel, 1);
+    grpLayout->addLayout(modelRow);
+
+    auto *note = new QLabel(tr("Select your trainer to enable virtual power estimation\n"
+                               "when no power meter is paired."), grp);
+    note->setStyleSheet("color: #888; font-style: italic;");
+    note->setWordWrap(true);
+    grpLayout->addWidget(note);
+
+    layout->addWidget(grp);
+    layout->addStretch();
+    return page;
+}
+
+void DialogConfig::initTrainerTab()
+{
+    if (!checkControlResistance) return;
+    checkControlResistance->setChecked(account->control_trainer_resistance);
+
+    const int modelId = account->powerCurve.getId();
+    for (int i = 0; i < comboTrainerModel->count(); ++i) {
+        if (comboTrainerModel->itemData(i).toInt() == modelId) {
+            comboTrainerModel->setCurrentIndex(i);
+            break;
+        }
+    }
+}
+
+void DialogConfig::saveTrainerTab()
+{
+    if (!checkControlResistance) return;
+    account->control_trainer_resistance = checkControlResistance->isChecked();
+    account->powerCurve.setId(comboTrainerModel->currentData().toInt());
 }
