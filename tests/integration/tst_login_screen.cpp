@@ -101,8 +101,8 @@
     static const QString kPlatformTag = QStringLiteral("linux");
 #endif
 
-static constexpr int SENSOR_TIMEOUT_MS  = 10'000;
-static constexpr int NETWORK_TIMEOUT_MS = 30'000;
+static constexpr int kSensorTimeoutMs  = 10'000;
+static constexpr int kNetworkTimeoutMs = 30'000;
 
 // ---------------------------------------------------------------------------
 // LoginScreenWindow
@@ -347,7 +347,7 @@ private:
 // ---------------------------------------------------------------------------
 // Helper: spin an event loop until @p reply finishes or timeout elapses.
 // ---------------------------------------------------------------------------
-static bool waitForReply(QNetworkReply *reply, int timeoutMs = NETWORK_TIMEOUT_MS)
+static bool waitForReply(QNetworkReply *reply, int timeoutMs = kNetworkTimeoutMs)
 {
     QEventLoop loop;
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
@@ -454,13 +454,13 @@ private slots:
 
         sim.start();
 
-        const int kPoll = 100;
+        const int kPollingIntervalMs = 100;
         int elapsed = 0;
         while ((window.hr() == 0 || window.cadence() == 0
                 || window.speed() < 0.01 || window.power() == 0)
-               && elapsed < SENSOR_TIMEOUT_MS) {
-            QTest::qWait(kPoll);
-            elapsed += kPoll;
+               && elapsed < kSensorTimeoutMs) {
+            QTest::qWait(kPollingIntervalMs);
+            elapsed += kPollingIntervalMs;
         }
 
         const bool timedOut = (window.hr() == 0 || window.cadence() == 0
@@ -632,11 +632,11 @@ private slots:
         req.setRawHeader("Accept", "application/json");
 
         QNetworkReply *reply = manager.get(req);
-        const bool finished = waitForReply(reply, NETWORK_TIMEOUT_MS);
+        const bool finished = waitForReply(reply, kNetworkTimeoutMs);
 
         QVERIFY2(finished,
                  qPrintable(QString("intervals.icu API request timed out after %1 ms")
-                                .arg(NETWORK_TIMEOUT_MS)));
+                                .arg(kNetworkTimeoutMs)));
 
         const int httpStatus =
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -684,9 +684,7 @@ private slots:
                 << "| HTTP:" << httpStatus;
 
         } else {
-            const QString errMsg = reply
-                ? reply->errorString()
-                : QStringLiteral("no reply");
+            const QString errMsg = reply->errorString();
             window.markLoginFailed(
                 QString("HTTP %1 — %2").arg(httpStatus).arg(errMsg));
             QCoreApplication::processEvents();

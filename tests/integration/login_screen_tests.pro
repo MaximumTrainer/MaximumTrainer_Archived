@@ -28,7 +28,7 @@
 #   .\build\tests\login_screen_tests.exe -v2
 ###############################################################################
 
-QT       += core gui widgets network bluetooth testlib
+QT       += core gui widgets network testlib
 CONFIG   += qt c++17
 CONFIG   -= app_bundle
 
