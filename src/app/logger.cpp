@@ -11,6 +11,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QDir>
+#include <QFileInfo>
 #include <QMutexLocker>
 
 #include <cstdio>
@@ -115,8 +116,22 @@ bool Logger::openLogFile()
     if (m_filePath.isEmpty()) {
         const QString dir =
             QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-        QDir().mkpath(dir);
         m_filePath = dir + QStringLiteral("/MaximumTrainer.log");
+    }
+
+    // Ensure the parent directory exists for both the default path and any
+    // user-configured custom path.  mkpath() is a no-op when the directory
+    // already exists, so this is safe to call unconditionally and covers all
+    // supported target OSes (Windows, macOS, Linux) via Qt's cross-platform
+    // QDir API.  The WASM build never reaches this code (guarded by the
+    // Q_OS_WASM check in setFileLogging()).
+    const QString parentDir = QFileInfo(m_filePath).absolutePath();
+    if (!QDir().mkpath(parentDir)) {
+        fprintf(stderr, "[Logger] Cannot create log directory: %s — "
+                "check that the path is valid and you have write permission.\n",
+                qPrintable(parentDir));
+        m_fileEnabled = false;
+        return false;
     }
 
     m_logFile.setFileName(m_filePath);
