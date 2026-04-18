@@ -220,12 +220,34 @@ void DialogInfoWebView::pageLoaded(bool ok){
         const QString urlStr = ui->webView->url().toDisplayString();
         LOG_INFO("DialogInfoWebView", QStringLiteral("Intervals.icu OAuth2 callback received"));
 
-        // If the user denied authorization, bail out early.
-        if (urlStr.contains("error=")) {
+        // If the authorization server returned an error in the redirect URL,
+        // determine whether the user explicitly cancelled (access_denied) or
+        // whether a technical OAuth error occurred (invalid_client,
+        // invalid_redirect_uri, server_error, etc.).
+        if (urlStr.contains(QLatin1String("error="))) {
+            const QUrlQuery errorQuery{QUrl(urlStr)};
+            const QString error     = errorQuery.queryItemValue(QStringLiteral("error"));
+            const QString errorDesc = errorQuery.queryItemValue(QStringLiteral("error_description"));
             LOG_WARN("DialogInfoWebView",
-                     QStringLiteral("Intervals.icu OAuth: user denied authorization or error in redirect"));
-            emit intervalsIcuLinked(false);
-            this->reject();
+                     QStringLiteral("Intervals.icu OAuth: error in redirect — ")
+                     + error
+                     + (errorDesc.isEmpty() ? QString()
+                                            : QStringLiteral(": ") + errorDesc));
+
+            if (error == QLatin1String("access_denied")) {
+                // User explicitly cancelled the authorization — close silently.
+                // Do not treat this as a login failure; the rejected() signal
+                // on the dialog is sufficient for the caller to clean up.
+                this->reject();
+            } else {
+                // Technical OAuth error (e.g. invalid_client, invalid_scope,
+                // server_error).  Signal failure and show a descriptive error
+                // page so the user understands what happened instead of having
+                // the window silently close.
+                emit intervalsIcuLinked(false);
+                m_showingErrorPage = true;
+                ui->webView->setHtml(buildErrorPageHtml(urlStr));
+            }
             return;
         }
 

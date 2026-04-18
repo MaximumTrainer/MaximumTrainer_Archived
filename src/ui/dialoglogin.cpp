@@ -512,12 +512,23 @@ void DialogLogin::onLoginWithIntervalsIcuClicked()
     oauthDialog->setTitle(tr("Login with Intervals.icu"));
     oauthDialog->setUsedForIntervalsIcu(true);
     oauthDialog->setExpectedOAuthState(oauthState);
-    oauthDialog->setUrlWebView(Environnement::getURLIntervalsIcuAuthorize(oauthState));
+    const QString oauthUrl = Environnement::getURLIntervalsIcuAuthorize(oauthState);
 
     connect(oauthDialog, &DialogInfoWebView::intervalsIcuLinked,
             this, &DialogLogin::onIntervalsIcuOAuthLinked);
     connect(oauthDialog, &DialogInfoWebView::rejected,
             this, &DialogLogin::onIntervalsIcuOAuthDialogRejected);
+
+    // Defer the URL load until after exec() starts its event loop and the
+    // dialog has been painted on screen.  On some platforms (notably Windows)
+    // the QWebEngineView renderer process is not ready for navigation until
+    // at least one event-loop iteration has elapsed after show().  Without
+    // this deferral the OAuth server can respond so quickly that
+    // accept()/reject() is called before the window is ever rendered,
+    // making it appear to "open and immediately close" with nothing shown.
+    QTimer::singleShot(0, oauthDialog, [oauthDialog, oauthUrl]() {
+        oauthDialog->setUrlWebView(oauthUrl);
+    });
 
     oauthDialog->exec();
 }
