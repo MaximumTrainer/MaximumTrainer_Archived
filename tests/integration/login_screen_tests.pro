@@ -39,11 +39,15 @@ DESTDIR  = ../../build/tests
 
 INCLUDEPATH += \
     ../../src/btle \
-    ../../src/persistence/db
+    ../../src/persistence/db \
+    ../../src/model
 
 SOURCES += \
     ../../src/btle/simulator_hub.cpp \
+    ../../src/persistence/db/environnement.cpp \
+    ../../src/model/settings.cpp \
     tst_login_screen.cpp
 
 HEADERS += \
-    ../../src/btle/simulator_hub.h
+    ../../src/btle/simulator_hub.h \
+    ../../src/model/settings.h

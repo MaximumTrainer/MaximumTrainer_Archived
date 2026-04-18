@@ -353,4 +353,4 @@ jobs:
       if: always()
       with:
         name: login-screen-screenshot-macos
-        path: build/tests/login-screen-macos-*.png
+        path: build/tests/login-screen*-macos-*.png

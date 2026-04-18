@@ -427,19 +427,22 @@ private slots:
         window.show();
         QCoreApplication::processEvents();
 
-        // ── Simulate the offline login logic (mirrors DialogLogin::loginOffline) ─
-        // Using plain ints/strings instead of the real Account class keeps the
-        // test dependency-free while still exercising the correct value logic.
-        const int    offlineId    = 0;
-        const bool   isOffline    = true;
-        const QString offlineEmail = QStringLiteral("local@offline");
-
-        QCOMPARE(offlineId,    0);
-        QVERIFY(isOffline);
-        QCOMPARE(offlineEmail, QStringLiteral("local@offline"));
+        // ── Capture UI state before marking success ───────────────────────────
+        // Grab the initial "initialising..." window image and then verify that
+        // markLoginSuccess() visually changes the rendered window.  This is
+        // meaningful: it validates that the success UI path actually updates
+        // the displayed widgets, not merely that local literals equal themselves.
+        const QImage beforeLogin = window.grab().toImage();
+        QVERIFY2(!beforeLogin.isNull(), "Pre-login window grab must not be null");
 
         window.markLoginSuccess(QStringLiteral("Local User (offline)"));
         QCoreApplication::processEvents();
+
+        const QImage afterLogin = window.grab().toImage();
+        QVERIFY2(!afterLogin.isNull(), "Post-login window grab must not be null");
+        QVERIFY2(beforeLogin != afterLogin,
+                 "markLoginSuccess() must visually change the window "
+                 "(badge and status label should update)");
 
         // ── Start SimulatorHub and wait for sensor data ──────────────────────
         SimulatorHub sim;
@@ -525,15 +528,12 @@ private slots:
     {
         const QString testState = QStringLiteral("abc123teststate");
 
-        // Build the OAuth URL using the same constants and logic as
-        // Environnement::getURLIntervalsIcuAuthorize() in production.
+        // Call the real production URL builder directly so this test verifies
+        // Environnement::getURLIntervalsIcuAuthorize() rather than duplicating
+        // its string-assembly logic.  Any regression in the production function
+        // will immediately cause this test to fail.
         const QString urlStr =
-            QString(urlIntervalsIcuOAuthAuthorize)
-            + QStringLiteral("&redirect_uri=")
-            + QString(prod)
-            + QStringLiteral("intervals_icu_token_exchange")
-            + QStringLiteral("&state=")
-            + testState;
+            Environnement::getURLIntervalsIcuAuthorize(testState);
 
         QVERIFY2(!urlStr.isEmpty(),
                  "OAuth authorization URL must not be empty");
@@ -611,7 +611,7 @@ private slots:
         }
 
         const QString screenshotName =
-            QString("login-screen-online-%1-%2.png").arg(kPlatformTag, m_timestamp);
+            QString("login-screen-%1-online-%2.png").arg(kPlatformTag, m_timestamp);
 
         LoginScreenWindow window(
             QStringLiteral("Intervals.icu OAuth (API key validation)"),

@@ -234,16 +234,17 @@ void DialogInfoWebView::pageLoaded(bool ok){
                      + (errorDesc.isEmpty() ? QString()
                                             : QStringLiteral(": ") + errorDesc));
 
-            emit intervalsIcuLinked(false);
-
             if (error == QLatin1String("access_denied")) {
                 // User explicitly cancelled the authorization — close silently.
+                // Do not treat this as a login failure; the rejected() signal
+                // on the dialog is sufficient for the caller to clean up.
                 this->reject();
             } else {
                 // Technical OAuth error (e.g. invalid_client, invalid_scope,
-                // server_error).  Show a descriptive error page so the user
-                // understands what happened instead of having the window
-                // silently close.  The user can then close the dialog manually.
+                // server_error).  Signal failure and show a descriptive error
+                // page so the user understands what happened instead of having
+                // the window silently close.
+                emit intervalsIcuLinked(false);
                 m_showingErrorPage = true;
                 ui->webView->setHtml(buildErrorPageHtml(urlStr));
             }

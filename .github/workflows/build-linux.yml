@@ -505,4 +505,4 @@ jobs:
       if: always()
       with:
         name: login-screen-screenshot-linux
-        path: build/tests/login-screen-linux-*.png
+        path: build/tests/login-screen*-linux-*.png
