@@ -24,3 +24,4 @@ package.json
 package-lock.json
 __pycache__/
 *.pyc
+MaximumTrainer_Archived/
