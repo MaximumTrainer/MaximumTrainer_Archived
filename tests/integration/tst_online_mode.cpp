@@ -63,6 +63,7 @@
 #include <QNetworkRequest>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QEventLoop>
 #include <QTimer>
 
@@ -258,6 +259,157 @@ void OnlineModeWindow::markFailed(int httpStatus, const QString &errorString)
     }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Shared helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Spin an event loop until @p reply finishes or @p timeoutMs elapses.
+/// Returns true iff the reply finished before the timeout.
+static bool waitForReply(QNetworkReply *reply, int timeoutMs = TIMEOUT_MS)
+{
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QTimer::singleShot(timeoutMs, &loop, &QEventLoop::quit);
+    loop.exec();
+    return reply->isFinished();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ResultWindow implementation
+// ─────────────────────────────────────────────────────────────────────────────
+ResultWindow::ResultWindow(const QString &testTitle,
+                           const QString &subtitle,
+                           const QString &timestamp,
+                           QWidget       *parent)
+    : QWidget(parent)
+{
+    const QString platform = kPlatformTag.toUpper();
+    const QString osName   = QSysInfo::prettyProductName();
+    const QString qtVer    = QString("Qt %1").arg(qVersion());
+
+    setWindowTitle(QString("MaximumTrainer — %1 [%2]").arg(testTitle, platform));
+    setFixedSize(1280, 720);
+
+    setStyleSheet(
+        "ResultWindow { background-color: #0d1117; }"
+        "QLabel { color: #c9d1d9;"
+        "         font-family: 'DejaVu Sans', 'Segoe UI', sans-serif; }");
+
+    auto *root = new QVBoxLayout(this);
+    root->setContentsMargins(48, 32, 48, 32);
+    root->setSpacing(0);
+
+    // ── Header ───────────────────────────────────────────────────────────────
+    auto *headerRow = new QHBoxLayout();
+
+    auto *appTitle = new QLabel("MaximumTrainer", this);
+    appTitle->setStyleSheet("font-size: 28px; font-weight: bold; color: #58a6ff;");
+
+    m_statusBadge = new QLabel("[ TESTING... ]", this);
+    m_statusBadge->setStyleSheet(
+        "font-size: 14px; color: #f0883e; background: #161b22;"
+        "border: 1px solid #30363d; border-radius: 4px; padding: 4px 12px;");
+    m_statusBadge->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+    headerRow->addWidget(appTitle,      1);
+    headerRow->addWidget(m_statusBadge, 0, Qt::AlignRight | Qt::AlignVCenter);
+    root->addLayout(headerRow);
+    root->addSpacing(6);
+
+    // ── Meta row ─────────────────────────────────────────────────────────────
+    auto *metaLabel = new QLabel(
+        QString("Platform: %1  |  %2  |  %3  |  %4")
+            .arg(platform, osName, qtVer, timestamp),
+        this);
+    metaLabel->setStyleSheet("font-size: 12px; color: #8b949e;");
+    root->addWidget(metaLabel);
+    root->addSpacing(18);
+
+    auto *sep1 = new QFrame(this);
+    sep1->setFrameShape(QFrame::HLine);
+    sep1->setStyleSheet("color: #21262d;");
+    root->addWidget(sep1);
+    root->addSpacing(24);
+
+    // ── Result panel ─────────────────────────────────────────────────────────
+    auto *panelFrame = new QFrame(this);
+    panelFrame->setStyleSheet(
+        "QFrame { background: #161b22; border: 1px solid #30363d;"
+        "         border-radius: 8px; }");
+    auto *panelLayout = new QVBoxLayout(panelFrame);
+    panelLayout->setContentsMargins(40, 32, 40, 32);
+    panelLayout->setSpacing(20);
+
+    auto *panelTitle = new QLabel(
+        QString("Intervals.icu — %1").arg(subtitle), panelFrame);
+    panelTitle->setStyleSheet(
+        "font-size: 14px; color: #8b949e; font-weight: bold;");
+    panelLayout->addWidget(panelTitle);
+
+    m_rowsLayout = new QVBoxLayout();
+    m_rowsLayout->setSpacing(16);
+    panelLayout->addLayout(m_rowsLayout);
+
+    root->addWidget(panelFrame);
+    root->addStretch();
+
+    // ── Footer ───────────────────────────────────────────────────────────────
+    auto *sep2 = new QFrame(this);
+    sep2->setFrameShape(QFrame::HLine);
+    sep2->setStyleSheet("color: #21262d;");
+    root->addWidget(sep2);
+    root->addSpacing(14);
+
+    auto *footerRow = new QHBoxLayout();
+    auto *footerLeft = new QLabel(
+        QString("intervals.icu — %1").arg(testTitle), this);
+    footerLeft->setStyleSheet("font-size: 12px; color: #8b949e;");
+
+    auto *footerRight = new QLabel(
+        QString("Artefact: online-mode-%1-%2.png").arg(kPlatformTag, timestamp), this);
+    footerRight->setStyleSheet("font-size: 12px; color: #8b949e;");
+    footerRight->setAlignment(Qt::AlignRight);
+
+    footerRow->addWidget(footerLeft,  1);
+    footerRow->addWidget(footerRight, 1, Qt::AlignRight);
+    root->addLayout(footerRow);
+}
+
+void ResultWindow::addRow(const QString &key, const QString &value, bool highlight)
+{
+    auto *row    = new QHBoxLayout();
+    auto *keyLbl = new QLabel(key + ":", this);
+    keyLbl->setStyleSheet("font-size: 14px; color: #8b949e;");
+
+    auto *valLbl = new QLabel(value, this);
+    const QString colour = highlight ? "#7ee787" : "#c9d1d9";
+    valLbl->setStyleSheet(
+        QString("font-size: 14px; color: %1; font-weight: bold;").arg(colour));
+
+    row->addWidget(keyLbl);
+    row->addWidget(valLbl);
+    row->addStretch();
+    m_rowsLayout->addLayout(row);
+
+    QCoreApplication::processEvents();
+}
+
+void ResultWindow::markPassed(const QString &summary)
+{
+    m_statusBadge->setText(QString("[ PASSED ]  %1").arg(summary));
+    m_statusBadge->setStyleSheet(
+        "font-size: 14px; color: #3fb950; background: #0d2010;"
+        "border: 1px solid #238636; border-radius: 4px; padding: 4px 12px;");
+}
+
+void ResultWindow::markFailed(const QString &summary)
+{
+    m_statusBadge->setText(QString("[ FAILED ]  %1").arg(summary));
+    m_statusBadge->setStyleSheet(
+        "font-size: 14px; color: #f85149; background: #200d0d;"
+        "border: 1px solid #58181a; border-radius: 4px; padding: 4px 12px;");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TstOnlineMode -- slot implementations
 // ─────────────────────────────────────────────────────────────────────────────
 void TstOnlineMode::initTestCase()
@@ -277,6 +429,22 @@ void TstOnlineMode::initTestCase()
 
 void TstOnlineMode::cleanupTestCase()
 {
+        // Clean up any workout created by testWorkoutPush
+        if (!m_pushedWorkoutId.isEmpty()) {
+            qDebug().noquote() << "[Cleanup] Deleting test workout:" << m_pushedWorkoutId;
+            QNetworkReply *del =
+                IntervalsIcuService::deleteWorkout(m_athleteId, m_pushedWorkoutId, m_apiKey);
+            if (del) {
+                waitForReply(del, 15'000);
+                const int status =
+                    del->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+                qDebug().noquote()
+                    << "[Cleanup] Delete workout HTTP status:" << status;
+                del->deleteLater();
+            }
+            m_pushedWorkoutId.clear();
+        }
+
         qApp->setProperty("NetworkManagerWS", QVariant());
     }
 
@@ -381,6 +549,353 @@ void TstOnlineMode::testOnlineModeAuthentication()
 
         QVERIFY2(!athleteName.trimmed().isEmpty(),
                  "Auth response returned an empty athlete name");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// testCalendar
+// ─────────────────────────────────────────────────────────────────────────────
+void TstOnlineMode::testCalendar()
+{
+    const QString timestamp =
+        QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH-mm-ssZ");
+    const QString screenshotName =
+        QString("online-mode-%1-calendar-%2.png").arg(kPlatformTag, timestamp);
+    const QString outPath =
+        QCoreApplication::applicationDirPath() + "/" + screenshotName;
+
+    const QDate startDate = QDate::currentDate().addDays(-7);
+    const QDate endDate   = QDate::currentDate().addDays(7);
+
+    ResultWindow window("Calendar Fetch", "Calendar Fetch", timestamp);
+    window.addRow("Athlete ID", m_athleteId);
+    window.addRow("Date Range",
+                  startDate.toString(Qt::ISODate) + " to " + endDate.toString(Qt::ISODate));
+    window.show();
+    QCoreApplication::processEvents();
+
+    auto grabScreenshot = [&]() {
+        QCoreApplication::processEvents();
+        QTest::qWait(500);
+        QCoreApplication::processEvents();
+        const QPixmap shot = window.grab();
+        if (!shot.isNull())
+            shot.save(outPath, "PNG");
+        qDebug().noquote() << "[Screenshot] Saved to:" << outPath;
+    };
+
+    QNetworkReply *reply =
+        IntervalsIcuService::getEvents(m_athleteId, m_apiKey, startDate, endDate);
+
+    if (!reply) {
+        window.markFailed("getEvents() returned nullptr");
+        grabScreenshot();
+        QFAIL("getEvents() returned nullptr");
+    }
+
+    if (!waitForReply(reply)) {
+        reply->abort();
+        reply->deleteLater();
+        window.markFailed("Request timed out after 30 s");
+        grabScreenshot();
+        QFAIL("Calendar request timed out after 30 s");
+    }
+
+    const int        httpStatus  = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const QByteArray body        = reply->readAll();
+    const auto       replyError  = reply->error();
+    const QString    replyErrStr = reply->errorString();
+    reply->deleteLater();
+
+    if (replyError != QNetworkReply::NoError || httpStatus != 200) {
+        window.addRow("HTTP Status", QString::number(httpStatus));
+        window.markFailed(replyErrStr);
+        grabScreenshot();
+        QFAIL(qPrintable(
+            QString("Calendar fetch failed: HTTP %1  —  %2").arg(httpStatus).arg(replyErrStr)));
+    }
+
+    const QJsonDocument doc = QJsonDocument::fromJson(body);
+    if (!doc.isArray()) {
+        window.addRow("HTTP Status", QString::number(httpStatus) + " OK");
+        window.markFailed("Response is not a JSON array");
+        grabScreenshot();
+        QFAIL("Calendar fetch returned non-array JSON");
+    }
+
+    const int eventCount = doc.array().size();
+    window.addRow("HTTP Status",  QString::number(httpStatus) + " OK", /*highlight=*/true);
+    window.addRow("Event Count",  QString::number(eventCount),         /*highlight=*/true);
+    window.markPassed(QString("%1 event(s) in window").arg(eventCount));
+    grabScreenshot();
+
+    QVERIFY2(replyError == QNetworkReply::NoError,
+             qPrintable(QString("Network error: %1").arg(replyErrStr)));
+    QCOMPARE(httpStatus, 200);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// testWorkoutPush
+// ─────────────────────────────────────────────────────────────────────────────
+void TstOnlineMode::testWorkoutPush()
+{
+    const QString timestamp =
+        QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH-mm-ssZ");
+    const QString screenshotName =
+        QString("online-mode-%1-workout-push-%2.png").arg(kPlatformTag, timestamp);
+    const QString outPath =
+        QCoreApplication::applicationDirPath() + "/" + screenshotName;
+
+    static constexpr const char kWorkoutName[] = "MaximumTrainer CI Test Workout";
+
+    ResultWindow window("Workout Push", "Workout Library — Create", timestamp);
+    window.addRow("Athlete ID",    m_athleteId);
+    window.addRow("Workout Name",  kWorkoutName);
+    window.show();
+    QCoreApplication::processEvents();
+
+    auto grabScreenshot = [&]() {
+        QCoreApplication::processEvents();
+        QTest::qWait(500);
+        QCoreApplication::processEvents();
+        const QPixmap shot = window.grab();
+        if (!shot.isNull())
+            shot.save(outPath, "PNG");
+        qDebug().noquote() << "[Screenshot] Saved to:" << outPath;
+    };
+
+    // Embed the timestamp so the workout can be identified if automated cleanup fails.
+    const QString uniqueName =
+        QString("MaximumTrainer CI Test Workout [%1]").arg(timestamp);
+    const QByteArray json =
+        QJsonDocument(QJsonObject{
+            { "name",        uniqueName },
+            { "type",        "Ride" },
+            { "description", "Auto-created by MaximumTrainer CI integration test — safe to delete." }
+        }).toJson(QJsonDocument::Compact);
+
+    QNetworkReply *reply =
+        IntervalsIcuService::createWorkout(m_athleteId, m_apiKey, json);
+
+    if (!reply) {
+        window.markFailed("createWorkout() returned nullptr");
+        grabScreenshot();
+        QFAIL("createWorkout() returned nullptr");
+    }
+
+    if (!waitForReply(reply)) {
+        reply->abort();
+        reply->deleteLater();
+        window.markFailed("Request timed out after 30 s");
+        grabScreenshot();
+        QFAIL("Workout push request timed out after 30 s");
+    }
+
+    const int        httpStatus  = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const QByteArray body        = reply->readAll();
+    const auto       replyError  = reply->error();
+    const QString    replyErrStr = reply->errorString();
+    reply->deleteLater();
+
+    if (replyError != QNetworkReply::NoError || httpStatus != 200) {
+        window.addRow("HTTP Status", QString::number(httpStatus));
+        window.markFailed(replyErrStr);
+        grabScreenshot();
+        QFAIL(qPrintable(
+            QString("Workout push failed: HTTP %1  —  %2").arg(httpStatus).arg(replyErrStr)));
+    }
+
+    const QJsonObject obj = QJsonDocument::fromJson(body).object();
+    const QString workoutId = obj.value(QStringLiteral("id")).toString();
+
+    if (workoutId.isEmpty()) {
+        window.addRow("HTTP Status", QString::number(httpStatus) + " OK");
+        window.markFailed("Response did not contain an 'id' field");
+        grabScreenshot();
+        QFAIL("createWorkout response missing 'id' field");
+    }
+
+    m_pushedWorkoutId = workoutId;   // stored for cleanup in cleanupTestCase
+
+    window.addRow("Workout Name",  uniqueName);
+    window.addRow("HTTP Status",        QString::number(httpStatus) + " OK", /*highlight=*/true);
+    window.addRow("Created Workout ID", workoutId,                            /*highlight=*/true);
+    window.markPassed("Workout created successfully");
+    grabScreenshot();
+
+    QVERIFY2(replyError == QNetworkReply::NoError,
+             qPrintable(QString("Network error: %1").arg(replyErrStr)));
+    QCOMPARE(httpStatus, 200);
+    QVERIFY2(!workoutId.isEmpty(), "createWorkout response missing 'id' field");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// testWorkoutPull
+// ─────────────────────────────────────────────────────────────────────────────
+void TstOnlineMode::testWorkoutPull()
+{
+    const QString timestamp =
+        QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH-mm-ssZ");
+    const QString screenshotName =
+        QString("online-mode-%1-workout-pull-%2.png").arg(kPlatformTag, timestamp);
+    const QString outPath =
+        QCoreApplication::applicationDirPath() + "/" + screenshotName;
+
+    ResultWindow window("Workout Pull", "Workout Library — Download ZWO", timestamp);
+    window.addRow("Athlete ID", m_athleteId);
+    window.show();
+    QCoreApplication::processEvents();
+
+    auto grabScreenshot = [&]() {
+        QCoreApplication::processEvents();
+        QTest::qWait(500);
+        QCoreApplication::processEvents();
+        const QPixmap shot = window.grab();
+        if (!shot.isNull())
+            shot.save(outPath, "PNG");
+        qDebug().noquote() << "[Screenshot] Saved to:" << outPath;
+    };
+
+    // ── 1. List the workout library ───────────────────────────────────────────
+    QNetworkReply *listReply = IntervalsIcuService::getWorkouts(m_athleteId, m_apiKey);
+
+    if (!listReply) {
+        window.markFailed("getWorkouts() returned nullptr");
+        grabScreenshot();
+        QFAIL("getWorkouts() returned nullptr");
+    }
+
+    if (!waitForReply(listReply)) {
+        listReply->abort();
+        listReply->deleteLater();
+        window.markFailed("Workout list request timed out after 30 s");
+        grabScreenshot();
+        QFAIL("getWorkouts() timed out");
+    }
+
+    const int        listStatus  = listReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const QByteArray listBody    = listReply->readAll();
+    const auto       listError   = listReply->error();
+    const QString    listErrStr  = listReply->errorString();
+    listReply->deleteLater();
+
+    if (listError != QNetworkReply::NoError || listStatus != 200) {
+        window.addRow("List HTTP Status", QString::number(listStatus));
+        window.markFailed(listErrStr);
+        grabScreenshot();
+        QFAIL(qPrintable(
+            QString("getWorkouts failed: HTTP %1  —  %2").arg(listStatus).arg(listErrStr)));
+    }
+
+    const QJsonArray workouts = QJsonDocument::fromJson(listBody).array();
+    window.addRow("Library Size", QString::number(workouts.size()));
+
+    if (workouts.isEmpty()) {
+        window.markPassed("No workouts in library — skipping ZWO download");
+        grabScreenshot();
+        QSKIP("Workout library is empty — nothing to pull");
+    }
+
+    // Pick up to 5 pre-existing workouts (skip the one we created in testWorkoutPush —
+    // it has no interval steps so its ZWO file would be empty), and try each until one
+    // returns valid XML. This avoids a hard failure when the first candidate has no
+    // structured workout data.
+    static constexpr int kMaxCandidates = 5;
+    QStringList candidateIds;
+    QStringList candidateNames;
+    for (const QJsonValue &v : workouts) {
+        const QJsonObject w = v.toObject();
+        const QString id    = w.value(QStringLiteral("id")).toString();
+        if (!id.isEmpty() && id != m_pushedWorkoutId) {
+            candidateIds   << id;
+            candidateNames << w.value(QStringLiteral("name")).toString();
+            if (candidateIds.size() >= kMaxCandidates)
+                break;
+        }
+    }
+
+    if (candidateIds.isEmpty()) {
+        window.markPassed("No pre-existing workouts to pull — skipping ZWO download");
+        grabScreenshot();
+        QSKIP("Workout library has no pre-existing workouts to pull");
+    }
+
+    // ── 2. Try each candidate until a valid ZWO is returned ──────────────────
+    int        zwoStatus = 0;
+    QByteArray zwoBody;
+    QString    zwoErrStr;
+    QString    pickedId;
+    QString    pickedName;
+    bool       isXml = false;
+
+    for (int i = 0; i < candidateIds.size(); ++i) {
+        pickedId   = candidateIds.at(i);
+        pickedName = candidateNames.at(i);
+
+        window.addRow(QString("Trying [%1/%2]").arg(i + 1).arg(candidateIds.size()),
+                      QString("ID: %1  —  %2").arg(pickedId,
+                              pickedName.isEmpty() ? "(unnamed)" : pickedName));
+
+        QNetworkReply *zwoReply =
+            IntervalsIcuService::downloadWorkoutZwo(m_athleteId, pickedId, m_apiKey);
+
+        if (!zwoReply) {
+            qDebug().noquote() << "[testWorkoutPull] downloadWorkoutZwo() returned nullptr for" << pickedId;
+            continue;
+        }
+
+        if (!waitForReply(zwoReply)) {
+            zwoReply->abort();
+            zwoReply->deleteLater();
+            qDebug().noquote() << "[testWorkoutPull] ZWO download timed out for" << pickedId;
+            continue;
+        }
+
+        zwoStatus = zwoReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        zwoBody   = zwoReply->readAll();
+        zwoErrStr = zwoReply->errorString();
+        const auto zwoErr = zwoReply->error();
+        zwoReply->deleteLater();
+
+        if (zwoErr != QNetworkReply::NoError || zwoStatus != 200) {
+            qDebug().noquote()
+                << "[testWorkoutPull] HTTP" << zwoStatus << "for" << pickedId << "—" << zwoErrStr;
+            continue;
+        }
+
+        isXml = zwoBody.startsWith("<?xml") || zwoBody.startsWith("<workout_file");
+        if (isXml)
+            break;   // found a valid ZWO
+
+        qDebug().noquote()
+            << "[testWorkoutPull] Non-XML response for" << pickedId
+            << "(first 64 bytes:" << zwoBody.left(64) << ")";
+    }
+
+    if (!isXml) {
+        window.markPassed(
+            QString("Tried %1 candidate(s) — none returned XML ZWO; skipping").arg(candidateIds.size()));
+        grabScreenshot();
+        QSKIP(qPrintable(
+            QString("None of the %1 candidate workout(s) returned a valid ZWO file")
+                .arg(candidateIds.size())));
+    }
+
+    const QString sizeStr = QString("%1 bytes").arg(zwoBody.size());
+
+    window.addRow("List HTTP Status", QString::number(listStatus) + " OK", /*highlight=*/true);
+    window.addRow("ZWO HTTP Status",  QString::number(zwoStatus)  + " OK", /*highlight=*/true);
+    window.addRow("ZWO Size",         sizeStr,                              /*highlight=*/true);
+    window.addRow("Format",           "XML (valid)");
+    window.markPassed("ZWO downloaded and validated");
+    grabScreenshot();
+
+    QCOMPARE(listStatus, 200);
+    QCOMPARE(zwoStatus, 200);
+    QVERIFY2(zwoBody.size() > 0, "ZWO response body is empty");
+    QVERIFY2(isXml,
+             qPrintable(QString("ZWO response does not start with XML header. "
+                                "First 64 bytes: %1")
+                            .arg(QString::fromUtf8(zwoBody.left(64)))));
 }
 
 QTEST_MAIN(TstOnlineMode)

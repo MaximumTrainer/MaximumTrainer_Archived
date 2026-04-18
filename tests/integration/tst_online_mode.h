@@ -3,6 +3,7 @@
 #include <QtTest/QtTest>
 #include <QWidget>
 #include <QLabel>
+#include <QVBoxLayout>
 #include <QNetworkAccessManager>
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -33,6 +34,36 @@ private:
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ResultWindow
+//
+// Generic 1280x720 dark-themed window for integration test result display.
+// Shows a title, a configurable list of key-value rows, and a status badge
+// that is updated to PASSED / FAILED once the test completes.
+// Q_OBJECT declared here so qmake reliably runs moc on it.
+// ─────────────────────────────────────────────────────────────────────────────
+class ResultWindow : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit ResultWindow(const QString &testTitle,
+                          const QString &subtitle,
+                          const QString &timestamp,
+                          QWidget       *parent = nullptr);
+
+    /// Append a labelled row to the result panel.
+    /// @param highlight  When true the value is rendered in green (good news).
+    void addRow(const QString &key, const QString &value, bool highlight = false);
+
+    void markPassed(const QString &summary);
+    void markFailed(const QString &summary);
+
+private:
+    QLabel      *m_statusBadge = nullptr;
+    QVBoxLayout *m_rowsLayout  = nullptr;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TstOnlineMode — QTest class
 //
 // Q_OBJECT declared here (in the header) so qmake reliably runs moc on it.
@@ -43,10 +74,14 @@ class TstOnlineMode : public QObject
 
     QString                m_apiKey;
     QString                m_athleteId;
+    QString                m_pushedWorkoutId;   // set by testWorkoutPush; cleaned in cleanupTestCase
     QNetworkAccessManager *m_manager = nullptr;
 
 private slots:
     void initTestCase();
     void cleanupTestCase();
     void testOnlineModeAuthentication();
+    void testCalendar();
+    void testWorkoutPush();
+    void testWorkoutPull();
 };

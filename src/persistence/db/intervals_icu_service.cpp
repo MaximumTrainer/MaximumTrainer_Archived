@@ -112,3 +112,41 @@ QNetworkReply* IntervalsIcuService::downloadWorkoutMrc(const QString &athleteId,
                         + QStringLiteral("/file.mrc");
     return manager->get(buildRequest(url, apiKey));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/athlete/{id}/workouts
+QNetworkReply* IntervalsIcuService::createWorkout(const QString &athleteId,
+                                                   const QString &apiKey,
+                                                   const QByteArray &json)
+{
+    QNetworkAccessManager *manager =
+        qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("createWorkout: NetworkManagerWS not available"));
+        return nullptr;
+    }
+
+    const QString url = QLatin1String(BASE_URL) + QStringLiteral("/athlete/") + athleteId
+                        + QStringLiteral("/workouts");
+    QNetworkRequest req = buildRequest(url, apiKey);
+    req.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    return manager->post(req, json);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/v1/athlete/{id}/workouts/{workoutId}
+QNetworkReply* IntervalsIcuService::deleteWorkout(const QString &athleteId,
+                                                   const QString &workoutId,
+                                                   const QString &apiKey)
+{
+    QNetworkAccessManager *manager =
+        qApp->property("NetworkManagerWS").value<QNetworkAccessManager*>();
+    if (!manager) {
+        LOG_WARN("IntervalsIcuService", QStringLiteral("deleteWorkout: NetworkManagerWS not available"));
+        return nullptr;
+    }
+
+    const QString url = QLatin1String(BASE_URL) + QStringLiteral("/athlete/") + athleteId
+                        + QStringLiteral("/workouts/") + workoutId;
+    return manager->deleteResource(buildRequest(url, apiKey));
+}

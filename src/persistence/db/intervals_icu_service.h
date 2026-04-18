@@ -43,6 +43,22 @@ public:
                                              const QString &workoutId,
                                              const QString &apiKey);
 
+    /// Create a workout in the athlete's library.
+    /// POST /athlete/{id}/workouts
+    /// @param json  UTF-8 encoded JSON object describing the new workout.
+    ///              Minimum required fields: "name" (string), "type" (string).
+    /// Returns the pending reply; on success the server responds HTTP 200 with
+    /// the created workout object (including its "id" field).
+    static QNetworkReply* createWorkout(const QString &athleteId,
+                                        const QString &apiKey,
+                                        const QByteArray &json);
+
+    /// Delete a workout from the athlete's library.
+    /// DELETE /athlete/{id}/workouts/{workoutId}
+    static QNetworkReply* deleteWorkout(const QString &athleteId,
+                                        const QString &workoutId,
+                                        const QString &apiKey);
+
 private:
     /// Build a QNetworkRequest with Authorization: Basic and Accept: application/json.
     static QNetworkRequest buildRequest(const QString &url, const QString &apiKey);
